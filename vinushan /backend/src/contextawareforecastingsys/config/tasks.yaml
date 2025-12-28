@@ -1,0 +1,38 @@
+historical_task:
+  description: >
+    Use the Item History Tool with month {target_month} ("{target_month_name}") and years_back {years_back} to answer:
+    What sold best, what sales are dropping, and which items rely on discounts? Keep it focused on {business_name} in {location}.
+  expected_output: >
+    JSON with keys: top_items[], falling_items[], discount_focus[], plus 3 short action notes for the manager.
+  agent: historical_analyst
+
+forecasting_task:
+  description: >
+    Call the Daily Forecast Tool for {target_month_name} {target_year}. Explain total forecasted qty, busiest days, and accuracy (MAE/MAPE).
+  expected_output: >
+    JSON describing predictions plus a human summary (<=120 words) about staffing and stock impact.
+  agent: forecasting_specialist
+
+holiday_task:
+  description: >
+    Use the Holiday Context Tool for month {target_month} to explain every holiday, pre-holiday, and post-holiday effect. Mention action per event.
+  expected_output: >
+    Bullet list with (holiday, phase, effect_pct, action). If no holidays, say "No holiday impact".
+  agent: holiday_analyst
+
+weather_task:
+  description: >
+    Run the Weather Context Tool for month {target_month}. Summarize rain_effect and temperature_effect for hot drinks, cold drinks, and pastries.
+  expected_output: >
+    Two sections: Rain Impact and Temperature Impact. Each has bullets with category, change_pct or avg_qty, and a tip.
+  agent: weather_analyst
+
+strategy_task:
+  description: >
+    Manager question: "{user_question}" 
+    Use context from {target_month_name} {target_year} for {business_name} in {location}. 
+    Combine all prior findings from historical, forecasting, holiday, and weather analysis. 
+    Structure your answer with relevant sections such as: Demand Outlook, Promotions, Staffing, Inventory, Risks.
+  expected_output: >
+    Markdown without fences. Use short bullet lists per section and end with a mini table (Metric | Value) covering total forecast qty, busiest day, key holiday, rainy-day action.
+  agent: strategy_planner

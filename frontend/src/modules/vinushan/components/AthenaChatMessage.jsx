@@ -1,0 +1,802 @@
+import { useState, useRef } from 'react';
+import ReactMarkdown from 'react-markdown';
+import { Bar, Line, Pie } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { jsPDF } from 'jspdf';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
+import { saveAs } from 'file-saver';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  PointElement,
+  LineElement,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Filler,
+);
+
+/**
+ * Chat Message Component for ATHENA
+ * Clean, modern design with chart rendering, text-to-speech, and export features
+ */
+
+// Parse markdown to plain text for TTS
+function markdownToPlainText(markdown) {
+  return markdown
+    .replace(/#{1,6}\s?/g, '') // Remove headers
+    .replace(/\*\*(.+?)\*\*/g, '$1') // Bold
+    .replace(/\*(.+?)\*/g, '$1') // Italic
+    .replace(/`(.+?)`/g, '$1') // Inline code
+    .replace(/```[\s\S]*?```/g, '') // Code blocks
+    .replace(/\[(.+?)\]\(.+?\)/g, '$1') // Links
+    .replace(/^\s*[-*+]\s/gm, '') // List items
+    .replace(/^\s*\d+\.\s/gm, '') // Numbered lists
+    .replace(/>\s?/g, '') // Blockquotes
+    .replace(/\|.*\|/g, '') // Tables
+    .replace(/---+/g, '') // Horizontal rules
+    .replace(/\n{3,}/g, '\n\n') // Multiple newlines
+    .trim();
+}
+
+// Parse markdown to formatted content for export
+function parseMarkdownForExport(markdown) {
+  const lines = markdown.split('\n');
+  const sections = [];
+  
+  lines.forEach(line => {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) return;
+    
+    // Headers
+    if (trimmedLine.startsWith('### ')) {
+      sections.push({ type: 'h3', text: trimmedLine.replace('### ', '') });
+    } else if (trimmedLine.startsWith('## ')) {
+      sections.push({ type: 'h2', text: trimmedLine.replace('## ', '') });
+    } else if (trimmedLine.startsWith('# ')) {
+      sections.push({ type: 'h1', text: trimmedLine.replace('# ', '') });
+    }
+    // Bold text
+    else if (trimmedLine.startsWith('**') && trimmedLine.endsWith('**')) {
+      sections.push({ type: 'bold', text: trimmedLine.replace(/\*\*/g, '') });
+    }
+    // List items
+    else if (trimmedLine.match(/^[-*+]\s/)) {
+      sections.push({ type: 'bullet', text: trimmedLine.replace(/^[-*+]\s/, '') });
+    }
+    else if (trimmedLine.match(/^\d+\.\s/)) {
+      sections.push({ type: 'number', text: trimmedLine.replace(/^\d+\.\s/, '') });
+    }
+    // Regular paragraph
+    else {
+      // Clean up markdown formatting
+      const cleanText = trimmedLine
+        .replace(/\*\*(.+?)\*\*/g, '$1')
+        .replace(/\*(.+?)\*/g, '$1')
+        .replace(/`(.+?)`/g, '$1');
+      sections.push({ type: 'paragraph', text: cleanText });
+    }
+  });
+  
+  return sections;
+}
+
+function renderInteractiveChart(chart) {
+  if (!chart?.chart_data || !chart.chart_data.labels || !chart.chart_data.datasets?.length) return null;
+
+  const { chart_type, labels, datasets } = chart.chart_data;
+  const data = { labels, datasets };
+  const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: { enabled: true },
+    },
+    scales: {
+      x: { ticks: { autoSkip: true, maxTicksLimit: 12 } },
+      y: { beginAtZero: true },
+    },
+  };
+
+  if (chart_type === 'pie') {
+    return <Pie data={data} />;
+  }
+  if (chart_type === 'line') {
+    return <Line data={data} options={commonOptions} />;
+  }
+  return <Bar data={data} options={commonOptions} />;
+}
+
+function AthenaChatMessage({ message, charts = [] }) {
+  const isUser = message.role === 'user';
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const speechRef = useRef(null);
+
+  // Text-to-Speech Handler
+  const handleSpeak = () => {
+    if (isSpeaking) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+      return;
+    }
+
+    const plainText = markdownToPlainText(message.content);
+    const utterance = new SpeechSynthesisUtterance(plainText);
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    
+    // Try to get a good voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Female')) 
+      || voices.find(v => v.lang.startsWith('en'));
+    if (preferredVoice) utterance.voice = preferredVoice;
+
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+
+    speechRef.current = utterance;
+    setIsSpeaking(true);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Export to PDF
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const maxWidth = pageWidth - margin * 2;
+    let yPos = 20;
+
+    // Title
+    doc.setFontSize(18);
+    doc.setTextColor(14, 165, 233); // Primary color
+    doc.text('ATHENA Response', margin, yPos);
+    yPos += 10;
+
+    // Timestamp
+    doc.setFontSize(10);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Generated: ${new Date(message.timestamp).toLocaleString()}`, margin, yPos);
+    yPos += 15;
+
+    // Divider line
+    doc.setDrawColor(226, 232, 240);
+    doc.line(margin, yPos, pageWidth - margin, yPos);
+    yPos += 10;
+
+    // Content
+    const sections = parseMarkdownForExport(message.content);
+    
+    sections.forEach(section => {
+      // Check if we need a new page
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      switch (section.type) {
+        case 'h1':
+          doc.setFontSize(16);
+          doc.setTextColor(30, 41, 59);
+          doc.setFont(undefined, 'bold');
+          yPos += 5;
+          doc.text(section.text, margin, yPos);
+          yPos += 10;
+          break;
+        case 'h2':
+          doc.setFontSize(14);
+          doc.setTextColor(30, 41, 59);
+          doc.setFont(undefined, 'bold');
+          yPos += 4;
+          doc.text(section.text, margin, yPos);
+          yPos += 8;
+          break;
+        case 'h3':
+          doc.setFontSize(12);
+          doc.setTextColor(30, 41, 59);
+          doc.setFont(undefined, 'bold');
+          yPos += 3;
+          doc.text(section.text, margin, yPos);
+          yPos += 7;
+          break;
+        case 'bold':
+          doc.setFontSize(11);
+          doc.setTextColor(30, 41, 59);
+          doc.setFont(undefined, 'bold');
+          doc.text(section.text, margin, yPos);
+          yPos += 6;
+          break;
+        case 'bullet':
+          doc.setFontSize(11);
+          doc.setTextColor(30, 41, 59);
+          doc.setFont(undefined, 'normal');
+          const bulletLines = doc.splitTextToSize(`• ${section.text}`, maxWidth - 5);
+          doc.text(bulletLines, margin + 5, yPos);
+          yPos += bulletLines.length * 5 + 2;
+          break;
+        case 'number':
+          doc.setFontSize(11);
+          doc.setTextColor(30, 41, 59);
+          doc.setFont(undefined, 'normal');
+          const numLines = doc.splitTextToSize(section.text, maxWidth - 10);
+          doc.text(numLines, margin + 10, yPos);
+          yPos += numLines.length * 5 + 2;
+          break;
+        default:
+          doc.setFontSize(11);
+          doc.setTextColor(51, 65, 85);
+          doc.setFont(undefined, 'normal');
+          const paraLines = doc.splitTextToSize(section.text, maxWidth);
+          doc.text(paraLines, margin, yPos);
+          yPos += paraLines.length * 5 + 3;
+      }
+    });
+
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(9);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`ATHENA - Context-Aware Forecasting System | Page ${i} of ${pageCount}`, margin, 285);
+    }
+
+    doc.save(`athena-response-${Date.now()}.pdf`);
+    setShowExportModal(false);
+  };
+
+  // Export to Word
+  const exportToWord = async () => {
+    const sections = parseMarkdownForExport(message.content);
+    const docChildren = [];
+
+    // Title
+    docChildren.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: 'ATHENA Response',
+            bold: true,
+            size: 36,
+            color: '0EA5E9',
+          }),
+        ],
+        spacing: { after: 200 },
+      })
+    );
+
+    // Timestamp
+    docChildren.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: `Generated: ${new Date(message.timestamp).toLocaleString()}`,
+            size: 20,
+            color: '64748B',
+          }),
+        ],
+        spacing: { after: 400 },
+      })
+    );
+
+    // Content
+    sections.forEach(section => {
+      switch (section.type) {
+        case 'h1':
+          docChildren.push(
+            new Paragraph({
+              text: section.text,
+              heading: HeadingLevel.HEADING_1,
+              spacing: { before: 300, after: 150 },
+            })
+          );
+          break;
+        case 'h2':
+          docChildren.push(
+            new Paragraph({
+              text: section.text,
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 250, after: 120 },
+            })
+          );
+          break;
+        case 'h3':
+          docChildren.push(
+            new Paragraph({
+              text: section.text,
+              heading: HeadingLevel.HEADING_3,
+              spacing: { before: 200, after: 100 },
+            })
+          );
+          break;
+        case 'bold':
+          docChildren.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: section.text,
+                  bold: true,
+                  size: 24,
+                }),
+              ],
+              spacing: { after: 120 },
+            })
+          );
+          break;
+        case 'bullet':
+          docChildren.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: section.text,
+                  size: 22,
+                }),
+              ],
+              bullet: { level: 0 },
+              spacing: { after: 80 },
+            })
+          );
+          break;
+        case 'number':
+          docChildren.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: section.text,
+                  size: 22,
+                }),
+              ],
+              numbering: { reference: 'default', level: 0 },
+              spacing: { after: 80 },
+            })
+          );
+          break;
+        default:
+          docChildren.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: section.text,
+                  size: 22,
+                }),
+              ],
+              spacing: { after: 120 },
+            })
+          );
+      }
+    });
+
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: docChildren,
+      }],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `athena-response-${Date.now()}.docx`);
+    setShowExportModal(false);
+  };
+
+  return (
+    <div 
+      className={`athena-message ${isUser ? 'user' : 'assistant'}`}
+      style={{
+        display: 'flex',
+        gap: '14px',
+        padding: '16px 20px',
+        borderRadius: '16px',
+        marginBottom: '16px',
+        animation: 'fadeInUp 0.3s ease',
+        background: isUser 
+          ? 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)' 
+          : 'var(--athena-card)',
+        border: isUser ? 'none' : '1px solid var(--athena-border)',
+        marginLeft: isUser ? '60px' : '0',
+        marginRight: isUser ? '0' : '60px',
+      }}
+    >
+      {/* Avatar */}
+      <div 
+        style={{
+          width: '42px',
+          height: '42px',
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '1.5rem',
+          flexShrink: 0,
+          background: isUser 
+            ? 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)' 
+            : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+          color: 'white',
+        }}
+      >
+        {isUser ? '👤' : '🤖'}
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        {/* Header */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          marginBottom: '10px' 
+        }}>
+          <span style={{ 
+            fontWeight: 600, 
+            fontSize: '0.9rem',
+            color: 'var(--athena-text)' 
+          }}>
+            {isUser ? 'You' : 'ATHENA'}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Action Buttons for Assistant Messages */}
+            {!isUser && (
+              <>
+                <button
+                  onClick={handleSpeak}
+                  title={isSpeaking ? 'Stop speaking' : 'Read aloud'}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--athena-border)',
+                    background: isSpeaking ? 'var(--athena-primary)' : 'var(--athena-bg)',
+                    color: isSpeaking ? 'white' : 'var(--athena-text-secondary)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontSize: '1rem',
+                  }}
+                >
+                  {isSpeaking ? '⏹️' : '🔊'}
+                </button>
+                <button
+                  onClick={() => setShowExportModal(true)}
+                  title="Export response"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--athena-border)',
+                    background: 'var(--athena-bg)',
+                    color: 'var(--athena-text-secondary)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontSize: '1rem',
+                  }}
+                >
+                  📥
+                </button>
+              </>
+            )}
+            <span style={{ 
+              fontSize: '0.75rem', 
+              color: 'var(--athena-text-secondary)' 
+            }}>
+              {new Date(message.timestamp).toLocaleTimeString()}
+            </span>
+          </div>
+        </div>
+
+        {/* Charts */}
+        {!isUser && charts?.length > 0 && (
+          <div style={{ marginBottom: '16px' }}>
+            {charts.map((chart, idx) => (
+              <div 
+                key={idx} 
+                style={{
+                  background: 'var(--athena-bg)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  marginBottom: '12px',
+                  border: '1px solid var(--athena-border)',
+                }}
+              >
+                {chart.title && (
+                  <h4 style={{ 
+                    margin: '0 0 12px 0', 
+                    fontSize: '1rem',
+                    fontWeight: 600,
+                    color: 'var(--athena-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}>
+                    📊 {chart.title}
+                  </h4>
+                )}
+                {chart.chart_data ? (
+                  <div style={{ height: '300px' }}>
+                    {renderInteractiveChart(chart)}
+                  </div>
+                ) : chart.image ? (
+                  <div style={{ 
+                    display: 'flex', 
+                    justifyContent: 'center',
+                    background: '#fafafa',
+                    borderRadius: '8px',
+                    padding: '12px',
+                  }}>
+                    <img
+                      src={`data:image/png;base64,${chart.image}`}
+                      alt={chart.title || 'Chart'}
+                      style={{ 
+                        maxWidth: '100%', 
+                        height: 'auto',
+                        borderRadius: '6px',
+                      }}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Message Text */}
+        <div 
+          className="athena-message-content"
+          style={{
+            lineHeight: 1.7,
+            color: 'var(--athena-text)',
+            fontSize: '0.95rem',
+          }}
+        >
+          {isUser ? (
+            <p style={{ margin: 0 }}>{message.content}</p>
+          ) : (
+            <ReactMarkdown
+              components={{
+                h1: ({ children }) => (
+                  <h1 style={{ 
+                    fontSize: '1.4em', 
+                    fontWeight: 700,
+                    marginTop: '20px',
+                    marginBottom: '12px',
+                    paddingBottom: '8px',
+                    borderBottom: '2px solid var(--athena-primary)',
+                    color: 'var(--athena-primary)',
+                  }}>{children}</h1>
+                ),
+                h2: ({ children }) => (
+                  <h2 style={{ 
+                    fontSize: '1.2em', 
+                    fontWeight: 600,
+                    marginTop: '16px',
+                    marginBottom: '10px',
+                  }}>{children}</h2>
+                ),
+                h3: ({ children }) => (
+                  <h3 style={{ 
+                    fontSize: '1.1em', 
+                    fontWeight: 600,
+                    marginTop: '14px',
+                    marginBottom: '8px',
+                  }}>{children}</h3>
+                ),
+                strong: ({ children }) => (
+                  <strong style={{ fontWeight: 600, color: 'var(--athena-primary)' }}>
+                    {children}
+                  </strong>
+                ),
+                ul: ({ children }) => (
+                  <ul style={{ margin: '8px 0', paddingLeft: '24px' }}>{children}</ul>
+                ),
+                ol: ({ children }) => (
+                  <ol style={{ margin: '8px 0', paddingLeft: '24px' }}>{children}</ol>
+                ),
+                li: ({ children }) => (
+                  <li style={{ marginBottom: '4px' }}>{children}</li>
+                ),
+                code: ({ inline, children }) => (
+                  inline ? (
+                    <code style={{
+                      background: 'var(--athena-bg)',
+                      padding: '2px 6px',
+                      borderRadius: '4px',
+                      fontFamily: 'Monaco, Menlo, monospace',
+                      fontSize: '0.9em',
+                    }}>{children}</code>
+                  ) : (
+                    <pre style={{
+                      background: '#1e293b',
+                      color: '#f1f5f9',
+                      padding: '14px 18px',
+                      borderRadius: '10px',
+                      overflow: 'auto',
+                      margin: '12px 0',
+                    }}>
+                      <code style={{ fontFamily: 'Monaco, Menlo, monospace' }}>{children}</code>
+                    </pre>
+                  )
+                ),
+                blockquote: ({ children }) => (
+                  <blockquote style={{
+                    borderLeft: '4px solid var(--athena-primary)',
+                    margin: '12px 0',
+                    paddingLeft: '16px',
+                    color: 'var(--athena-text-secondary)',
+                    fontStyle: 'italic',
+                  }}>{children}</blockquote>
+                ),
+                table: ({ children }) => (
+                  <div style={{ overflowX: 'auto', margin: '12px 0' }}>
+                    <table style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: '0.9em',
+                    }}>{children}</table>
+                  </div>
+                ),
+                th: ({ children }) => (
+                  <th style={{
+                    background: 'var(--athena-bg)',
+                    padding: '10px 14px',
+                    textAlign: 'left',
+                    fontWeight: 600,
+                    border: '1px solid var(--athena-border)',
+                  }}>{children}</th>
+                ),
+                td: ({ children }) => (
+                  <td style={{
+                    padding: '10px 14px',
+                    border: '1px solid var(--athena-border)',
+                  }}>{children}</td>
+                ),
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          )}
+        </div>
+      </div>
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            animation: 'fadeIn 0.2s ease',
+          }}
+          onClick={() => setShowExportModal(false)}
+        >
+          <div 
+            style={{
+              background: 'var(--athena-card)',
+              borderRadius: '16px',
+              padding: '24px',
+              minWidth: '320px',
+              maxWidth: '90%',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+              animation: 'fadeInUp 0.3s ease',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 style={{ 
+              margin: '0 0 8px 0', 
+              fontSize: '1.25rem',
+              fontWeight: 700,
+              color: 'var(--athena-text)',
+            }}>
+              📥 Export Response
+            </h3>
+            <p style={{ 
+              margin: '0 0 20px 0', 
+              fontSize: '0.9rem',
+              color: 'var(--athena-text-secondary)',
+            }}>
+              Choose your preferred format:
+            </p>
+            
+            <div style={{ display: 'flex', gap: '12px', flexDirection: 'column' }}>
+              <button
+                onClick={exportToPDF}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '14px 20px',
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <span style={{ fontSize: '1.5rem' }}>📄</span>
+                <div style={{ textAlign: 'left' }}>
+                  <div>Export as PDF</div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: 400 }}>
+                    Best for printing & sharing
+                  </div>
+                </div>
+              </button>
+              
+              <button
+                onClick={exportToWord}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '14px 20px',
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <span style={{ fontSize: '1.5rem' }}>📝</span>
+                <div style={{ textAlign: 'left' }}>
+                  <div>Export as Word</div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.8, fontWeight: 400 }}>
+                    Best for editing & reports
+                  </div>
+                </div>
+              </button>
+            </div>
+            
+            <button
+              onClick={() => setShowExportModal(false)}
+              style={{
+                width: '100%',
+                marginTop: '16px',
+                padding: '12px',
+                background: 'var(--athena-bg)',
+                color: 'var(--athena-text-secondary)',
+                border: '1px solid var(--athena-border)',
+                borderRadius: '10px',
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default AthenaChatMessage;

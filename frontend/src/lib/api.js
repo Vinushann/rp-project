@@ -57,6 +57,108 @@ export async function sendChatMessage(moduleName, sessionId, message) {
 }
 
 /**
+ * Send a chat message to the Vinushan context-aware assistant.
+ * @param {string} message - User message
+ * @param {Array<{role:string, content:string, timestamp:string}>} conversationHistory - Prior messages
+ * @returns {Promise<object>} ChatResponse payload
+ */
+export async function sendVinushanChat(message, conversationHistory = []) {
+  return apiRequest('/api/v1/vinushan/chat', {
+    method: 'POST',
+    body: JSON.stringify({
+      message,
+      conversation_history: conversationHistory,
+    }),
+  });
+}
+
+/**
+ * Stream chat response from Vinushan's context-aware assistant.
+ * Uses Server-Sent Events for real-time reasoning display.
+ * @param {string} message - User message
+ * @param {Array<{role:string, content:string, timestamp:string}>} conversationHistory - Prior messages
+ * @param {Object} callbacks - Event callbacks
+ * @param {Function} callbacks.onStatus - Called with status updates
+ * @param {Function} callbacks.onRouting - Called with routing decision
+ * @param {Function} callbacks.onAgentStart - Called when an agent starts
+ * @param {Function} callbacks.onAgentComplete - Called when an agent completes
+ * @param {Function} callbacks.onFinalResponse - Called with final response
+ * @param {Function} callbacks.onError - Called on error
+ * @returns {Promise<void>}
+ */
+export async function streamVinushanChat(message, conversationHistory = [], callbacks = {}) {
+  const url = `${API_BASE_URL}/api/v1/vinushan/chat/stream`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      message,
+      conversation_history: conversationHistory,
+    }),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+  }
+  
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  
+  while (true) {
+    const { done, value } = await reader.read();
+    
+    if (done) break;
+    
+    buffer += decoder.decode(value, { stream: true });
+    
+    // Process complete SSE messages
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || ''; // Keep incomplete line in buffer
+    
+    let currentEvent = null;
+    
+    for (const line of lines) {
+      if (line.startsWith('event: ')) {
+        currentEvent = line.slice(7).trim();
+      } else if (line.startsWith('data: ') && currentEvent) {
+        try {
+          const data = JSON.parse(line.slice(6));
+          
+          switch (currentEvent) {
+            case 'status':
+              callbacks.onStatus?.(data);
+              break;
+            case 'routing':
+              callbacks.onRouting?.(data);
+              break;
+            case 'agent_start':
+              callbacks.onAgentStart?.(data);
+              break;
+            case 'agent_complete':
+              callbacks.onAgentComplete?.(data);
+              break;
+            case 'final_response':
+              callbacks.onFinalResponse?.(data);
+              break;
+            case 'error':
+              callbacks.onError?.(data);
+              break;
+          }
+        } catch (e) {
+          console.error('Failed to parse SSE data:', e);
+        }
+        currentEvent = null;
+      }
+    }
+  }
+}
+
+/**
  * Check if the main API is healthy
  * @returns {Promise<{status: string}>}
  */
@@ -75,6 +177,8 @@ export async function getApiInfo() {
 export default {
   pingModule,
   sendChatMessage,
+  sendVinushanChat,
+  streamVinushanChat,
   checkHealth,
   getApiInfo,
 };
