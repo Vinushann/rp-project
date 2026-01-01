@@ -1,0 +1,165 @@
+{
+  "timestamp": "2025-12-26T17:11:44.230588",
+  "best_model": {
+    "vectorizer": "Bag-of-Words",
+    "feature_selector": "Chi-Square",
+    "model": "SVM",
+    "accuracy": 0.9
+  },
+  "all_results": [
+    {
+      "vectorizer": "Bag-of-Words",
+      "feature_selector": "Chi-Square",
+      "model": "SVM",
+      "accuracy": 0.9,
+      "precision": 0.82,
+      "recall": 0.9,
+      "f1_score": 0.8555555555555555,
+      "cv_mean": 0.825,
+      "cv_std": 0.06123724356957946
+    },
+    {
+      "vectorizer": "Bag-of-Words",
+      "feature_selector": "Chi-Square",
+      "model": "Logistic Regression",
+      "accuracy": 0.9,
+      "precision": 0.82,
+      "recall": 0.9,
+      "f1_score": 0.8555555555555555,
+      "cv_mean": 0.825,
+      "cv_std": 0.06123724356957946
+    },
+    {
+      "vectorizer": "Bag-of-Words",
+      "feature_selector": "Mutual Information",
+      "model": "SVM",
+      "accuracy": 0.9,
+      "precision": 0.82,
+      "recall": 0.9,
+      "f1_score": 0.8555555555555555,
+      "cv_mean": 0.825,
+      "cv_std": 0.06123724356957946
+    },
+    {
+      "vectorizer": "Bag-of-Words",
+      "feature_selector": "Mutual Information",
+      "model": "Logistic Regression",
+      "accuracy": 0.9,
+      "precision": 0.82,
+      "recall": 0.9,
+      "f1_score": 0.8555555555555555,
+      "cv_mean": 0.825,
+      "cv_std": 0.06123724356957946
+    },
+    {
+      "vectorizer": "Bag-of-Words",
+      "feature_selector": "LSA",
+      "model": "SVM",
+      "accuracy": 0.9,
+      "precision": 0.82,
+      "recall": 0.9,
+      "f1_score": 0.8555555555555555,
+      "cv_mean": 0.825,
+      "cv_std": 0.06123724356957946
+    },
+    {
+      "vectorizer": "Bag-of-Words",
+      "feature_selector": "LSA",
+      "model": "Logistic Regression",
+      "accuracy": 0.9,
+      "precision": 0.82,
+      "recall": 0.9,
+      "f1_score": 0.8555555555555555,
+      "cv_mean": 0.825,
+      "cv_std": 0.06123724356957946
+    },
+    {
+      "vectorizer": "TF-IDF",
+      "feature_selector": "Chi-Square",
+      "model": "SVM",
+      "accuracy": 0.9,
+      "precision": 0.82,
+      "recall": 0.9,
+      "f1_score": 0.8555555555555555,
+      "cv_mean": 0.675,
+      "cv_std": 0.06123724356957945
+    },
+    {
+      "vectorizer": "TF-IDF",
+      "feature_selector": "Mutual Information",
+      "model": "SVM",
+      "accuracy": 0.9,
+      "precision": 0.82,
+      "recall": 0.9,
+      "f1_score": 0.8555555555555555,
+      "cv_mean": 0.7,
+      "cv_std": 0.09999999999999999
+    },
+    {
+      "vectorizer": "TF-IDF",
+      "feature_selector": "LSA",
+      "model": "SVM",
+      "accuracy": 0.9,
+      "precision": 0.82,
+      "recall": 0.9,
+      "f1_score": 0.8555555555555555,
+      "cv_mean": 0.7,
+      "cv_std": 0.09999999999999999
+    },
+    {
+      "vectorizer": "TF-IDF",
+      "feature_selector": "LSA",
+      "model": "Multinomial Naive Bayes",
+      "accuracy": 0.9,
+      "precision": 0.82,
+      "recall": 0.9,
+      "f1_score": 0.8555555555555555,
+      "cv_mean": 0.6,
+      "cv_std": 0.049999999999999996
+    },
+    {
+      "vectorizer": "Bag-of-Words",
+      "feature_selector": "LSA",
+      "model": "Multinomial Naive Bayes",
+      "accuracy": 0.8,
+      "precision": 0.645,
+      "recall": 0.8,
+      "f1_score": 0.7126984126984126,
+      "cv_mean": 0.6,
+      "cv_std": 0.049999999999999996
+    },
+    {
+      "vectorizer": "TF-IDF",
+      "feature_selector": "Chi-Square",
+      "model": "Logistic Regression",
+      "accuracy": 0.8,
+      "precision": 0.6666666666666666,
+      "recall": 0.8,
+      "f1_score": 0.72,
+      "cv_mean": 0.6,
+      "cv_std": 0.049999999999999996
+    },
+    {
+      "vectorizer": "TF-IDF",
+      "feature_selector": "Mutual Information",
+      "model": "Logistic Regression",
+      "accuracy": 0.8,
+      "precision": 0.6666666666666666,
+      "recall": 0.8,
+      "f1_score": 0.72,
+      "cv_mean": 0.6,
+      "cv_std": 0.049999999999999996
+    },
+    {
+      "vectorizer": "TF-IDF",
+      "feature_selector": "LSA",
+      "model": "Logistic Regression",
+      "accuracy": 0.8,
+      "precision": 0.6666666666666666,
+      "recall": 0.8,
+      "f1_score": 0.72,
+      "cv_mean": 0.6,
+      "cv_std": 0.049999999999999996
+    }
+  ]
+}

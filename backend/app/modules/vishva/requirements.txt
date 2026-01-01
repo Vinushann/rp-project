@@ -1,0 +1,10 @@
+python-dotenv
+browser-use
+langchain-anthropic
+playwright
+scikit-learn
+pandas
+numpy
+joblib
+nltk
+scipy

@@ -1,0 +1,302 @@
+[
+  {
+    "name": "HYBRID",
+    "price": "Rs. 2450",
+    "description": "Beef Patty | Crispy Chicken Breast | Iceberg Lettuce | 2x Cheese | Grilled Chicken Bacon | Tomato Relish | Garlic Mayo",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "THE CLUTCH - Chicken",
+    "price": "Rs. 1550",
+    "description": "Iceberg Lettuce | Red Onions | Garlic Mayo | Tomato Relish",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "THE CLUTCH - Beef",
+    "price": "Rs. 1550",
+    "description": "Iceberg Lettuce | Red Onions | Garlic Mayo | Tomato Relish",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "DRIFTER (SINGLE PATTIE) - Crispy",
+    "price": "Rs. 1850",
+    "description": "Cheddar Cheese | Gherkin Chips | Dijon Mustard | Tomato Relish | Garlic Mayo",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "DRIFTER (SINGLE PATTIE) - Beef",
+    "price": "Rs. 1850",
+    "description": "Cheddar Cheese | Gherkin Chips | Dijon Mustard | Tomato Relish | Garlic Mayo",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "DRIFTER (SINGLE PATTIE) - Vege",
+    "price": "Rs. 1300",
+    "description": "Cheddar Cheese | Gherkin Chips | Dijon Mustard | Tomato Relish | Garlic Mayo",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "TWIN DRIFTER (2X PATTIE) - Beef",
+    "price": "Rs. 2450",
+    "description": "Cheddar Cheese | Gherkin Chips | Dijon Mustard | Tomato Relish | Garlic Mayo",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "SILENCER - Crispy",
+    "price": "Rs. 1850",
+    "description": "Description not fully visible.",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "SILENCER - Beef",
+    "price": "Rs. 1800",
+    "description": "Description not fully visible.",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "STREET COOPER - Chicken Slider",
+    "price": "Rs. 1150",
+    "description": "Cheddar Cheese | Iceberg Lettuce | Garlic Mayo",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "STREET COOPER - Beef Slider",
+    "price": "Rs. 1150",
+    "description": "Cheddar Cheese | Iceberg Lettuce | Garlic Mayo",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "COUPE SLIDER",
+    "price": "Rs. 1150",
+    "description": "Crispy Chicken | Iceberg Lettuce | Sriracha Mayo",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "SILENCER SLIDER",
+    "price": "Rs. 1150",
+    "description": "Crispy Chicken | Iceberg Lettuce | Hot Sauce | Garlic Mayo",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "BBQ SLIDER",
+    "price": "Rs. 1150",
+    "description": "Crispy Chicken | Iceberg Lettuce | BBQ Sauce | Garlic Mayo",
+    "category": "BURGERS REINVENTED"
+  },
+  {
+    "name": "FRIES",
+    "price": "Rs. 950",
+    "description": "Crispy Fries | Served with Garlic Mayo Dip and Ketchup",
+    "category": "SIDES"
+  },
+  {
+    "name": "RIPPLE STRIPES",
+    "price": "Rs. 990",
+    "description": "Char-Grilled Chicken Tenderloins with Rosemary & Basil Served with Ripple Sauce",
+    "category": "SIDES"
+  },
+  {
+    "name": "CRISPY RIPPLE STRIPES - 4 pcs",
+    "price": "Rs. 1300",
+    "description": "Crispy Chicken Tenderloins served with Hot Sauce and Garlic Mayo",
+    "category": "SIDES"
+  },
+  {
+    "name": "CRISPY RIPPLE STRIPES - 2 pcs",
+    "price": "Rs. 650",
+    "description": "Crispy Chicken Tenderloins served with Hot Sauce and Garlic Mayo",
+    "category": "SIDES"
+  },
+  {
+    "name": "HOT ROD - Crispy",
+    "price": "Rs. 1600",
+    "description": "Crispy Chipotle Chicken | Four Signature Sauces | 2x Cheddar Cheese | Red onion | Chopped Habanero Pepper",
+    "category": "SIDES"
+  },
+  {
+    "name": "Mini Bun + Grilled Egg",
+    "price": "Rs. 150",
+    "description": "",
+    "category": "ADD-ONS"
+  },
+  {
+    "name": "Fresh Onions",
+    "price": "Rs. 30",
+    "description": "",
+    "category": "ADD-ONS"
+  },
+  {
+    "name": "Fried Onion Rings x2",
+    "price": "Rs. 200",
+    "description": "",
+    "category": "ADD-ONS"
+  },
+  {
+    "name": "SAUCE & DIPS - Add to burger",
+    "price": "Rs. 180",
+    "description": "Dijon Mustard | Sriracha Mayo | BBQ Sauce | Garlic Mayo | Hot Sauce | Ripple Sauce",
+    "category": "SAUCE & DIPS"
+  },
+  {
+    "name": "SAUCE & DIPS - Dip",
+    "price": "Rs. 200",
+    "description": "Dijon Mustard | Sriracha Mayo | BBQ Sauce | Garlic Mayo | Hot Sauce | Ripple Sauce",
+    "category": "SAUCE & DIPS"
+  },
+  {
+    "name": "KIDS MEAL - Crispy (INCLUDES FREE TOY)",
+    "price": "Rs. 1850",
+    "description": "INCLUDES FREE TOY",
+    "category": "KIDS MEAL"
+  },
+  {
+    "name": "KIDS MEAL - Beef (INCLUDES FREE TOY)",
+    "price": "Rs. 1850",
+    "description": "INCLUDES FREE TOY",
+    "category": "KIDS MEAL"
+  },
+  {
+    "name": "KIDS MEAL - Chkn Popcorn (INCLUDES FREE TOY)",
+    "price": "Rs. 1850",
+    "description": "INCLUDES FREE TOY",
+    "category": "KIDS MEAL"
+  },
+  {
+    "name": "MILKSHAKES - Chocolate",
+    "price": "Rs. 880",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "MILKSHAKES - Vanilla",
+    "price": "Rs. 880",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "MILKSHAKES - Strawberry",
+    "price": "Rs. 880",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "MILKSHAKES - Mango Vanilla",
+    "price": "Rs. 1350",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "MILKSHAKES - Peach Vanilla",
+    "price": "Rs. 1350",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "MILKSHAKES - Blueberry Choco",
+    "price": "Rs. 1350",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "MILKSHAKES - Caramel Choco",
+    "price": "Rs. 1350",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "MOJITOS - Blue Curacao",
+    "price": "Rs. 850",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "MOJITOS - Blueberry",
+    "price": "Rs. 850",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "MOJITOS - Mango",
+    "price": "Rs. 850",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "MOJITOS - Passion",
+    "price": "Rs. 850",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "MOJITOS - Peach",
+    "price": "Rs. 850",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "MOJITOS - Strawberry",
+    "price": "Rs. 850",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "SOFT DRINKS - Pepsi",
+    "price": "Rs. 400",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "SOFT DRINKS - 7UP",
+    "price": "Rs. 400",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "SOFT DRINKS - Mountain Dew",
+    "price": "Rs. 400",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "OTHER DRINKS - Ice Milo",
+    "price": "Rs. 880",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "OTHER DRINKS - Parkers Narang & Pink Salt",
+    "price": "Rs. 550",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "OTHER DRINKS - Water Bottle 500ml",
+    "price": "Rs. 70",
+    "description": "",
+    "category": "BEVERAGES"
+  },
+  {
+    "name": "Special Festive Bun 1",
+    "price": "Rs. 2500",
+    "description": "Crispy Chicken Breast | Driftmas Sauce | Cheddar | Chicken Bacon | Ice Berg Lettuce | Wild Rocket Leaves | Gochujang Mayo",
+    "category": "DRIFTMAS SPECIALS"
+  },
+  {
+    "name": "Special Festive Bun 2",
+    "price": "Rs. 2300",
+    "description": "Char Grilled Beef Patty | Driftmas Sauce | Cheddar | Chicken Bacon | Ice Berg Lettuce | Wild Rocket Leaves | Gochujang Mayo",
+    "category": "DRIFTMAS SPECIALS"
+  },
+  {
+    "name": "Fries | Gochujang Mayo | Crispy Fried Pulled Beef | Driftmas Sauce",
+    "price": "Rs. 1850",
+    "description": "",
+    "category": "DRIFTMAS SPECIALS"
+  },
+  {
+    "name": "Fries | Gochujang Mayo | Crispy Chicken Bites | Driftmas Sauce | Fried Shallots",
+    "price": "Rs. 1850",
+    "description": "",
+    "category": "DRIFTMAS SPECIALS"
+  }
+]
