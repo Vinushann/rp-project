@@ -44,7 +44,6 @@ def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
         3. Extract ALL menu items with these exact fields:
            - name: (the item name)
            - price: (the price as shown)
-           - description: (any description text)
            - category: (if visible)
         
         OUTPUT FORMAT REQUIREMENT:
@@ -57,7 +56,6 @@ def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
           {{
             "name": "Item Name",
             "price": "Rs. XXX",
-            "description": "Description text",
             "category": "Category name"
           }},
           ...

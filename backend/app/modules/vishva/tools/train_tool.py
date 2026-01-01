@@ -114,17 +114,16 @@ class MenuCategoryClassifier:
         categories = []
         
         for item in data:
-            # Combine name and description for better classification
-            name = item.get('name', '').strip()
-            description = item.get('description', '').strip()
-            category = item.get('category', '').strip()
+            # Use only name for classification (no description - POS items won't have it)
+            # Handle None values explicitly
+            name = (item.get('name') or '').strip()
+            category = (item.get('category') or '').strip()
             
             if not name or not category:
                 continue
             
-            # Combine name and description
-            combined_text = f"{name} {description}".strip()
-            preprocessed = self.preprocess_text(combined_text)
+            # Use only name for classification
+            preprocessed = self.preprocess_text(name)
             
             if preprocessed:  # Only add if text is not empty after preprocessing
                 texts.append(preprocessed)

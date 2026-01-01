@@ -142,15 +142,16 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
         
         # Clean up each item
         for item in data:
-            # Ensure all required fields exist
+            # Ensure all required fields exist (name, price, category only - no description needed for POS)
             if 'name' not in item:
                 item['name'] = ''
             if 'price' not in item:
                 item['price'] = ''
-            if 'description' not in item:
-                item['description'] = ''
             if 'category' not in item:
                 item['category'] = ''
+            # Remove description if it exists (not needed for POS system)
+            if 'description' in item:
+                del item['description']
             
             # Clean up whitespace in all fields
             for key in item:

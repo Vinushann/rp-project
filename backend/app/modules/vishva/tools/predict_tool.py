@@ -83,30 +83,26 @@ def load_model_components(model_dir: str = "models"):
 def predict_single_item(item: Dict, components: Dict) -> Dict:
     """Predict category for a single menu item"""
     
-    # Extract text
-    name = item.get('name', '').strip()
-    description = item.get('description', '').strip()
-    price = item.get('price', '').strip()
+    # Extract text - use only name for prediction (same as training, no description needed for POS)
+    name = (item.get('name') or '').strip()
+    price = (item.get('price') or '').strip()
     
     if not name:
         return {
             'name': name,
             'price': price,
-            'description': description,
             'predicted_category': 'Unknown',
             'confidence': 0.0,
             'error': 'Item name is required'
         }
     
-    # Combine name and description (same as training)
-    combined_text = f"{name} {description}".strip()
-    preprocessed = preprocess_text(combined_text)
+    # Use only name for prediction (same as training)
+    preprocessed = preprocess_text(name)
     
     if not preprocessed:
         return {
             'name': name,
             'price': price,
-            'description': description,
             'predicted_category': 'Unknown',
             'confidence': 0.0,
             'error': 'No valid text after preprocessing'
@@ -143,7 +139,6 @@ def predict_single_item(item: Dict, components: Dict) -> Dict:
     return {
         'name': name,
         'price': price,
-        'description': description,
         'predicted_category': prediction,
         'confidence': confidence,
         'all_probabilities': all_probs

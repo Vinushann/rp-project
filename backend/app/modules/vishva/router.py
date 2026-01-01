@@ -62,10 +62,9 @@ class TrainResponse(BaseModel):
     categories: Optional[List[str]] = None
 
 class MenuItem(BaseModel):
-    """A single menu item"""
+    """A single menu item (name, price, category only - no description for POS)"""
     name: str
     price: Optional[str] = ""
-    description: Optional[str] = ""
     category: Optional[str] = None
 
 class PredictRequest(BaseModel):
@@ -73,10 +72,9 @@ class PredictRequest(BaseModel):
     items: List[MenuItem]
 
 class PredictedItem(BaseModel):
-    """A menu item with prediction"""
+    """A menu item with prediction (no description for POS)"""
     name: str
     price: Optional[str] = ""
-    description: Optional[str] = ""
     predicted_category: str
     confidence: float
     all_probabilities: Optional[Dict[str, float]] = None
@@ -254,7 +252,7 @@ async def train_model(request: TrainRequest):
         
         # Train the model
         result = train_category_classifier(
-            json_file=training_file,
+            training_file=training_file,
             output_dir=os.path.join(MODULE_DIR, "models")
         )
         
@@ -306,8 +304,7 @@ async def predict_categories(request: PredictRequest):
         for item in request.items:
             item_dict = {
                 'name': item.name,
-                'price': item.price or '',
-                'description': item.description or ''
+                'price': item.price or ''
             }
             
             result = predict_single_item(item_dict, components)
@@ -315,7 +312,6 @@ async def predict_categories(request: PredictRequest):
             predictions.append(PredictedItem(
                 name=result['name'],
                 price=result.get('price', ''),
-                description=result.get('description', ''),
                 predicted_category=result['predicted_category'],
                 confidence=result['confidence'],
                 all_probabilities=result.get('all_probabilities')
