@@ -3,7 +3,6 @@ from browser_use import Agent, ChatBrowserUse
 import json
 from datetime import datetime
 import os
-import asyncio
 
 # Load .env from both the backend root and the module directory
 backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
@@ -13,14 +12,8 @@ load_dotenv(os.path.join(backend_dir, '.env'))
 module_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(module_dir, '.env'))
 
-# Enable nested event loops for FastAPI compatibility
-try:
-    import nest_asyncio
-    nest_asyncio.apply()
-except ImportError:
-    pass
 
-async def extract_menu_data_async(url: str, output_dir: str = "data/raw") -> dict:
+def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
     """
     Tool to extract menu data from a website.
     
@@ -77,8 +70,8 @@ async def extract_menu_data_async(url: str, output_dir: str = "data/raw") -> dic
     )
     
     try:
-        # Run agent asynchronously
-        result = await agent.run()
+        # Run agent synchronously - this opens a local browser
+        result = agent.run_sync()
         
         # Extract content
         text_output = None
@@ -86,9 +79,9 @@ async def extract_menu_data_async(url: str, output_dir: str = "data/raw") -> dic
         if hasattr(result, 'final_result'):
             try:
                 text_output = result.final_result()
-                print("✅ Used final_result() method")
+                print("[OK] Used final_result() method")
             except Exception as e:
-                print(f"⚠️  final_result() failed: {e}")
+                print(f"[WARN] final_result() failed: {e}")
         
         if not text_output and hasattr(result, 'history'):
             try:
@@ -101,9 +94,9 @@ async def extract_menu_data_async(url: str, output_dir: str = "data/raw") -> dic
                         text_output = last_item.content
                     else:
                         text_output = str(last_item)
-                    print("✅ Used history attribute")
+                    print("[OK] Used history attribute")
             except Exception as e:
-                print(f"⚠️  history access failed: {e}")
+                print(f"[WARN] history access failed: {e}")
         
         if not text_output:
             try:
@@ -116,13 +109,13 @@ async def extract_menu_data_async(url: str, output_dir: str = "data/raw") -> dic
                         text_output = last_item.result
                     else:
                         text_output = str(last_item)
-                    print("✅ Converted to list")
+                    print("[OK] Converted to list")
             except Exception as e:
-                print(f"⚠️  list conversion failed: {e}")
+                print(f"[WARN] list conversion failed: {e}")
         
         if not text_output:
             text_output = str(result)
-            print("✅ Used string conversion (fallback)")
+            print("[OK] Used string conversion (fallback)")
         
         if text_output:
             # Generate timestamp and filename
@@ -133,7 +126,7 @@ async def extract_menu_data_async(url: str, output_dir: str = "data/raw") -> dic
             with open(output_filename, "w", encoding="utf-8") as f:
                 f.write(text_output)
             
-            print(f"✅ Output saved to {output_filename} ({len(text_output)} characters)")
+            print(f"[OK] Output saved to {output_filename} ({len(text_output)} characters)")
             
             # Try to count items if it looks like JSON
             item_count = 0
@@ -162,7 +155,7 @@ async def extract_menu_data_async(url: str, output_dir: str = "data/raw") -> dic
     except Exception as e:
         import traceback
         error_msg = f"Error: {type(e).__name__} - {str(e)}"
-        print(f"❌ {error_msg}")
+        print(f"[ERROR] {error_msg}")
         
         # Save error log
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -180,11 +173,3 @@ async def extract_menu_data_async(url: str, output_dir: str = "data/raw") -> dic
             "message": error_msg,
             "item_count": 0
         }
-
-
-def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
-    """
-    Synchronous wrapper for extract_menu_data_async.
-    Runs in a fresh event loop (for subprocess execution).
-    """
-    return asyncio.run(extract_menu_data_async(url, output_dir))

@@ -410,6 +410,50 @@ async def get_model_status():
 from fastapi.responses import StreamingResponse
 import subprocess
 import sys
+import threading
+
+# Global tracking for running extraction processes
+_active_extraction = {
+    "process": None,
+    "running": False,
+    "stop_requested": False,
+    "lock": threading.Lock()
+}
+
+
+@router.post("/extract-stop")
+async def stop_extraction():
+    """
+    Stop the currently running extraction agent.
+    """
+    with _active_extraction["lock"]:
+        if _active_extraction["process"] is not None and _active_extraction["running"]:
+            _active_extraction["stop_requested"] = True
+            try:
+                _active_extraction["process"].terminate()
+                # Give it a moment, then force kill if needed
+                try:
+                    _active_extraction["process"].wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    _active_extraction["process"].kill()
+                return {"success": True, "message": "Extraction stopped"}
+            except Exception as e:
+                return {"success": False, "message": f"Failed to stop: {str(e)}"}
+        else:
+            return {"success": False, "message": "No extraction is currently running"}
+
+
+@router.get("/extract-status")
+async def get_extraction_status():
+    """
+    Get the current extraction status.
+    """
+    with _active_extraction["lock"]:
+        return {
+            "running": _active_extraction["running"],
+            "stop_requested": _active_extraction["stop_requested"]
+        }
+
 
 @router.get("/extract-stream")
 async def extract_menu_stream(url: str):
@@ -461,12 +505,25 @@ print(json.dumps(result))
                 errors='replace'
             )
             
+            # Track the process globally so it can be stopped
+            with _active_extraction["lock"]:
+                _active_extraction["process"] = process
+                _active_extraction["running"] = True
+                _active_extraction["stop_requested"] = False
+            
             result_json = None
             capturing_result = False
             result_lines = []
+            was_stopped = False
             
             # Stream output line by line
             for line in iter(process.stdout.readline, ''):
+                # Check if stop was requested
+                with _active_extraction["lock"]:
+                    if _active_extraction["stop_requested"]:
+                        was_stopped = True
+                        break
+                
                 if not line:
                     break
                     
@@ -482,6 +539,20 @@ print(json.dumps(result))
                     # Stream agent thoughts to frontend
                     if line.strip():
                         yield f"data: {json.dumps({'type': 'thought', 'message': line})}\n\n"
+            
+            # Clean up process tracking
+            with _active_extraction["lock"]:
+                _active_extraction["process"] = None
+                _active_extraction["running"] = False
+            
+            # Handle stopped case
+            if was_stopped:
+                try:
+                    os.remove(extract_script)
+                except:
+                    pass
+                yield f"data: {json.dumps({'type': 'stopped', 'success': False, 'message': 'Extraction was stopped by user'})}\n\n"
+                return
             
             process.wait()
             

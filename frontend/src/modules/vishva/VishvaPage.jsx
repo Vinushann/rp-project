@@ -16,7 +16,8 @@ import {
   trainModel, 
   predictCategories, 
   getMenuData, 
-  getModelStatus 
+  getModelStatus,
+  stopExtraction 
 } from '../../lib/api';
 
 const MODULE_NAME = 'vishva';
@@ -28,6 +29,7 @@ function VishvaPage() {
   const [extractResult, setExtractResult] = useState(null);
   const [agentThoughts, setAgentThoughts] = useState([]);
   const thoughtsEndRef = useRef(null);
+  const eventSourceRef = useRef(null);  // Reference to EventSource for stopping
   
   // State for menu data
   const [menuData, setMenuData] = useState([]);
@@ -96,6 +98,7 @@ function VishvaPage() {
     
     try {
       const eventSource = new EventSource(`/api/v1/vishva/extract-stream?url=${encodeURIComponent(extractUrl)}`);
+      eventSourceRef.current = eventSource;  // Store reference for stopping
       
       eventSource.onmessage = (event) => {
         try {
@@ -114,13 +117,24 @@ function VishvaPage() {
               item_count: data.item_count
             });
             setExtracting(false);
+            eventSourceRef.current = null;
             eventSource.close();
             if (data.success) {
               loadMenuData();
             }
+          } else if (data.type === 'stopped') {
+            // Handle stopped by user
+            setExtractResult({
+              success: false,
+              message: data.message || 'Extraction stopped by user'
+            });
+            setExtracting(false);
+            eventSourceRef.current = null;
+            eventSource.close();
           } else if (data.type === 'error') {
             setError(data.message);
             setExtracting(false);
+            eventSourceRef.current = null;
             eventSource.close();
           }
         } catch (e) {
@@ -132,12 +146,48 @@ function VishvaPage() {
         console.error('SSE Error:', err);
         setError('Connection to server lost');
         setExtracting(false);
+        eventSourceRef.current = null;
         eventSource.close();
       };
       
     } catch (err) {
       setError(err.message);
       setExtracting(false);
+    }
+  };
+
+  // Stop the extraction agent
+  const handleStopExtract = async () => {
+    try {
+      // Close the SSE connection
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      
+      // Call backend to stop the subprocess
+      const result = await stopExtraction();
+      
+      setAgentThoughts(prev => [...prev, {
+        type: 'status',
+        message: '🛑 Extraction stopped by user',
+        timestamp: new Date().toLocaleTimeString()
+      }]);
+      
+      setExtractResult({
+        success: false,
+        message: result.message || 'Extraction stopped'
+      });
+      setExtracting(false);
+    } catch (err) {
+      console.error('Failed to stop extraction:', err);
+      // Still try to clean up client-side
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      setExtracting(false);
+      setError('Failed to stop extraction: ' + err.message);
     }
   };
 
@@ -287,14 +337,25 @@ function VishvaPage() {
                 onChange={(e) => setExtractUrl(e.target.value)}
                 placeholder="https://restaurant.com/menu"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              />
-              <button
-                onClick={handleExtract}
                 disabled={extracting}
-                className="w-full btn-primary disabled:opacity-50"
-              >
-                {extracting ? '⏳ Extracting... (this may take a minute)' : '🔍 Extract Menu'}
-              </button>
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleExtract}
+                  disabled={extracting}
+                  className="flex-1 btn-primary disabled:opacity-50"
+                >
+                  {extracting ? '⏳ Extracting...' : '🔍 Extract Menu'}
+                </button>
+                {extracting && (
+                  <button
+                    onClick={handleStopExtract}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors"
+                  >
+                    🛑 Stop
+                  </button>
+                )}
+              </div>
               
               {extractResult && (
                 <div className={`p-4 rounded-lg ${extractResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>

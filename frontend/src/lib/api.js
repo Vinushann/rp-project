@@ -128,6 +128,24 @@ export async function getModelStatus() {
   return apiRequest('/api/v1/vishva/model-status');
 }
 
+/**
+ * Stop the currently running extraction agent
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export async function stopExtraction() {
+  return apiRequest('/api/v1/vishva/extract-stop', {
+    method: 'POST',
+  });
+}
+
+/**
+ * Get extraction status
+ * @returns {Promise<{running: boolean, stop_requested: boolean}>}
+ */
+export async function getExtractionStatus() {
+  return apiRequest('/api/v1/vishva/extract-status');
+}
+
 export default {
   pingModule,
   sendChatMessage,
@@ -139,4 +157,6 @@ export default {
   predictCategories,
   getMenuData,
   getModelStatus,
+  stopExtraction,
+  getExtractionStatus,
 };
