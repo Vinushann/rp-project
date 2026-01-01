@@ -40,7 +40,7 @@ function getAgentIcon(agentName = '') {
   for (const [key, icon] of Object.entries(agentIcons)) {
     if (lower.includes(key)) return icon;
   }
-  return '🤖';
+  return 'AI';
 }
 
 function renderInteractiveChart(chart) {
@@ -75,8 +75,8 @@ function VinushanChatMessage({ message, agentSteps, routingReasoning, agentsUsed
 
   return (
     <div className={`chat-message ${isUser ? 'user' : 'assistant'}`}>
-      <div className="message-avatar">
-        {isUser ? '👤' : '🤖'}
+      <div className="message-avatar" aria-label={isUser ? 'You' : 'ATHENA assistant'}>
+        {isUser ? '👤' : 'ATH'}
       </div>
       <div className="message-content">
         <div className="message-header">

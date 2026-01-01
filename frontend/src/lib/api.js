@@ -78,11 +78,14 @@ export async function sendVinushanChat(message, conversationHistory = []) {
  * @param {string} message - User message
  * @param {Array<{role:string, content:string, timestamp:string}>} conversationHistory - Prior messages
  * @param {Object} callbacks - Event callbacks
- * @param {Function} callbacks.onStatus - Called with status updates
- * @param {Function} callbacks.onRouting - Called with routing decision
+ * @param {Function} callbacks.onRunStart - Called when processing begins
+ * @param {Function} callbacks.onQueryAnalysis - Called with routing decision
  * @param {Function} callbacks.onAgentStart - Called when an agent starts
- * @param {Function} callbacks.onAgentComplete - Called when an agent completes
- * @param {Function} callbacks.onFinalResponse - Called with final response
+ * @param {Function} callbacks.onToolStart - Called when a tool is invoked
+ * @param {Function} callbacks.onToolResult - Called when a tool completes
+ * @param {Function} callbacks.onAgentOutput - Called with intermediate output
+ * @param {Function} callbacks.onAgentEnd - Called when an agent completes
+ * @param {Function} callbacks.onRunEnd - Called with final response
  * @param {Function} callbacks.onError - Called on error
  * @returns {Promise<void>}
  */
@@ -130,23 +133,45 @@ export async function streamVinushanChat(message, conversationHistory = [], call
           const data = JSON.parse(line.slice(6));
           
           switch (currentEvent) {
-            case 'status':
-              callbacks.onStatus?.(data);
+            case 'run_start':
+              callbacks.onRunStart?.(data);
               break;
-            case 'routing':
-              callbacks.onRouting?.(data);
+            case 'query_analysis':
+              callbacks.onQueryAnalysis?.(data);
               break;
             case 'agent_start':
               callbacks.onAgentStart?.(data);
               break;
-            case 'agent_complete':
-              callbacks.onAgentComplete?.(data);
+            case 'tool_start':
+              callbacks.onToolStart?.(data);
               break;
-            case 'final_response':
-              callbacks.onFinalResponse?.(data);
+            case 'tool_result':
+              callbacks.onToolResult?.(data);
+              break;
+            case 'agent_output':
+              callbacks.onAgentOutput?.(data);
+              break;
+            case 'agent_end':
+              callbacks.onAgentEnd?.(data);
+              break;
+            case 'run_end':
+              callbacks.onRunEnd?.(data);
               break;
             case 'error':
               callbacks.onError?.(data);
+              break;
+            // Legacy event support
+            case 'status':
+              callbacks.onRunStart?.(data);
+              break;
+            case 'routing':
+              callbacks.onQueryAnalysis?.(data);
+              break;
+            case 'agent_complete':
+              callbacks.onAgentEnd?.(data);
+              break;
+            case 'final_response':
+              callbacks.onRunEnd?.(data);
               break;
           }
         } catch (e) {

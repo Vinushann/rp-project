@@ -98,22 +98,96 @@ function renderInteractiveChart(chart) {
   if (!chart?.chart_data || !chart.chart_data.labels || !chart.chart_data.datasets?.length) return null;
 
   const { chart_type, labels, datasets } = chart.chart_data;
-  const data = { labels, datasets };
+  
+  // Apply dark theme colors to datasets
+  const themedDatasets = datasets.map((ds, idx) => ({
+    ...ds,
+    borderColor: ds.borderColor || ['#0ea5e9', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
+    backgroundColor: ds.backgroundColor || (chart_type === 'line' 
+      ? 'rgba(14, 165, 233, 0.1)' 
+      : ['rgba(14, 165, 233, 0.7)', 'rgba(34, 197, 94, 0.7)', 'rgba(245, 158, 11, 0.7)', 'rgba(239, 68, 68, 0.7)', 'rgba(139, 92, 246, 0.7)'][idx % 5]),
+    pointBackgroundColor: ds.pointBackgroundColor || '#0ea5e9',
+    pointBorderColor: ds.pointBorderColor || '#fff',
+    tension: ds.tension ?? 0.3,
+  }));
+
+  const data = { labels, datasets: themedDatasets };
+  
+  // Dark theme chart options
   const commonOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'top' },
-      tooltip: { enabled: true },
+      legend: { 
+        position: 'top',
+        labels: {
+          color: '#94a3b8', // Light gray text
+          font: { size: 12 },
+        }
+      },
+      tooltip: { 
+        enabled: true,
+        backgroundColor: '#1e293b',
+        titleColor: '#f1f5f9',
+        bodyColor: '#94a3b8',
+        borderColor: '#334155',
+        borderWidth: 1,
+      },
     },
     scales: {
-      x: { ticks: { autoSkip: true, maxTicksLimit: 12 } },
-      y: { beginAtZero: true },
+      x: { 
+        ticks: { 
+          autoSkip: true, 
+          maxTicksLimit: 12,
+          color: '#94a3b8', // Light gray axis labels
+        },
+        grid: {
+          color: 'rgba(51, 65, 85, 0.5)', // Subtle grid lines
+        },
+        border: {
+          color: '#334155',
+        }
+      },
+      y: { 
+        beginAtZero: true,
+        ticks: {
+          color: '#94a3b8', // Light gray axis labels
+        },
+        grid: {
+          color: 'rgba(51, 65, 85, 0.5)', // Subtle grid lines
+        },
+        border: {
+          color: '#334155',
+        }
+      },
+    },
+  };
+
+  // Pie chart specific options (no scales)
+  const pieOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { 
+        position: 'top',
+        labels: {
+          color: '#94a3b8',
+          font: { size: 12 },
+        }
+      },
+      tooltip: { 
+        enabled: true,
+        backgroundColor: '#1e293b',
+        titleColor: '#f1f5f9',
+        bodyColor: '#94a3b8',
+        borderColor: '#334155',
+        borderWidth: 1,
+      },
     },
   };
 
   if (chart_type === 'pie') {
-    return <Pie data={data} />;
+    return <Pie data={data} options={pieOptions} />;
   }
   if (chart_type === 'line') {
     return <Line data={data} options={commonOptions} />;
@@ -124,35 +198,82 @@ function renderInteractiveChart(chart) {
 function AthenaChatMessage({ message, charts = [] }) {
   const isUser = message.role === 'user';
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
-  const speechRef = useRef(null);
+  const audioRef = useRef(null);
 
-  // Text-to-Speech Handler
-  const handleSpeak = () => {
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
+  // Text-to-Speech Handler using OpenAI TTS API
+  const handleSpeak = async () => {
+    // If already speaking, stop
+    if (isSpeaking && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
       setIsSpeaking(false);
       return;
     }
 
-    const plainText = markdownToPlainText(message.content);
-    const utterance = new SpeechSynthesisUtterance(plainText);
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-    utterance.volume = 1;
+    setIsLoadingAudio(true);
     
-    // Try to get a good voice
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Female')) 
-      || voices.find(v => v.lang.startsWith('en'));
-    if (preferredVoice) utterance.voice = preferredVoice;
+    try {
+      const plainText = markdownToPlainText(message.content);
+      
+      // Call the backend TTS endpoint
+      const response = await fetch('/api/v1/vinushan/tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: plainText,
+          voice: 'nova', // Warm, natural female voice
+        }),
+      });
 
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
+      if (!response.ok) {
+        throw new Error('TTS request failed');
+      }
 
-    speechRef.current = utterance;
-    setIsSpeaking(true);
-    window.speechSynthesis.speak(utterance);
+      // Create audio blob and play
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      // Clean up previous audio
+      if (audioRef.current) {
+        URL.revokeObjectURL(audioRef.current.src);
+      }
+      
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        setIsLoadingAudio(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      setIsSpeaking(true);
+      setIsLoadingAudio(false);
+      await audio.play();
+      
+    } catch (error) {
+      console.error('TTS Error:', error);
+      setIsLoadingAudio(false);
+      setIsSpeaking(false);
+      
+      // Fallback to browser speech synthesis if API fails
+      const plainText = markdownToPlainText(message.content);
+      const utterance = new SpeechSynthesisUtterance(plainText);
+      utterance.rate = 0.9;
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      setIsSpeaking(true);
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   // Export to PDF
@@ -399,39 +520,21 @@ function AthenaChatMessage({ message, charts = [] }) {
       className={`athena-message ${isUser ? 'user' : 'assistant'}`}
       style={{
         display: 'flex',
-        gap: '14px',
+        flexDirection: 'column',
         padding: '16px 20px',
         borderRadius: '16px',
-        marginBottom: '16px',
+        marginBottom: '12px',
         animation: 'fadeInUp 0.3s ease',
         background: isUser 
-          ? 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)' 
-          : 'var(--athena-card)',
-        border: isUser ? 'none' : '1px solid var(--athena-border)',
-        marginLeft: isUser ? '60px' : '0',
-        marginRight: isUser ? '0' : '60px',
+          ? 'linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%)' 
+          : 'transparent',
+        border: isUser ? '1px solid rgba(14, 165, 233, 0.2)' : 'none',
+        marginLeft: isUser ? '80px' : '0',
+        marginRight: isUser ? '0' : '80px',
+        borderLeft: !isUser ? '3px solid var(--athena-primary)' : 'none',
+        paddingLeft: !isUser ? '16px' : '20px',
       }}
     >
-      {/* Avatar */}
-      <div 
-        style={{
-          width: '42px',
-          height: '42px',
-          borderRadius: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '1.5rem',
-          flexShrink: 0,
-          background: isUser 
-            ? 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)' 
-            : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-          color: 'white',
-        }}
-      >
-        {isUser ? '👤' : '🤖'}
-      </div>
-
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
         {/* Header */}
@@ -439,12 +542,14 @@ function AthenaChatMessage({ message, charts = [] }) {
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center',
-          marginBottom: '10px' 
+          marginBottom: '8px' 
         }}>
           <span style={{ 
             fontWeight: 600, 
-            fontSize: '0.9rem',
-            color: 'var(--athena-text)' 
+            fontSize: '0.85rem',
+            color: isUser ? 'var(--athena-primary)' : 'var(--athena-accent)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px',
           }}>
             {isUser ? 'You' : 'ATHENA'}
           </span>
@@ -454,23 +559,25 @@ function AthenaChatMessage({ message, charts = [] }) {
               <>
                 <button
                   onClick={handleSpeak}
-                  title={isSpeaking ? 'Stop speaking' : 'Read aloud'}
+                  disabled={isLoadingAudio}
+                  title={isLoadingAudio ? 'Loading audio...' : isSpeaking ? 'Stop speaking' : 'Read aloud (AI Voice)'}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '6px',
                     border: '1px solid var(--athena-border)',
-                    background: isSpeaking ? 'var(--athena-primary)' : 'var(--athena-bg)',
+                    background: isSpeaking ? 'var(--athena-primary)' : isLoadingAudio ? 'var(--athena-bg)' : 'transparent',
                     color: isSpeaking ? 'white' : 'var(--athena-text-secondary)',
-                    cursor: 'pointer',
+                    cursor: isLoadingAudio ? 'wait' : 'pointer',
                     transition: 'all 0.2s ease',
-                    fontSize: '1rem',
+                    fontSize: '0.85rem',
+                    opacity: isLoadingAudio ? 0.7 : 1,
                   }}
                 >
-                  {isSpeaking ? '⏹️' : '🔊'}
+                  {isLoadingAudio ? '⏳' : isSpeaking ? '⏹️' : '🔊'}
                 </button>
                 <button
                   onClick={() => setShowExportModal(true)}
@@ -479,15 +586,15 @@ function AthenaChatMessage({ message, charts = [] }) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '6px',
                     border: '1px solid var(--athena-border)',
-                    background: 'var(--athena-bg)',
+                    background: 'transparent',
                     color: 'var(--athena-text-secondary)',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
-                    fontSize: '1rem',
+                    fontSize: '0.85rem',
                   }}
                 >
                   📥

@@ -21,17 +21,14 @@ function VinushanPage() {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [showReasoning, setShowReasoning] = useState(false);
-  const [currentReasoning, setCurrentReasoning] = useState({
-    routingReasoning: null,
-    agentsUsed: [],
-    agentSteps: [],
-    statusMessage: null,
-    activeAgents: [],
-    completedAgents: [],
-  });
   const [inputValue, setInputValue] = useState('');
+  
+  // Real-time event tracking
+  const [currentRunId, setCurrentRunId] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [routingReasoning, setRoutingReasoning] = useState(null);
+  const [agentsNeeded, setAgentsNeeded] = useState([]);
   
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -40,8 +37,12 @@ function VinushanPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(prev => !prev);
+  // Clear reasoning state
+  const clearReasoning = () => {
+    setEvents([]);
+    setRoutingReasoning(null);
+    setAgentsNeeded([]);
+    setCurrentRunId(null);
   };
 
   const handleSendMessage = async (content) => {
@@ -61,14 +62,7 @@ function VinushanPage() {
     
     // Open reasoning panel and reset state
     setShowReasoning(true);
-    setCurrentReasoning({
-      routingReasoning: null,
-      agentsUsed: [],
-      agentSteps: [],
-      statusMessage: 'Starting analysis...',
-      activeAgents: [],
-      completedAgents: [],
-    });
+    clearReasoning();
 
     try {
       const history = [...messages, userMessage].map(({ role, content: text, timestamp }) => ({
@@ -77,85 +71,50 @@ function VinushanPage() {
         timestamp,
       }));
 
-      // Use streaming API with real-time callbacks
+      // Use streaming API with real-time event callbacks
       await streamVinushanChat(content, history, {
-        onStatus: (data) => {
-          setCurrentReasoning(prev => ({
-            ...prev,
-            statusMessage: data.message,
-          }));
+        onRunStart: (data) => {
+          setCurrentRunId(data.run_id);
+          setEvents(prev => [...prev, data]);
         },
         
-        onRouting: (data) => {
-          setCurrentReasoning(prev => ({
-            ...prev,
-            routingReasoning: data.reasoning,
-            agentsUsed: data.agents_needed || [],
-            statusMessage: `Routing to ${data.agents_needed?.length || 0} specialized agents...`,
-          }));
+        onQueryAnalysis: (data) => {
+          setRoutingReasoning(data.content || data.data?.reasoning);
+          setAgentsNeeded(data.data?.agents_needed || []);
+          setEvents(prev => [...prev, data]);
         },
         
         onAgentStart: (data) => {
-          setCurrentReasoning(prev => ({
-            ...prev,
-            activeAgents: [...prev.activeAgents, {
-              name: data.agent_name,
-              task: data.task_name,
-              description: data.description,
-              startTime: Date.now(),
-            }],
-            statusMessage: `${data.agent_name} is analyzing...`,
-          }));
+          setEvents(prev => [...prev, data]);
         },
         
-        onAgentComplete: (data) => {
-          setCurrentReasoning(prev => {
-            // Move from active to completed
-            const activeAgents = prev.activeAgents.filter(
-              a => a.name !== data.agent_name
-            );
-            
-            const completedAgent = {
-              name: data.agent_name,
-              task: data.task_name,
-              summary: data.summary,
-              output_preview: data.output_preview,
-              step_number: data.step_number,
-              total_steps: data.total_steps,
-            };
-            
-            return {
-              ...prev,
-              activeAgents,
-              completedAgents: [...prev.completedAgents, completedAgent],
-              agentSteps: [...prev.agentSteps, {
-                agent_name: data.agent_name,
-                task_name: data.task_name,
-                summary: data.summary,
-                output_preview: data.output_preview,
-              }],
-              statusMessage: data.total_steps 
-                ? `Completed step ${data.step_number} of ${data.total_steps}`
-                : `${data.agent_name} completed`,
-            };
-          });
+        onToolStart: (data) => {
+          setEvents(prev => [...prev, data]);
         },
         
-        onFinalResponse: (data) => {
-          setCurrentReasoning(prev => ({
-            ...prev,
-            statusMessage: null,
-            activeAgents: [],
-            routingReasoning: data.routing_reasoning || prev.routingReasoning,
-            agentsUsed: data.agents_used || prev.agentsUsed,
-            agentSteps: data.reasoning_steps?.length > 0 ? data.reasoning_steps : prev.agentSteps,
-          }));
-
+        onToolResult: (data) => {
+          setEvents(prev => [...prev, data]);
+        },
+        
+        onAgentOutput: (data) => {
+          setEvents(prev => [...prev, data]);
+        },
+        
+        onAgentEnd: (data) => {
+          setEvents(prev => [...prev, data]);
+        },
+        
+        onRunEnd: (data) => {
+          setEvents(prev => [...prev, data]);
+          
+          // Extract final response from data
+          const responseData = data.data || {};
+          
           const assistantMessage = {
             role: 'assistant',
-            content: data.response,
+            content: responseData.response || data.content || 'Analysis complete.',
             timestamp: new Date().toISOString(),
-            charts: data.charts,
+            charts: responseData.charts,
           };
 
           setMessages(prev => [...prev, assistantMessage]);
@@ -163,11 +122,9 @@ function VinushanPage() {
         },
         
         onError: (data) => {
-          setError(data.message || 'An error occurred');
-          setCurrentReasoning(prev => ({
-            ...prev,
-            statusMessage: `Error: ${data.message}`,
-          }));
+          setError(data.content || data.message || 'An error occurred');
+          setEvents(prev => [...prev, data]);
+          setIsLoading(false);
         },
       });
 
@@ -200,21 +157,12 @@ function VinushanPage() {
   };
 
   return (
-    <div className={`athena-container ${isDarkMode ? 'athena-dark' : ''}`}>
+    <div className="athena-container">
       {/* Header */}
       <header className="athena-header">
         <div className="athena-logo">
           <h1 className="athena-title">ATHENA</h1>
           <p className="athena-subtitle">A Context-Aware Forecasting and Decision Support System</p>
-        </div>
-        <div className="athena-controls">
-          <button 
-            className="theme-toggle" 
-            onClick={toggleDarkMode}
-            title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {isDarkMode ? '☀️' : '🌙'}
-          </button>
         </div>
       </header>
 
@@ -226,7 +174,6 @@ function VinushanPage() {
           <div className="athena-messages">
             {messages.length === 0 ? (
               <div className="athena-welcome">
-                <div className="athena-welcome-icon">🤖</div>
                 <h3>Welcome, Manager!</h3>
                 <p>
                   I can analyze sales, forecast demand, explain holiday and weather impacts, and create charts.
@@ -258,16 +205,24 @@ function VinushanPage() {
 
             {/* Loading indicator */}
             {isLoading && (
-              <div className="athena-loading">
-                <div className="loading-avatar">🤖</div>
-                <div className="loading-content">
-                  <div className="loading-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-                  <p className="loading-text">{currentReasoning.statusMessage || 'Analyzing your question...'}</p>
+              <div className="athena-loading" style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '16px 20px',
+                marginRight: '80px',
+                borderLeft: '3px solid var(--athena-primary)',
+              }}>
+                <div className="loading-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
                 </div>
+                <p className="loading-text" style={{ margin: 0, color: 'var(--athena-text-secondary)', fontSize: '0.9rem' }}>
+                  {events.length > 0 
+                    ? events[events.length - 1]?.content || 'Analyzing your question...'
+                    : 'Analyzing your question...'}
+                </p>
               </div>
             )}
 
@@ -310,12 +265,12 @@ function VinushanPage() {
         <ReasoningPanel
           isOpen={showReasoning}
           onClose={() => setShowReasoning(false)}
-          routingReasoning={currentReasoning.routingReasoning}
-          agentsUsed={currentReasoning.agentsUsed}
-          agentSteps={currentReasoning.agentSteps}
-          activeAgents={currentReasoning.activeAgents}
-          statusMessage={currentReasoning.statusMessage}
+          onClear={clearReasoning}
+          events={events}
+          currentRunId={currentRunId}
           isLoading={isLoading}
+          routingReasoning={routingReasoning}
+          agentsNeeded={agentsNeeded}
         />
       </main>
     </div>
