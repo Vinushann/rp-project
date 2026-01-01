@@ -72,9 +72,71 @@ export async function getApiInfo() {
   return apiRequest('/');
 }
 
+// ============================================
+// VISHVA MODULE API FUNCTIONS
+// ============================================
+
+/**
+ * Extract menu data from a URL
+ * @param {string} url - The restaurant menu URL to scrape
+ * @returns {Promise<{success: boolean, message: string, item_count: number}>}
+ */
+export async function extractMenu(url) {
+  return apiRequest('/api/v1/vishva/extract', {
+    method: 'POST',
+    body: JSON.stringify({ url }),
+  });
+}
+
+/**
+ * Train the category classifier model
+ * @param {string} trainingFile - Optional path to training file
+ * @returns {Promise<{success: boolean, message: string, best_model: string, accuracy: number}>}
+ */
+export async function trainModel(trainingFile = null) {
+  return apiRequest('/api/v1/vishva/train', {
+    method: 'POST',
+    body: JSON.stringify({ training_file: trainingFile }),
+  });
+}
+
+/**
+ * Predict categories for menu items
+ * @param {Array<{name: string, price?: string, description?: string}>} items - Menu items to classify
+ * @returns {Promise<{success: boolean, predictions: Array}>}
+ */
+export async function predictCategories(items) {
+  return apiRequest('/api/v1/vishva/predict', {
+    method: 'POST',
+    body: JSON.stringify({ items }),
+  });
+}
+
+/**
+ * Get current menu data
+ * @returns {Promise<{success: boolean, items: Array}>}
+ */
+export async function getMenuData() {
+  return apiRequest('/api/v1/vishva/menu-data');
+}
+
+/**
+ * Get model status
+ * @returns {Promise<{model_exists: boolean, model_name: string, accuracy: number}>}
+ */
+export async function getModelStatus() {
+  return apiRequest('/api/v1/vishva/model-status');
+}
+
 export default {
   pingModule,
   sendChatMessage,
   checkHealth,
   getApiInfo,
+  // Vishva module
+  extractMenu,
+  trainModel,
+  predictCategories,
+  getMenuData,
+  getModelStatus,
 };

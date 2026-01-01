@@ -1,8 +1,22 @@
 # Core dependencies
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-pydantic==2.5.3
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.10.0
 
 # Development dependencies
-python-dotenv==1.0.0
-httpx==0.26.0  # For testing
+python-dotenv>=1.0.0
+httpx>=0.26.0  # For testing
+
+
+
+#Vishva's Dependencies
+python-dotenv
+browser-use
+langchain-anthropic
+playwright
+scikit-learn
+pandas
+numpy
+joblib
+nltk
+scipy

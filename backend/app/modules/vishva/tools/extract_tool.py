@@ -3,10 +3,24 @@ from browser_use import Agent, ChatBrowserUse
 import json
 from datetime import datetime
 import os
+import asyncio
 
-load_dotenv()
+# Load .env from both the backend root and the module directory
+backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+load_dotenv(os.path.join(backend_dir, '.env'))
 
-def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
+# Also try module-level .env as fallback
+module_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(module_dir, '.env'))
+
+# Enable nested event loops for FastAPI compatibility
+try:
+    import nest_asyncio
+    nest_asyncio.apply()
+except ImportError:
+    pass
+
+async def extract_menu_data_async(url: str, output_dir: str = "data/raw") -> dict:
     """
     Tool to extract menu data from a website.
     
@@ -21,8 +35,8 @@ def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
-    print(f"🤖 Starting extraction agent...")
-    print(f"📍 Target: {url}")
+    print("[BOT] Starting extraction agent...")
+    print(f"[URL] Target: {url}")
     print("-" * 50)
     
     agent = Agent(
@@ -63,8 +77,8 @@ def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
     )
     
     try:
-        # Run agent
-        result = agent.run_sync()
+        # Run agent asynchronously
+        result = await agent.run()
         
         # Extract content
         text_output = None
@@ -166,3 +180,11 @@ def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
             "message": error_msg,
             "item_count": 0
         }
+
+
+def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
+    """
+    Synchronous wrapper for extract_menu_data_async.
+    Runs in a fresh event loop (for subprocess execution).
+    """
+    return asyncio.run(extract_menu_data_async(url, output_dir))
