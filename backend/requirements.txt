@@ -20,3 +20,6 @@ numpy
 joblib
 nltk
 scipy
+PyMuPDF
+reportlab
+python-multipart

@@ -146,6 +146,59 @@ export async function getExtractionStatus() {
   return apiRequest('/api/v1/vishva/extract-status');
 }
 
+/**
+ * Predict categories from an uploaded file (CSV or PDF)
+ * @param {File} file - The file to upload
+ * @returns {Promise<{success: boolean, predictions: Array, statistics: object}>}
+ */
+export async function predictFromFile(file) {
+  const url = `${API_BASE_URL}/api/v1/vishva/predict-file`;
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * Export predictions to a specific format
+ * @param {Array} predictions - The predictions to export
+ * @param {string} format - Export format: 'json', 'csv', or 'pdf'
+ * @returns {Promise<Blob|object>}
+ */
+export async function exportPredictions(predictions, format) {
+  const url = `${API_BASE_URL}/api/v1/vishva/export-predictions?format=${format}`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(predictions),
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+  }
+  
+  if (format === 'json') {
+    return response.json();
+  } else {
+    // Return blob for CSV and PDF
+    return response.blob();
+  }
+}
+
 export default {
   pingModule,
   sendChatMessage,
@@ -155,6 +208,8 @@ export default {
   extractMenu,
   trainModel,
   predictCategories,
+  predictFromFile,
+  exportPredictions,
   getMenuData,
   getModelStatus,
   stopExtraction,

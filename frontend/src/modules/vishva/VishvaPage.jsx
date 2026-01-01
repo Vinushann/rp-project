@@ -14,7 +14,9 @@ import { useState, useEffect, useRef } from 'react';
 import PingButton from '../../components/PingButton';
 import { 
   trainModel, 
-  predictCategories, 
+  predictCategories,
+  predictFromFile,
+  exportPredictions,
   getMenuData, 
   getModelStatus,
   stopExtraction 
@@ -44,6 +46,14 @@ function VishvaPage() {
   const [predictionInput, setPredictionInput] = useState('');
   const [predicting, setPredicting] = useState(false);
   const [predictions, setPredictions] = useState([]);
+  
+  // State for file upload
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+  
+  // State for export
+  const [exporting, setExporting] = useState(false);
   
   // State for errors
   const [error, setError] = useState(null);
@@ -224,8 +234,7 @@ function VishvaPage() {
         const parts = line.split(' - ');
         return {
           name: parts[0].trim(),
-          price: parts[1]?.trim() || '',
-          description: parts[2]?.trim() || ''
+          price: parts[1]?.trim() || ''
         };
       });
       
@@ -239,6 +248,89 @@ function VishvaPage() {
       setError(err.message);
     } finally {
       setPredicting(false);
+    }
+  };
+
+  // Handle file selection
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const validTypes = ['text/csv', 'application/pdf', 'application/vnd.ms-excel'];
+      const validExtensions = ['.csv', '.pdf'];
+      const fileExt = file.name.toLowerCase().slice(file.name.lastIndexOf('.'));
+      
+      if (!validExtensions.includes(fileExt)) {
+        setError('Please upload a CSV or PDF file');
+        return;
+      }
+      setUploadedFile(file);
+      setError(null);
+    }
+  };
+
+  // Handle file upload and prediction
+  const handleFilePredict = async () => {
+    if (!uploadedFile) {
+      setError('Please select a file first');
+      return;
+    }
+    
+    setUploading(true);
+    setError(null);
+    
+    try {
+      const result = await predictFromFile(uploadedFile);
+      if (result.success) {
+        setPredictions(result.predictions || []);
+      } else {
+        setError(result.message);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Handle export
+  const handleExport = async (format) => {
+    if (predictions.length === 0) {
+      setError('No predictions to export');
+      return;
+    }
+    
+    setExporting(true);
+    setError(null);
+    
+    try {
+      const result = await exportPredictions(predictions, format);
+      
+      if (format === 'json') {
+        // Download JSON
+        const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'predictions.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else {
+        // Download CSV or PDF blob
+        const url = URL.createObjectURL(result);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `predictions.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -456,39 +548,109 @@ function VishvaPage() {
           {/* Predict Categories Card */}
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">🔮 Predict Categories</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Enter menu items to classify (one per line). Format: <code className="bg-gray-100 px-1 rounded">Name - Price - Description</code>
-            </p>
-            <textarea
-              value={predictionInput}
-              onChange={(e) => setPredictionInput(e.target.value)}
-              placeholder="Cheese Burger - Rs. 1500 - Juicy beef patty with cheese&#10;Chicken Wings - Rs. 800 - Crispy fried wings&#10;Pepperoni Pizza - Rs. 2000"
-              className="w-full h-32 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-            />
-            <button
-              onClick={handlePredict}
-              disabled={predicting || !modelStatus?.model_exists}
-              className="w-full mt-4 btn-primary disabled:opacity-50"
-            >
-              {predicting ? '⏳ Predicting...' : '🔮 Predict Categories'}
-            </button>
+            
+            {/* File Upload Section - Primary */}
+            <div className="mb-6 p-4 bg-green-50 border-2 border-dashed border-green-300 rounded-lg">
+              <p className="text-green-800 font-medium mb-2">📁 Upload Product File (Recommended)</p>
+              <p className="text-green-700 text-sm mb-3">
+                Upload a CSV or PDF file with product names to classify them automatically.
+              </p>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                accept=".csv,.pdf"
+                className="hidden"
+              />
+              <div className="flex gap-2 items-center">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-4 py-2 bg-white border border-green-400 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
+                >
+                  📂 Choose File
+                </button>
+                {uploadedFile && (
+                  <span className="text-green-800 text-sm font-medium">
+                    ✓ {uploadedFile.name}
+                  </span>
+                )}
+              </div>
+              {uploadedFile && (
+                <button
+                  onClick={handleFilePredict}
+                  disabled={uploading || !modelStatus?.model_exists}
+                  className="w-full mt-3 btn-primary disabled:opacity-50"
+                >
+                  {uploading ? '⏳ Processing File...' : '🚀 Classify Products from File'}
+                </button>
+              )}
+            </div>
+            
+            {/* Manual Input Section - Secondary */}
+            <div className="border-t pt-4">
+              <p className="text-gray-600 text-sm mb-2">
+                Or enter product names manually (one per line). Format: <code className="bg-gray-100 px-1 rounded">Name - Price</code>
+              </p>
+              <textarea
+                value={predictionInput}
+                onChange={(e) => setPredictionInput(e.target.value)}
+                placeholder="Cheese Burger - Rs. 1500&#10;Chicken Wings - Rs. 800&#10;Pepperoni Pizza - Rs. 2000"
+                className="w-full h-24 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none text-sm"
+              />
+              <button
+                onClick={handlePredict}
+                disabled={predicting || !modelStatus?.model_exists}
+                className="w-full mt-2 btn-secondary disabled:opacity-50"
+              >
+                {predicting ? '⏳ Predicting...' : '🔮 Predict from Text'}
+              </button>
+            </div>
+            
             {!modelStatus?.model_exists && (
-              <p className="text-yellow-600 text-sm mt-2">Train the model first before predicting</p>
+              <p className="text-yellow-600 text-sm mt-2">⚠️ Train the model first before predicting</p>
             )}
             
             {/* Prediction Results */}
             {predictions.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <h4 className="font-medium text-gray-700">Results:</h4>
-                {predictions.map((pred, i) => (
-                  <div key={i} className="p-3 bg-gray-50 rounded-lg border">
-                    <div className="flex justify-between items-start">
+              <div className="mt-6 border-t pt-4">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="font-medium text-gray-700">📊 Results ({predictions.length} items)</h4>
+                  
+                  {/* Export Buttons */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleExport('csv')}
+                      disabled={exporting}
+                      className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors disabled:opacity-50"
+                    >
+                      📥 CSV
+                    </button>
+                    <button
+                      onClick={() => handleExport('pdf')}
+                      disabled={exporting}
+                      className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors disabled:opacity-50"
+                    >
+                      📥 PDF
+                    </button>
+                    <button
+                      onClick={() => handleExport('json')}
+                      disabled={exporting}
+                      className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors disabled:opacity-50"
+                    >
+                      📥 JSON
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  {predictions.map((pred, i) => (
+                    <div key={i} className="p-3 bg-gray-50 rounded-lg border flex justify-between items-center">
                       <div>
-                        <p className="font-medium">{pred.name}</p>
+                        <p className="font-medium text-gray-800">{pred.name}</p>
                         {pred.price && <p className="text-gray-500 text-sm">{pred.price}</p>}
                       </div>
                       <div className="text-right">
-                        <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
                           {pred.predicted_category}
                         </span>
                         <p className="text-gray-500 text-xs mt-1">
@@ -496,8 +658,21 @@ function VishvaPage() {
                         </p>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                
+                {/* Clear Results */}
+                <button
+                  onClick={() => {
+                    setPredictions([]);
+                    setUploadedFile(null);
+                    setPredictionInput('');
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
+                  className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700"
+                >
+                  🗑️ Clear Results
+                </button>
               </div>
             )}
           </div>

@@ -17,12 +17,15 @@ ENDPOINTS:
 - GET  /model-status   - Get model training status/info
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from app.schemas import PingResponse, ChatRequest, ChatResponse
 import os
 import json
+import csv
+import io
 
 # Get the module directory path
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -331,6 +334,228 @@ async def predict_categories(request: PredictRequest):
             }
         )
         
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/predict-file")
+async def predict_from_file(file: UploadFile = File(...)):
+    """
+    Predict categories from an uploaded file (CSV or PDF).
+    
+    CSV format: Should have a column named 'name' or 'product' or 'item' containing product names.
+    PDF format: Will extract text and parse product names (one per line).
+    
+    Returns predictions that can be exported to CSV, PDF, or JSON.
+    """
+    try:
+        from app.modules.vishva.tools.predict_tool import load_model_components, predict_single_item
+        
+        model_dir = os.path.join(MODULE_DIR, "models")
+        
+        # Load model components
+        try:
+            components = load_model_components(model_dir)
+        except FileNotFoundError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        
+        # Read file content
+        content = await file.read()
+        filename = file.filename.lower()
+        
+        items = []
+        
+        if filename.endswith('.csv'):
+            # Parse CSV file
+            try:
+                text_content = content.decode('utf-8')
+                csv_reader = csv.DictReader(io.StringIO(text_content))
+                
+                # Find the name column (could be 'name', 'product', 'item', 'product_name', etc.)
+                fieldnames = csv_reader.fieldnames or []
+                name_column = None
+                price_column = None
+                
+                for field in fieldnames:
+                    field_lower = field.lower().strip()
+                    if field_lower in ['name', 'product', 'item', 'product_name', 'item_name', 'productname']:
+                        name_column = field
+                    if field_lower in ['price', 'cost', 'amount', 'value']:
+                        price_column = field
+                
+                if not name_column:
+                    # Try first column as name
+                    if fieldnames:
+                        name_column = fieldnames[0]
+                    else:
+                        raise HTTPException(status_code=400, detail="CSV must have a column for product names")
+                
+                for row in csv_reader:
+                    name = row.get(name_column, '').strip()
+                    price = row.get(price_column, '').strip() if price_column else ''
+                    if name:
+                        items.append({'name': name, 'price': price})
+                        
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {str(e)}")
+                
+        elif filename.endswith('.pdf'):
+            # Parse PDF file
+            try:
+                import fitz  # PyMuPDF
+                
+                pdf_document = fitz.open(stream=content, filetype="pdf")
+                text = ""
+                for page in pdf_document:
+                    text += page.get_text()
+                pdf_document.close()
+                
+                # Parse lines as product names
+                lines = text.split('\n')
+                for line in lines:
+                    line = line.strip()
+                    if line and len(line) > 2 and len(line) < 200:  # Filter out too short or too long lines
+                        # Try to extract price if present (e.g., "Product Name - Rs. 1000" or "Product Name 1000")
+                        items.append({'name': line, 'price': ''})
+                        
+            except ImportError:
+                raise HTTPException(status_code=400, detail="PDF support requires PyMuPDF. Install with: pip install PyMuPDF")
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Failed to parse PDF: {str(e)}")
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported file type. Please upload a CSV or PDF file.")
+        
+        if not items:
+            raise HTTPException(status_code=400, detail="No product names found in the file")
+        
+        # Predict categories for all items
+        predictions = []
+        total_confidence = 0
+        
+        for item in items:
+            result = predict_single_item(item, components)
+            predictions.append({
+                'name': result['name'],
+                'price': result.get('price', ''),
+                'predicted_category': result['predicted_category'],
+                'confidence': result['confidence']
+            })
+            total_confidence += result['confidence']
+        
+        avg_confidence = total_confidence / len(predictions) if predictions else 0
+        
+        return {
+            "success": True,
+            "message": f"Predicted categories for {len(predictions)} items from {file.filename}",
+            "predictions": predictions,
+            "statistics": {
+                "total_items": len(predictions),
+                "average_confidence": avg_confidence,
+                "source_file": file.filename
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/export-predictions")
+async def export_predictions(
+    predictions: List[Dict[str, Any]],
+    format: str = "json"
+):
+    """
+    Export predictions to CSV, PDF, or JSON format.
+    """
+    try:
+        if format.lower() == "json":
+            return {
+                "success": True,
+                "data": predictions,
+                "format": "json"
+            }
+            
+        elif format.lower() == "csv":
+            output = io.StringIO()
+            if predictions:
+                fieldnames = ['name', 'price', 'predicted_category', 'confidence']
+                writer = csv.DictWriter(output, fieldnames=fieldnames)
+                writer.writeheader()
+                for pred in predictions:
+                    writer.writerow({
+                        'name': pred.get('name', ''),
+                        'price': pred.get('price', ''),
+                        'predicted_category': pred.get('predicted_category', ''),
+                        'confidence': f"{pred.get('confidence', 0) * 100:.1f}%"
+                    })
+            
+            output.seek(0)
+            return StreamingResponse(
+                iter([output.getvalue()]),
+                media_type="text/csv",
+                headers={"Content-Disposition": "attachment; filename=predictions.csv"}
+            )
+            
+        elif format.lower() == "pdf":
+            try:
+                from reportlab.lib import colors
+                from reportlab.lib.pagesizes import letter, A4
+                from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+                from reportlab.lib.styles import getSampleStyleSheet
+                
+                buffer = io.BytesIO()
+                doc = SimpleDocTemplate(buffer, pagesize=A4)
+                elements = []
+                
+                styles = getSampleStyleSheet()
+                elements.append(Paragraph("Category Predictions Report", styles['Heading1']))
+                elements.append(Spacer(1, 20))
+                
+                # Create table data
+                table_data = [['Product Name', 'Price', 'Category', 'Confidence']]
+                for pred in predictions:
+                    table_data.append([
+                        pred.get('name', '')[:50],  # Truncate long names
+                        pred.get('price', ''),
+                        pred.get('predicted_category', ''),
+                        f"{pred.get('confidence', 0) * 100:.1f}%"
+                    ])
+                
+                table = Table(table_data, colWidths=[200, 80, 120, 70])
+                table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('FONTSIZE', (0, 0), (-1, 0), 10),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                    ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+                    ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                    ('FONTSIZE', (0, 1), (-1, -1), 8),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ]))
+                
+                elements.append(table)
+                doc.build(elements)
+                
+                buffer.seek(0)
+                return StreamingResponse(
+                    buffer,
+                    media_type="application/pdf",
+                    headers={"Content-Disposition": "attachment; filename=predictions.pdf"}
+                )
+                
+            except ImportError:
+                raise HTTPException(status_code=400, detail="PDF export requires reportlab. Install with: pip install reportlab")
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported format: {format}. Use 'json', 'csv', or 'pdf'.")
+            
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
