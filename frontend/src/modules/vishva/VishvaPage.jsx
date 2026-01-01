@@ -24,7 +24,7 @@ const MODULE_NAME = 'vishva';
 
 function VishvaPage() {
   // State for extraction
-  const [extractUrl, setExtractUrl] = useState('https://streetburger.lk/our-menu/');
+  const [extractUrl, setExtractUrl] = useState('https://tilapiyacolombo.lk/menu/');
   const [extracting, setExtracting] = useState(false);
   const [extractResult, setExtractResult] = useState(null);
   const [agentThoughts, setAgentThoughts] = useState([]);
@@ -159,25 +159,23 @@ function VishvaPage() {
   // Stop the extraction agent
   const handleStopExtract = async () => {
     try {
-      // Close the SSE connection
+      // Close the SSE connection first
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }
       
-      // Call backend to stop the subprocess
+      // Call backend to stop the subprocess (kills the browser too)
       const result = await stopExtraction();
       
       setAgentThoughts(prev => [...prev, {
         type: 'status',
-        message: '🛑 Extraction stopped by user',
+        message: 'Extraction stopped by user',
         timestamp: new Date().toLocaleTimeString()
       }]);
       
-      setExtractResult({
-        success: false,
-        message: result.message || 'Extraction stopped'
-      });
+      // Clear the result and go back to ready state
+      setExtractResult(null);
       setExtracting(false);
     } catch (err) {
       console.error('Failed to stop extraction:', err);
@@ -187,7 +185,7 @@ function VishvaPage() {
         eventSourceRef.current = null;
       }
       setExtracting(false);
-      setError('Failed to stop extraction: ' + err.message);
+      setExtractResult(null);
     }
   };
 

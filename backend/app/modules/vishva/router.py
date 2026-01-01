@@ -425,19 +425,40 @@ _active_extraction = {
 async def stop_extraction():
     """
     Stop the currently running extraction agent.
+    Uses taskkill on Windows to kill the entire process tree including browser.
     """
+    import platform
+    
     with _active_extraction["lock"]:
         if _active_extraction["process"] is not None and _active_extraction["running"]:
             _active_extraction["stop_requested"] = True
             try:
-                _active_extraction["process"].terminate()
-                # Give it a moment, then force kill if needed
-                try:
-                    _active_extraction["process"].wait(timeout=3)
-                except subprocess.TimeoutExpired:
-                    _active_extraction["process"].kill()
+                process = _active_extraction["process"]
+                pid = process.pid
+                
+                if platform.system() == "Windows":
+                    # On Windows, use taskkill to kill the entire process tree
+                    import subprocess as sp
+                    sp.run(['taskkill', '/F', '/T', '/PID', str(pid)], 
+                           capture_output=True, check=False)
+                else:
+                    # On Unix, kill process group
+                    import signal
+                    try:
+                        os.killpg(os.getpgid(pid), signal.SIGTERM)
+                    except:
+                        process.kill()
+                
+                # Clean up
+                _active_extraction["process"] = None
+                _active_extraction["running"] = False
+                
                 return {"success": True, "message": "Extraction stopped"}
             except Exception as e:
+                # Force cleanup even on error
+                _active_extraction["process"] = None
+                _active_extraction["running"] = False
+                _active_extraction["stop_requested"] = False
                 return {"success": False, "message": f"Failed to stop: {str(e)}"}
         else:
             return {"success": False, "message": "No extraction is currently running"}
@@ -462,8 +483,15 @@ async def extract_menu_stream(url: str):
     
     Use this endpoint to see what the agent is thinking as it extracts data.
     """
+    import queue
+    import threading
     
-    async def generate():
+    def generate_sync():
+        """Synchronous generator that yields SSE data"""
+        output_queue = queue.Queue()
+        process = None
+        reader_thread = None
+        
         try:
             from app.modules.vishva.tools import clean_json_data
             
@@ -506,7 +534,7 @@ for logger_name in ['browser_use', 'Agent', 'service', 'tools', 'BrowserSession'
 sys.path.insert(0, r"{backend_dir}")
 os.chdir(r"{backend_dir}")
 
-from app.modules.vishva.tools import extract_menu_data
+from app.modules.vishva.tools.extract_tool import extract_menu_data
 import json
 
 result = extract_menu_data(r"{url}", r"{output_dir}")
@@ -520,20 +548,17 @@ print(json.dumps(result))
             yield f"data: {json.dumps({'type': 'status', 'message': 'Starting extraction agent...'})}\n\n"
             yield f"data: {json.dumps({'type': 'status', 'message': f'Target URL: {url}'})}\n\n"
             
-            # Run subprocess with real-time output streaming
+            # Run subprocess
             python_exe = sys.executable
             env = os.environ.copy()
-            env['PYTHONUNBUFFERED'] = '1'  # Force unbuffered output
+            env['PYTHONUNBUFFERED'] = '1'
             
             process = subprocess.Popen(
-                [python_exe, '-u', extract_script],  # -u for unbuffered
+                [python_exe, '-u', extract_script],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
+                bufsize=0,
                 cwd=backend_dir,
-                encoding='utf-8',
-                errors='replace',
                 env=env
             )
             
@@ -543,34 +568,67 @@ print(json.dumps(result))
                 _active_extraction["running"] = True
                 _active_extraction["stop_requested"] = False
             
+            # Thread to read stdout and put lines in queue
+            def reader():
+                try:
+                    for line in iter(process.stdout.readline, b''):
+                        output_queue.put(line.decode('utf-8', errors='replace').rstrip())
+                except:
+                    pass
+                finally:
+                    output_queue.put(None)  # Signal end
+            
+            reader_thread = threading.Thread(target=reader, daemon=True)
+            reader_thread.start()
+            
             result_json = None
             capturing_result = False
             result_lines = []
             was_stopped = False
             
-            # Stream output line by line
-            for line in iter(process.stdout.readline, ''):
+            # Read from queue with timeout
+            while True:
                 # Check if stop was requested
                 with _active_extraction["lock"]:
                     if _active_extraction["stop_requested"]:
                         was_stopped = True
                         break
                 
-                if not line:
-                    break
+                try:
+                    line = output_queue.get(timeout=0.3)
                     
-                line = line.rstrip()
-                
-                if "__RESULT_JSON__" in line:
-                    capturing_result = True
-                    continue
-                
-                if capturing_result:
-                    result_lines.append(line)
-                else:
-                    # Stream agent thoughts to frontend
-                    if line.strip():
+                    if line is None:
+                        # Process ended
+                        break
+                    
+                    if "__RESULT_JSON__" in line:
+                        capturing_result = True
+                        continue
+                    
+                    if capturing_result:
+                        result_lines.append(line)
+                    elif line.strip():
                         yield f"data: {json.dumps({'type': 'thought', 'message': line})}\n\n"
+                        
+                except queue.Empty:
+                    # Timeout - check if process has ended
+                    if process.poll() is not None:
+                        # Drain remaining items from queue
+                        while True:
+                            try:
+                                line = output_queue.get_nowait()
+                                if line is None:
+                                    break
+                                if "__RESULT_JSON__" in line:
+                                    capturing_result = True
+                                    continue
+                                if capturing_result:
+                                    result_lines.append(line)
+                                elif line.strip():
+                                    yield f"data: {json.dumps({'type': 'thought', 'message': line})}\n\n"
+                            except queue.Empty:
+                                break
+                        break
             
             # Clean up process tracking
             with _active_extraction["lock"]:
@@ -585,8 +643,6 @@ print(json.dumps(result))
                     pass
                 yield f"data: {json.dumps({'type': 'stopped', 'success': False, 'message': 'Extraction was stopped by user'})}\n\n"
                 return
-            
-            process.wait()
             
             # Parse final result
             if result_lines:
@@ -623,10 +679,16 @@ print(json.dumps(result))
                 yield f"data: {json.dumps({'type': 'complete', 'success': False, 'message': err_msg})}\n\n"
                 
         except Exception as e:
-            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+            import traceback
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e) + ' - ' + traceback.format_exc()})}\n\n"
+        finally:
+            # Ensure cleanup
+            with _active_extraction["lock"]:
+                _active_extraction["process"] = None
+                _active_extraction["running"] = False
     
     return StreamingResponse(
-        generate(),
+        generate_sync(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
