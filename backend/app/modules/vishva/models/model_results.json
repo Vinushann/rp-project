@@ -4,8 +4,23 @@
     "vectorizer": "Bag-of-Words",
     "feature_selector": "Chi-Square",
     "model": "Logistic Regression",
-    "accuracy": 0.7619047619047619
+    "accuracy": 0.7619047619047619,
+    "f1_score": 0.746031746031746
   },
+  "categories": [
+    "All Day Brunch Bowls",
+    "Desserts",
+    "Fried Meat And Seafood",
+    "Island Delights",
+    "Kids Menu",
+    "On The Grill",
+    "Pasta & Noodles",
+    "Rice",
+    "Salads & Soups",
+    "Seafood Specials",
+    "Side Dishes",
+    "Tilapiya Fish"
+  ],
   "all_results": [
     {
       "vectorizer": "Bag-of-Words",

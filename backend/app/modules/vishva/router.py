@@ -614,13 +614,57 @@ async def get_model_status():
         except:
             pass
     
+    # Extract best model info - JSON has 'model' field not 'name'
+    best_model = model_info.get('best_model', {})
+    model_name = best_model.get('model', 'Unknown')
+    # Add vectorizer and feature selector for more context
+    vectorizer = best_model.get('vectorizer', '')
+    feature_selector = best_model.get('feature_selector', '')
+    if vectorizer and feature_selector:
+        model_name = f"{model_name} ({vectorizer} + {feature_selector})"
+    
+    accuracy = best_model.get('accuracy')
+    
+    # F1 score - check best_model first (new format), then fall back to all_results (old format)
+    f1_score = best_model.get('f1_score')
+    if f1_score is None:
+        all_results = model_info.get('all_results', [])
+        if all_results:
+            # Find the best model in all_results to get its f1_score
+            for result in all_results:
+                if (result.get('vectorizer') == best_model.get('vectorizer') and
+                    result.get('feature_selector') == best_model.get('feature_selector') and
+                    result.get('model') == best_model.get('model')):
+                    f1_score = result.get('f1_score')
+                    break
+            # Fallback: use first result's f1_score
+            if f1_score is None and all_results:
+                f1_score = all_results[0].get('f1_score')
+    
+    # Get categories from label encoder if exists
+    categories = model_info.get('categories')
+    if not categories:
+        # Try to load from label encoder
+        label_encoder_file = os.path.join(MODULE_DIR, "models/label_encoder.pkl")
+        if os.path.exists(label_encoder_file):
+            try:
+                import pickle
+                with open(label_encoder_file, 'rb') as f:
+                    le = pickle.load(f)
+                    categories = list(le.classes_)
+            except:
+                pass
+    
+    # Use timestamp as trained_at
+    trained_at = model_info.get('trained_at') or model_info.get('timestamp')
+    
     return ModelStatus(
         model_exists=True,
-        model_name=model_info.get('best_model', {}).get('name', 'Unknown'),
-        accuracy=model_info.get('best_model', {}).get('accuracy'),
-        f1_score=model_info.get('best_model', {}).get('f1_score'),
-        categories=model_info.get('categories'),
-        trained_at=model_info.get('trained_at')
+        model_name=model_name,
+        accuracy=accuracy,
+        f1_score=f1_score,
+        categories=categories,
+        trained_at=trained_at
     )
 
 

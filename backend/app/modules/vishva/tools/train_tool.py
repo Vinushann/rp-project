@@ -337,7 +337,7 @@ class MenuCategoryClassifier:
             return MultinomialNB()
         return model
     
-    def save_model(self, output_dir: str = "models"):
+    def save_model(self, output_dir: str = "models", categories: List[str] = None):
         """Save the best model, vectorizer, and selector"""
         os.makedirs(output_dir, exist_ok=True)
         
@@ -377,14 +377,18 @@ class MenuCategoryClassifier:
             })
         
         with open(results_file, 'w', encoding='utf-8') as f:
+            # Get f1_score from the best result
+            best_result = self.results[0] if self.results else {}
             json.dump({
                 'timestamp': datetime.now().isoformat(),
                 'best_model': {
-                    'vectorizer': self.results[0]['vectorizer'],
-                    'feature_selector': self.results[0]['feature_selector'],
-                    'model': self.results[0]['model'],
-                    'accuracy': float(self.best_score)
+                    'vectorizer': best_result.get('vectorizer', ''),
+                    'feature_selector': best_result.get('feature_selector', ''),
+                    'model': best_result.get('model', ''),
+                    'accuracy': float(self.best_score),
+                    'f1_score': float(best_result.get('f1_score', 0))
                 },
+                'categories': categories or [],
                 'all_results': results_to_save
             }, f, indent=2)
         
@@ -467,9 +471,10 @@ def train_category_classifier(training_file: str, output_dir: str = "models") ->
         print(f"   F1-Score: {best['f1_score']:.4f}")
         print(f"   CV Score: {best['cv_mean']:.4f} (±{best['cv_std']:.4f})")
         
-        # Save model
+        # Save model with categories
         print(f"\n💾 Saving best model...")
-        model_file, vec_file, results_file = classifier.save_model(output_dir)
+        unique_categories = list(set(categories))
+        model_file, vec_file, results_file = classifier.save_model(output_dir, unique_categories)
         
         print(f"✅ Model saved to: {model_file}")
         print(f"✅ Vectorizer saved to: {vec_file}")
