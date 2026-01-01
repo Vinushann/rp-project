@@ -475,6 +475,34 @@ async def extract_menu_stream(url: str):
             script_content = f'''
 import sys
 import os
+import io
+import logging
+
+# Force UTF-8 encoding for stdout/stderr to handle emojis
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+
+# Configure root logger to capture all library logs
+for handler in logging.root.handlers[:]:
+    logging.root.removeHandler(handler)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(message)s',
+    handlers=[logging.StreamHandler(sys.stdout)],
+    force=True
+)
+
+# Also configure the browser_use loggers specifically
+for logger_name in ['browser_use', 'Agent', 'service', 'tools', 'BrowserSession']:
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.INFO)
+    logger.handlers = []
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter('%(message)s'))
+    logger.addHandler(handler)
+    logger.propagate = False
+
 sys.path.insert(0, r"{backend_dir}")
 os.chdir(r"{backend_dir}")
 
@@ -494,15 +522,19 @@ print(json.dumps(result))
             
             # Run subprocess with real-time output streaming
             python_exe = sys.executable
+            env = os.environ.copy()
+            env['PYTHONUNBUFFERED'] = '1'  # Force unbuffered output
+            
             process = subprocess.Popen(
-                [python_exe, extract_script],
+                [python_exe, '-u', extract_script],  # -u for unbuffered
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
                 bufsize=1,
                 cwd=backend_dir,
                 encoding='utf-8',
-                errors='replace'
+                errors='replace',
+                env=env
             )
             
             # Track the process globally so it can be stopped
