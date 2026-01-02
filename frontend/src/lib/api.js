@@ -215,3 +215,182 @@ export default {
   stopExtraction,
   getExtractionStatus,
 };
+
+
+// ============================================
+// TRAINING DATA MANAGEMENT API
+// ============================================
+
+/**
+ * Get all training data items
+ */
+export async function getTrainingData() {
+  return apiRequest('/api/v1/vishva/training-data');
+}
+
+/**
+ * Add a new training item
+ */
+export async function addTrainingItem(item) {
+  return apiRequest('/api/v1/vishva/training-data', {
+    method: 'POST',
+    body: JSON.stringify(item),
+  });
+}
+
+/**
+ * Update a training item
+ */
+export async function updateTrainingItem(itemId, updates) {
+  return apiRequest(`/api/v1/vishva/training-data/${itemId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ id: itemId, ...updates }),
+  });
+}
+
+/**
+ * Delete a training item
+ */
+export async function deleteTrainingItem(itemId) {
+  return apiRequest(`/api/v1/vishva/training-data/${itemId}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Merge categories
+ */
+export async function mergeCategories(sourceCategories, targetCategory) {
+  return apiRequest('/api/v1/vishva/training-data/merge-categories', {
+    method: 'POST',
+    body: JSON.stringify({ source_categories: sourceCategories, target_category: targetCategory }),
+  });
+}
+
+/**
+ * Split a category
+ */
+export async function splitCategory(sourceCategory, newCategories) {
+  return apiRequest('/api/v1/vishva/training-data/split-category', {
+    method: 'POST',
+    body: JSON.stringify({ source_category: sourceCategory, new_categories: newCategories }),
+  });
+}
+
+
+// ============================================
+// MODEL PERFORMANCE API
+// ============================================
+
+/**
+ * Get model performance metrics
+ */
+export async function getModelPerformance() {
+  return apiRequest('/api/v1/vishva/model-performance');
+}
+
+/**
+ * Get confusion matrix
+ */
+export async function getConfusionMatrix() {
+  return apiRequest('/api/v1/vishva/model-confusion-matrix');
+}
+
+
+// ============================================
+// FEEDBACK / CONTINUOUS LEARNING API
+// ============================================
+
+/**
+ * Submit feedback for a wrong prediction
+ */
+export async function submitFeedback(itemName, predictedCategory, correctCategory, price = '') {
+  const params = new URLSearchParams({
+    item_name: itemName,
+    predicted_category: predictedCategory,
+    correct_category: correctCategory,
+    price: price,
+  });
+  return apiRequest(`/api/v1/vishva/feedback?${params}`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * Get all feedback
+ */
+export async function getFeedback() {
+  return apiRequest('/api/v1/vishva/feedback');
+}
+
+/**
+ * Apply all feedback to training data
+ */
+export async function applyAllFeedback() {
+  return apiRequest('/api/v1/vishva/feedback/apply-all', {
+    method: 'POST',
+  });
+}
+
+
+// ============================================
+// ABBREVIATION MAPPER API
+// ============================================
+
+/**
+ * Get abbreviation rules
+ */
+export async function getAbbreviations() {
+  return apiRequest('/api/v1/vishva/abbreviations');
+}
+
+/**
+ * Update all abbreviation rules
+ */
+export async function updateAbbreviations(rules, autoLearn = true) {
+  return apiRequest('/api/v1/vishva/abbreviations', {
+    method: 'POST',
+    body: JSON.stringify({ rules, auto_learn: autoLearn }),
+  });
+}
+
+/**
+ * Add a single abbreviation
+ */
+export async function addAbbreviation(abbreviation, fullText) {
+  return apiRequest('/api/v1/vishva/abbreviations/add', {
+    method: 'POST',
+    body: JSON.stringify({ abbreviation, full_text: fullText }),
+  });
+}
+
+/**
+ * Delete an abbreviation
+ */
+export async function deleteAbbreviation(abbreviation) {
+  return apiRequest(`/api/v1/vishva/abbreviations/${encodeURIComponent(abbreviation)}`, {
+    method: 'DELETE',
+  });
+}
+
+
+// ============================================
+// CONFIDENCE SETTINGS API
+// ============================================
+
+/**
+ * Get confidence settings
+ */
+export async function getConfidenceSettings() {
+  return apiRequest('/api/v1/vishva/confidence-settings');
+}
+
+/**
+ * Update confidence settings
+ */
+export async function updateConfidenceSettings(settings) {
+  return apiRequest('/api/v1/vishva/confidence-settings', {
+    method: 'POST',
+    body: JSON.stringify(settings),
+  });
+}

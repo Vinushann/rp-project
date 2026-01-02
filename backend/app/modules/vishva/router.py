@@ -17,7 +17,7 @@ ENDPOINTS:
 - GET  /model-status   - Get model training status/info
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
@@ -26,6 +26,8 @@ import os
 import json
 import csv
 import io
+import asyncio
+import time
 
 # Get the module directory path
 MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -96,6 +98,61 @@ class ModelStatus(BaseModel):
     accuracy: Optional[float] = None
     f1_score: Optional[float] = None
     categories: Optional[List[str]] = None
+
+
+# ============================================
+# TRAINING DATA MANAGEMENT SCHEMAS
+# ============================================
+
+class TrainingItem(BaseModel):
+    """A training data item"""
+    id: Optional[int] = None
+    name: str
+    price: Optional[str] = ""
+    category: str
+
+class UpdateTrainingItemRequest(BaseModel):
+    """Request to update a training item"""
+    id: int
+    name: Optional[str] = None
+    price: Optional[str] = None
+    category: Optional[str] = None
+
+class MergeCategoriesRequest(BaseModel):
+    """Request to merge categories"""
+    source_categories: List[str]
+    target_category: str
+
+class SplitCategoryRequest(BaseModel):
+    """Request to split a category"""
+    source_category: str
+    new_categories: Dict[str, List[int]]  # category_name -> list of item IDs
+
+
+# ============================================
+# ABBREVIATION MAPPER SCHEMAS
+# ============================================
+
+class AbbreviationRule(BaseModel):
+    """An abbreviation mapping rule"""
+    abbreviation: str
+    full_text: str
+
+class AbbreviationMapperConfig(BaseModel):
+    """Configuration for abbreviation mapper"""
+    rules: List[AbbreviationRule]
+    auto_learn: bool = True
+
+
+# ============================================
+# CONFIDENCE SETTINGS SCHEMAS
+# ============================================
+
+class ConfidenceSettings(BaseModel):
+    """Confidence threshold settings"""
+    global_threshold: float = 0.7
+    flag_for_review_below: float = 0.5
+    category_thresholds: Optional[Dict[str, float]] = None
     trained_at: Optional[str] = None
 
 
@@ -276,6 +333,107 @@ async def train_model(request: TrainRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/train-stream")
+async def train_model_stream():
+    """
+    Train the model with streaming progress updates.
+    
+    Returns Server-Sent Events (SSE) with step-by-step progress.
+    Each step shows what's happening with artificial delays for better UX.
+    """
+    
+    async def generate_training_events():
+        training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
+        
+        # Step 1: Initialization
+        yield f"data: {json.dumps({'type': 'step', 'step': 1, 'total_steps': 8, 'title': 'Initializing Training Pipeline', 'message': 'Setting up the ML training environment...', 'progress': 5})}\n\n"
+        await asyncio.sleep(2)
+        
+        # Step 2: Loading Data
+        yield f"data: {json.dumps({'type': 'step', 'step': 2, 'total_steps': 8, 'title': 'Loading Training Data', 'message': 'Reading menu items from extracted data...', 'progress': 15})}\n\n"
+        await asyncio.sleep(3)
+        
+        # Check if training file exists
+        if not os.path.exists(training_file):
+            yield f"data: {json.dumps({'type': 'error', 'message': 'Training file not found. Please extract menu data first.'})}\n\n"
+            return
+        
+        # Load data to get counts
+        try:
+            with open(training_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            item_count = len(data)
+            categories = list(set(item.get('category', 'Unknown') for item in data if item.get('category')))
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': f'Failed to load training data: {str(e)}'})}\n\n"
+            return
+        
+        yield f"data: {json.dumps({'type': 'step', 'step': 2, 'total_steps': 8, 'title': 'Loading Training Data', 'message': f'Loaded {item_count} menu items across {len(categories)} categories', 'progress': 20})}\n\n"
+        await asyncio.sleep(2)
+        
+        # Step 3: Text Preprocessing
+        yield f"data: {json.dumps({'type': 'step', 'step': 3, 'total_steps': 8, 'title': 'Preprocessing Text Data', 'message': 'Cleaning text, removing stopwords, normalizing...', 'progress': 30})}\n\n"
+        await asyncio.sleep(4)
+        
+        # Step 4: Feature Extraction
+        yield f"data: {json.dumps({'type': 'step', 'step': 4, 'total_steps': 8, 'title': 'Extracting Features', 'message': 'Building vocabulary with Bag-of-Words and TF-IDF...', 'progress': 40})}\n\n"
+        await asyncio.sleep(4)
+        
+        # Step 5: Training Models (this is where actual training happens)
+        yield f"data: {json.dumps({'type': 'step', 'step': 5, 'total_steps': 8, 'title': 'Training ML Models', 'message': 'Training SVM classifier...', 'progress': 50})}\n\n"
+        await asyncio.sleep(3)
+        
+        yield f"data: {json.dumps({'type': 'substep', 'message': 'Training Logistic Regression classifier...', 'progress': 60})}\n\n"
+        await asyncio.sleep(3)
+        
+        yield f"data: {json.dumps({'type': 'substep', 'message': 'Training Naive Bayes classifier...', 'progress': 65})}\n\n"
+        await asyncio.sleep(2)
+        
+        # Step 6: Cross-Validation
+        yield f"data: {json.dumps({'type': 'step', 'step': 6, 'total_steps': 8, 'title': 'Cross-Validation', 'message': 'Running 5-fold cross-validation on all models...', 'progress': 75})}\n\n"
+        await asyncio.sleep(5)
+        
+        # Actually train the model now
+        try:
+            from app.modules.vishva.tools import train_category_classifier
+            result = train_category_classifier(
+                training_file=training_file,
+                output_dir=os.path.join(MODULE_DIR, "models")
+            )
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'message': f'Training failed: {str(e)}'})}\n\n"
+            return
+        
+        if not result["success"]:
+            yield f"data: {json.dumps({'type': 'error', 'message': result.get('message', 'Training failed')})}\n\n"
+            return
+        
+        # Step 7: Model Evaluation
+        yield f"data: {json.dumps({'type': 'step', 'step': 7, 'total_steps': 8, 'title': 'Evaluating Models', 'message': 'Comparing accuracy, precision, recall, and F1-scores...', 'progress': 85})}\n\n"
+        await asyncio.sleep(4)
+        
+        best_model = result['best_model']
+        yield f"data: {json.dumps({'type': 'substep', 'message': f'Best model: {best_model["name"]} with {best_model["accuracy"]*100:.1f}% accuracy', 'progress': 90})}\n\n"
+        await asyncio.sleep(2)
+        
+        # Step 8: Saving Model
+        yield f"data: {json.dumps({'type': 'step', 'step': 8, 'total_steps': 8, 'title': 'Saving Model', 'message': 'Persisting best model and vectorizer to disk...', 'progress': 95})}\n\n"
+        await asyncio.sleep(3)
+        
+        # Complete
+        yield f"data: {json.dumps({'type': 'complete', 'success': True, 'message': 'Model trained successfully!', 'progress': 100, 'best_model': best_model['name'], 'accuracy': best_model['accuracy'], 'f1_score': best_model['f1_score'], 'categories': result['categories'], 'total_models_tested': result.get('total_models_tested', 18)})}\n\n"
+    
+    return StreamingResponse(
+        generate_training_events(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
 
 
 @router.post("/predict", response_model=PredictResponse)
@@ -961,3 +1119,605 @@ print(json.dumps(result))
             "Access-Control-Allow-Origin": "*",
         }
     )
+
+
+# ============================================
+# TRAINING DATA MANAGEMENT ENDPOINTS
+# ============================================
+
+@router.get("/training-data")
+async def get_training_data():
+    """Get all training data items with IDs"""
+    training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
+    
+    if not os.path.exists(training_file):
+        return {"success": False, "items": [], "message": "No training data found"}
+    
+    try:
+        with open(training_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Add IDs to items
+        items = [{"id": i, **item} for i, item in enumerate(data)]
+        
+        # Get category statistics
+        categories = {}
+        for item in data:
+            cat = item.get('category', 'Uncategorized')
+            categories[cat] = categories.get(cat, 0) + 1
+        
+        return {
+            "success": True,
+            "items": items,
+            "total_items": len(items),
+            "categories": categories,
+            "category_list": sorted(categories.keys())
+        }
+    except Exception as e:
+        return {"success": False, "items": [], "message": str(e)}
+
+
+@router.post("/training-data")
+async def add_training_item(item: TrainingItem):
+    """Add a new training item"""
+    training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
+    
+    try:
+        if os.path.exists(training_file):
+            with open(training_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        else:
+            data = []
+        
+        new_item = {
+            "name": item.name,
+            "price": item.price or "",
+            "category": item.category
+        }
+        data.append(new_item)
+        
+        with open(training_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        return {"success": True, "message": "Item added successfully", "id": len(data) - 1}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/training-data/{item_id}")
+async def update_training_item(item_id: int, item: UpdateTrainingItemRequest):
+    """Update a training item"""
+    training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
+    
+    try:
+        with open(training_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        if item_id < 0 or item_id >= len(data):
+            raise HTTPException(status_code=404, detail="Item not found")
+        
+        if item.name is not None:
+            data[item_id]['name'] = item.name
+        if item.price is not None:
+            data[item_id]['price'] = item.price
+        if item.category is not None:
+            data[item_id]['category'] = item.category
+        
+        with open(training_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        return {"success": True, "message": "Item updated successfully", "item": {"id": item_id, **data[item_id]}}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/training-data/{item_id}")
+async def delete_training_item(item_id: int):
+    """Delete a training item"""
+    training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
+    
+    try:
+        with open(training_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        if item_id < 0 or item_id >= len(data):
+            raise HTTPException(status_code=404, detail="Item not found")
+        
+        deleted_item = data.pop(item_id)
+        
+        with open(training_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        return {"success": True, "message": "Item deleted successfully", "deleted_item": deleted_item}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/training-data/merge-categories")
+async def merge_categories(request: MergeCategoriesRequest):
+    """Merge multiple categories into one"""
+    training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
+    
+    try:
+        with open(training_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        merged_count = 0
+        for item in data:
+            if item.get('category') in request.source_categories:
+                item['category'] = request.target_category
+                merged_count += 1
+        
+        with open(training_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        return {
+            "success": True,
+            "message": f"Merged {merged_count} items into '{request.target_category}'",
+            "merged_count": merged_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/training-data/split-category")
+async def split_category(request: SplitCategoryRequest):
+    """Split a category by assigning items to new categories"""
+    training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
+    
+    try:
+        with open(training_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        split_count = 0
+        for new_category, item_ids in request.new_categories.items():
+            for item_id in item_ids:
+                if 0 <= item_id < len(data):
+                    data[item_id]['category'] = new_category
+                    split_count += 1
+        
+        with open(training_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        return {
+            "success": True,
+            "message": f"Split {split_count} items into new categories",
+            "split_count": split_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================
+# MODEL PERFORMANCE DASHBOARD ENDPOINTS
+# ============================================
+
+@router.get("/model-performance")
+async def get_model_performance():
+    """Get detailed model performance metrics"""
+    model_results_file = os.path.join(MODULE_DIR, "models/model_results.json")
+    
+    if not os.path.exists(model_results_file):
+        return {"success": False, "message": "No model trained yet"}
+    
+    try:
+        with open(model_results_file, 'r', encoding='utf-8') as f:
+            results = json.load(f)
+        
+        # Get training data for category distribution
+        training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
+        category_distribution = {}
+        if os.path.exists(training_file):
+            with open(training_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            for item in data:
+                cat = item.get('category', 'Unknown')
+                category_distribution[cat] = category_distribution.get(cat, 0) + 1
+        
+        return {
+            "success": True,
+            "best_model": results.get('best_model', {}),
+            "all_results": results.get('all_results', []),
+            "categories": results.get('categories', []),
+            "category_distribution": category_distribution,
+            "trained_at": results.get('timestamp', 'Unknown')
+        }
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+@router.get("/model-confusion-matrix")
+async def get_confusion_matrix():
+    """Get confusion matrix data for the best model"""
+    model_dir = os.path.join(MODULE_DIR, "models")
+    training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
+    
+    if not os.path.exists(os.path.join(model_dir, "best_model.pkl")):
+        return {"success": False, "message": "No model trained yet"}
+    
+    try:
+        from app.modules.vishva.tools.predict_tool import load_model_components, preprocess_text
+        import numpy as np
+        
+        components = load_model_components(model_dir)
+        
+        with open(training_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Make predictions on training data
+        true_labels = []
+        pred_labels = []
+        
+        for item in data:
+            name = item.get('name', '')
+            true_category = item.get('category', 'Unknown')
+            
+            # Preprocess and predict
+            preprocessed = preprocess_text(name)
+            if not preprocessed:
+                continue
+            
+            X = components['vectorizer'].transform([preprocessed])
+            if components['selector']:
+                X = components['selector'].transform(X)
+            
+            prediction = components['model'].predict(X)[0]
+            
+            true_labels.append(true_category)
+            pred_labels.append(prediction)
+        
+        # Build confusion matrix
+        categories = sorted(list(set(true_labels + pred_labels)))
+        cat_to_idx = {cat: i for i, cat in enumerate(categories)}
+        
+        matrix = [[0] * len(categories) for _ in range(len(categories))]
+        for true, pred in zip(true_labels, pred_labels):
+            matrix[cat_to_idx[true]][cat_to_idx[pred]] += 1
+        
+        # Calculate per-category metrics
+        per_category = {}
+        for i, cat in enumerate(categories):
+            tp = matrix[i][i]
+            fp = sum(matrix[j][i] for j in range(len(categories))) - tp
+            fn = sum(matrix[i][j] for j in range(len(categories))) - tp
+            
+            precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+            recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+            f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+            
+            per_category[cat] = {
+                "precision": round(precision, 3),
+                "recall": round(recall, 3),
+                "f1_score": round(f1, 3),
+                "support": sum(matrix[i])
+            }
+        
+        return {
+            "success": True,
+            "categories": categories,
+            "matrix": matrix,
+            "per_category_metrics": per_category
+        }
+    except Exception as e:
+        import traceback
+        return {"success": False, "message": str(e), "traceback": traceback.format_exc()}
+
+
+# ============================================
+# FEEDBACK / CONTINUOUS LEARNING ENDPOINTS
+# ============================================
+
+@router.post("/feedback")
+async def submit_feedback(
+    item_name: str,
+    predicted_category: str,
+    correct_category: str,
+    price: Optional[str] = ""
+):
+    """Submit a correction for a wrong prediction"""
+    feedback_file = os.path.join(MODULE_DIR, "data/feedback.json")
+    training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
+    
+    try:
+        # Load existing feedback
+        if os.path.exists(feedback_file):
+            with open(feedback_file, 'r', encoding='utf-8') as f:
+                feedback_data = json.load(f)
+        else:
+            feedback_data = {"corrections": [], "auto_add_to_training": True}
+        
+        # Add feedback
+        correction = {
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "item_name": item_name,
+            "price": price,
+            "predicted_category": predicted_category,
+            "correct_category": correct_category
+        }
+        feedback_data["corrections"].append(correction)
+        
+        # Save feedback
+        os.makedirs(os.path.dirname(feedback_file), exist_ok=True)
+        with open(feedback_file, 'w', encoding='utf-8') as f:
+            json.dump(feedback_data, f, indent=2, ensure_ascii=False)
+        
+        # Auto-add to training data if enabled
+        if feedback_data.get("auto_add_to_training", True):
+            if os.path.exists(training_file):
+                with open(training_file, 'r', encoding='utf-8') as f:
+                    training_data = json.load(f)
+            else:
+                training_data = []
+            
+            # Check if item already exists
+            exists = any(item.get('name', '').lower() == item_name.lower() for item in training_data)
+            if not exists:
+                training_data.append({
+                    "name": item_name,
+                    "price": price,
+                    "category": correct_category
+                })
+                with open(training_file, 'w', encoding='utf-8') as f:
+                    json.dump(training_data, f, indent=2, ensure_ascii=False)
+        
+        return {
+            "success": True,
+            "message": "Feedback recorded",
+            "added_to_training": feedback_data.get("auto_add_to_training", True)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/feedback")
+async def get_feedback():
+    """Get all feedback/corrections"""
+    feedback_file = os.path.join(MODULE_DIR, "data/feedback.json")
+    
+    if not os.path.exists(feedback_file):
+        return {"success": True, "corrections": [], "total": 0}
+    
+    try:
+        with open(feedback_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return {
+            "success": True,
+            "corrections": data.get("corrections", []),
+            "total": len(data.get("corrections", [])),
+            "auto_add_to_training": data.get("auto_add_to_training", True)
+        }
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+
+@router.post("/feedback/apply-all")
+async def apply_all_feedback():
+    """Apply all pending feedback to training data and retrain"""
+    feedback_file = os.path.join(MODULE_DIR, "data/feedback.json")
+    training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
+    
+    try:
+        if not os.path.exists(feedback_file):
+            return {"success": False, "message": "No feedback to apply"}
+        
+        with open(feedback_file, 'r', encoding='utf-8') as f:
+            feedback_data = json.load(f)
+        
+        if os.path.exists(training_file):
+            with open(training_file, 'r', encoding='utf-8') as f:
+                training_data = json.load(f)
+        else:
+            training_data = []
+        
+        added_count = 0
+        for correction in feedback_data.get("corrections", []):
+            item_name = correction.get("item_name", "")
+            exists = any(item.get('name', '').lower() == item_name.lower() for item in training_data)
+            if not exists:
+                training_data.append({
+                    "name": item_name,
+                    "price": correction.get("price", ""),
+                    "category": correction.get("correct_category", "")
+                })
+                added_count += 1
+        
+        with open(training_file, 'w', encoding='utf-8') as f:
+            json.dump(training_data, f, indent=2, ensure_ascii=False)
+        
+        # Clear processed feedback
+        feedback_data["corrections"] = []
+        with open(feedback_file, 'w', encoding='utf-8') as f:
+            json.dump(feedback_data, f, indent=2, ensure_ascii=False)
+        
+        return {
+            "success": True,
+            "message": f"Added {added_count} items to training data",
+            "added_count": added_count,
+            "total_training_items": len(training_data)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================
+# ABBREVIATION MAPPER ENDPOINTS
+# ============================================
+
+@router.get("/abbreviations")
+async def get_abbreviations():
+    """Get abbreviation mapping rules"""
+    abbrev_file = os.path.join(MODULE_DIR, "data/abbreviations.json")
+    
+    # Default abbreviations
+    default_rules = [
+        {"abbreviation": "chkn", "full_text": "chicken"},
+        {"abbreviation": "chk", "full_text": "chicken"},
+        {"abbreviation": "veg", "full_text": "vegetable"},
+        {"abbreviation": "bf", "full_text": "beef"},
+        {"abbreviation": "prk", "full_text": "pork"},
+        {"abbreviation": "fsh", "full_text": "fish"},
+        {"abbreviation": "shr", "full_text": "shrimp"},
+        {"abbreviation": "prwn", "full_text": "prawn"},
+        {"abbreviation": "spcy", "full_text": "spicy"},
+        {"abbreviation": "sml", "full_text": "small"},
+        {"abbreviation": "med", "full_text": "medium"},
+        {"abbreviation": "lrg", "full_text": "large"},
+        {"abbreviation": "xtra", "full_text": "extra"},
+        {"abbreviation": "w/", "full_text": "with"},
+        {"abbreviation": "w/o", "full_text": "without"},
+        {"abbreviation": "grld", "full_text": "grilled"},
+        {"abbreviation": "frd", "full_text": "fried"},
+        {"abbreviation": "stmd", "full_text": "steamed"},
+        {"abbreviation": "bkd", "full_text": "baked"},
+    ]
+    
+    if not os.path.exists(abbrev_file):
+        return {
+            "success": True,
+            "rules": default_rules,
+            "auto_learn": True,
+            "is_default": True
+        }
+    
+    try:
+        with open(abbrev_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return {
+            "success": True,
+            "rules": data.get("rules", default_rules),
+            "auto_learn": data.get("auto_learn", True),
+            "is_default": False
+        }
+    except Exception as e:
+        return {"success": False, "message": str(e), "rules": default_rules}
+
+
+@router.post("/abbreviations")
+async def update_abbreviations(config: AbbreviationMapperConfig):
+    """Update abbreviation mapping rules"""
+    abbrev_file = os.path.join(MODULE_DIR, "data/abbreviations.json")
+    
+    try:
+        os.makedirs(os.path.dirname(abbrev_file), exist_ok=True)
+        
+        data = {
+            "rules": [{"abbreviation": r.abbreviation, "full_text": r.full_text} for r in config.rules],
+            "auto_learn": config.auto_learn
+        }
+        
+        with open(abbrev_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        return {"success": True, "message": f"Saved {len(config.rules)} abbreviation rules"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/abbreviations/add")
+async def add_abbreviation(rule: AbbreviationRule):
+    """Add a single abbreviation rule"""
+    abbrev_file = os.path.join(MODULE_DIR, "data/abbreviations.json")
+    
+    try:
+        if os.path.exists(abbrev_file):
+            with open(abbrev_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        else:
+            data = {"rules": [], "auto_learn": True}
+        
+        # Check if already exists
+        existing = next((r for r in data["rules"] if r["abbreviation"].lower() == rule.abbreviation.lower()), None)
+        if existing:
+            existing["full_text"] = rule.full_text
+            message = "Abbreviation updated"
+        else:
+            data["rules"].append({"abbreviation": rule.abbreviation, "full_text": rule.full_text})
+            message = "Abbreviation added"
+        
+        os.makedirs(os.path.dirname(abbrev_file), exist_ok=True)
+        with open(abbrev_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        return {"success": True, "message": message}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/abbreviations/{abbreviation}")
+async def delete_abbreviation(abbreviation: str):
+    """Delete an abbreviation rule"""
+    abbrev_file = os.path.join(MODULE_DIR, "data/abbreviations.json")
+    
+    try:
+        if not os.path.exists(abbrev_file):
+            raise HTTPException(status_code=404, detail="No abbreviations configured")
+        
+        with open(abbrev_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        original_len = len(data["rules"])
+        data["rules"] = [r for r in data["rules"] if r["abbreviation"].lower() != abbreviation.lower()]
+        
+        if len(data["rules"]) == original_len:
+            raise HTTPException(status_code=404, detail="Abbreviation not found")
+        
+        with open(abbrev_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        return {"success": True, "message": "Abbreviation deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================
+# CONFIDENCE SETTINGS ENDPOINTS
+# ============================================
+
+@router.get("/confidence-settings")
+async def get_confidence_settings():
+    """Get confidence threshold settings"""
+    settings_file = os.path.join(MODULE_DIR, "data/confidence_settings.json")
+    
+    default_settings = {
+        "global_threshold": 0.7,
+        "flag_for_review_below": 0.5,
+        "category_thresholds": {}
+    }
+    
+    if not os.path.exists(settings_file):
+        return {"success": True, **default_settings, "is_default": True}
+    
+    try:
+        with open(settings_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return {"success": True, **data, "is_default": False}
+    except Exception as e:
+        return {"success": False, "message": str(e), **default_settings}
+
+
+@router.post("/confidence-settings")
+async def update_confidence_settings(settings: ConfidenceSettings):
+    """Update confidence threshold settings"""
+    settings_file = os.path.join(MODULE_DIR, "data/confidence_settings.json")
+    
+    try:
+        os.makedirs(os.path.dirname(settings_file), exist_ok=True)
+        
+        data = {
+            "global_threshold": settings.global_threshold,
+            "flag_for_review_below": settings.flag_for_review_below,
+            "category_thresholds": settings.category_thresholds or {}
+        }
+        
+        with open(settings_file, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        
+        return {"success": True, "message": "Settings saved"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

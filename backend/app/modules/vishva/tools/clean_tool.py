@@ -35,13 +35,18 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
     
     print(f"✅ File loaded ({len(content)} characters)")
     
-    # Step 1: Unescape the content if it contains literal \n
+    # Step 1: Normalize mixed quote escaping issues
+    # The browser agent sometimes produces inconsistent escaping where some
+    # fields have \" and others have unescaped "
+    if r'\"' in content:
+        print("ℹ️  Detected escaped quotes, normalizing...")
+        # First, unescape all escaped quotes to regular quotes
+        content = content.replace(r'\"', '"')
+    
+    # Handle escaped newlines and other sequences
     if r'\n' in content:
         print("ℹ️  Detected escaped newlines, unescaping...")
-        # Replace literal \n with actual newlines
         content = content.replace(r'\n', '\n')
-        # Also handle other common escape sequences
-        content = content.replace(r'\"', '"')
         content = content.replace(r'\/', '/')
         content = content.replace(r'\t', '\t')
     
