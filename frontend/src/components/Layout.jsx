@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { ToastContainer } from './ui';
 
 const modules = [
   { name: 'Vinushan', path: '/vinushan', color: 'bg-blue-500' },
@@ -12,6 +13,9 @@ function Layout() {
 
   return (
     <div className="flex min-h-screen">
+      {/* Toast Notifications */}
+      <ToastContainer />
+      
       {/* Sidebar */}
       <aside className="w-64 bg-gray-900 text-white flex flex-col">
         {/* Logo Area */}
