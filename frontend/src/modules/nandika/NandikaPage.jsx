@@ -11,6 +11,7 @@
  */
 
 import { useState } from "react";
+import { jsPDF } from "jspdf";
 
 const MODULE_NAME = "nandika";
 const API_BASE = "http://127.0.0.1:8000/api/v1/nandika";
@@ -32,6 +33,218 @@ function NandikaPage() {
 
   // State for errors
   const [error, setError] = useState("");
+
+  // Generate PDF Report
+  const generatePDF = (statistics, mode, additionalInfo = {}) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let yPos = 20;
+
+    // Title
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("Sentiment Analysis Report", pageWidth / 2, yPos, {
+      align: "center",
+    });
+    yPos += 10;
+
+    // Subtitle
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("Multilingual Review Analyzer", pageWidth / 2, yPos, {
+      align: "center",
+    });
+    yPos += 10;
+
+    // Date
+    doc.setFontSize(10);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, yPos, {
+      align: "center",
+    });
+    yPos += 15;
+
+    // Mode info
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    if (mode === "manual") {
+      doc.text("Analysis Mode: Manual Text Input", 20, yPos);
+    } else {
+      doc.text("Analysis Mode: Google Maps Review Scraper", 20, yPos);
+      yPos += 7;
+      doc.setFont("helvetica", "normal");
+      if (additionalInfo.url) {
+        doc.setFontSize(9);
+        doc.text(`URL: ${additionalInfo.url.substring(0, 80)}...`, 20, yPos);
+      }
+      if (additionalInfo.totalScraped) {
+        yPos += 5;
+        doc.text(
+          `Total Reviews Analyzed: ${additionalInfo.totalScraped}`,
+          20,
+          yPos
+        );
+      }
+    }
+    yPos += 15;
+
+    // Summary Section
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Summary Statistics", 20, yPos);
+    yPos += 10;
+
+    const sentiments = ["Positive", "Negative", "Neutral", "Mixed"];
+    const colors = {
+      Positive: [34, 197, 94],
+      Negative: [239, 68, 68],
+      Neutral: [156, 163, 175],
+      Mixed: [234, 179, 8],
+    };
+
+    // Draw score cards
+    let xPos = 20;
+    const cardWidth = 40;
+    const cardHeight = 25;
+
+    sentiments.forEach((sentiment) => {
+      const data = statistics[sentiment];
+      if (data) {
+        // Card background
+        doc.setFillColor(...colors[sentiment]);
+        doc.roundedRect(xPos, yPos, cardWidth, cardHeight, 3, 3, "F");
+
+        // Card text
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text(sentiment, xPos + cardWidth / 2, yPos + 8, {
+          align: "center",
+        });
+        doc.setFontSize(14);
+        doc.text(String(data.count), xPos + cardWidth / 2, yPos + 16, {
+          align: "center",
+        });
+        doc.setFontSize(8);
+        doc.text(data.percentage, xPos + cardWidth / 2, yPos + 22, {
+          align: "center",
+        });
+
+        xPos += cardWidth + 5;
+      }
+    });
+
+    doc.setTextColor(0, 0, 0);
+    yPos += cardHeight + 15;
+
+    // Detailed Reviews Section
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Detailed Review Analysis", 20, yPos);
+    yPos += 10;
+
+    sentiments.forEach((sentiment) => {
+      const data = statistics[sentiment];
+      if (data && data.reviews.length > 0) {
+        // Check if we need a new page
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        // Sentiment header
+        doc.setFillColor(...colors[sentiment]);
+        doc.rect(20, yPos, pageWidth - 40, 8, "F");
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(11);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${sentiment} Reviews (${data.count})`, 25, yPos + 6);
+        doc.setTextColor(0, 0, 0);
+        yPos += 12;
+
+        // Reviews
+        data.reviews.forEach((review, idx) => {
+          if (yPos > 270) {
+            doc.addPage();
+            yPos = 20;
+          }
+
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "bold");
+          doc.text(`Review ${idx + 1}:`, 20, yPos);
+          yPos += 5;
+
+          doc.setFont("helvetica", "normal");
+
+          // Original text (with word wrap)
+          const originalLines = doc.splitTextToSize(
+            `Original: ${review.original_text}`,
+            pageWidth - 45
+          );
+          originalLines.forEach((line) => {
+            if (yPos > 280) {
+              doc.addPage();
+              yPos = 20;
+            }
+            doc.text(line, 25, yPos);
+            yPos += 4;
+          });
+
+          // Translated text if different
+          if (
+            review.translated_text &&
+            review.translated_text !== review.original_text
+          ) {
+            const translatedLines = doc.splitTextToSize(
+              `Translated: ${review.translated_text}`,
+              pageWidth - 45
+            );
+            translatedLines.forEach((line) => {
+              if (yPos > 280) {
+                doc.addPage();
+                yPos = 20;
+              }
+              doc.text(line, 25, yPos);
+              yPos += 4;
+            });
+          }
+
+          // Scores
+          if (review.scores) {
+            const scoresText = Object.entries(review.scores)
+              .map(([label, score]) => `${label}: ${(score * 100).toFixed(1)}%`)
+              .join(" | ");
+            doc.setFontSize(8);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Scores: ${scoresText}`, 25, yPos);
+            doc.setTextColor(0, 0, 0);
+            yPos += 8;
+          }
+        });
+
+        yPos += 5;
+      }
+    });
+
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text(
+        `Page ${i} of ${pageCount} | Generated by Multilingual Review Analyzer`,
+        pageWidth / 2,
+        doc.internal.pageSize.getHeight() - 10,
+        { align: "center" }
+      );
+    }
+
+    // Save PDF
+    const filename = `sentiment_analysis_${mode}_${
+      new Date().toISOString().split("T")[0]
+    }.pdf`;
+    doc.save(filename);
+  };
 
   // Analyze single text
   const handleAnalyzeText = async () => {
@@ -357,22 +570,45 @@ function NandikaPage() {
             {/* Manual Results */}
             {manualResults && (
               <div className="mt-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <svg
-                    className="w-5 h-5 text-green-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <svg
+                      className="w-5 h-5 text-green-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                    Analysis Results
+                  </h3>
+                  <button
+                    onClick={() =>
+                      generatePDF(manualResults.statistics, "manual")
+                    }
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-medium rounded-lg hover:from-red-600 hover:to-pink-600 transition-all shadow-md"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  Analysis Results
-                </h3>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    Download PDF
+                  </button>
+                </div>
                 {renderStatistics(manualResults.statistics)}
               </div>
             )}
@@ -468,25 +704,51 @@ function NandikaPage() {
             {/* Scraper Results */}
             {scraperResults && (
               <div className="mt-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                  <svg
-                    className="w-5 h-5 text-green-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <svg
+                      className="w-5 h-5 text-green-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
+                    </svg>
+                    Analysis Results
+                    <span className="text-sm font-normal text-gray-500 ml-2">
+                      ({scraperResults.total_scraped} reviews analyzed)
+                    </span>
+                  </h3>
+                  <button
+                    onClick={() =>
+                      generatePDF(scraperResults.statistics, "scraper", {
+                        url: googleUrl,
+                        totalScraped: scraperResults.total_scraped,
+                      })
+                    }
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-medium rounded-lg hover:from-red-600 hover:to-pink-600 transition-all shadow-md"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  Analysis Results
-                  <span className="text-sm font-normal text-gray-500 ml-2">
-                    ({scraperResults.total_scraped} reviews analyzed)
-                  </span>
-                </h3>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    Download PDF
+                  </button>
+                </div>
                 {renderStatistics(scraperResults.statistics)}
               </div>
             )}
