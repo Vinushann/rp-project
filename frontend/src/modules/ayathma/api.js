@@ -110,8 +110,197 @@ export async function pingModule() {
   return response.json();
 }
 
+// --- Data Quality endpoint ---
+
+/**
+ * Analyze data quality of the currently loaded dataset
+ * @returns {Promise<Object>}
+ */
+export async function analyzeDataQuality() {
+  const response = await fetch(`${API_BASE_URL}/api/v1/ayathma/quality`, {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || error.error || `Quality analysis failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// --- Anomaly Detection endpoint ---
+
+/**
+ * Detect anomalies in the currently loaded dataset
+ * @returns {Promise<Object>}
+ */
+export async function detectAnomalies() {
+  const response = await fetch(`${API_BASE_URL}/api/v1/ayathma/anomalies`, {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || error.error || `Anomaly detection failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// --- Comparative Analysis endpoints ---
+
+/**
+ * Automatically compare recent period to previous period
+ * @returns {Promise<Object>}
+ */
+export async function autoCompare() {
+  const response = await fetch(`${API_BASE_URL}/api/v1/ayathma/compare/auto`, {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || error.error || `Comparison failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Compare two specific time periods
+ * @param {File} file - CSV or Excel file
+ * @param {Object} params - Period parameters
+ * @returns {Promise<{ok: boolean, comparison: Object}>}
+ */
+export async function comparePeriods(file, params) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('time_col', params.time_col);
+  formData.append('period_a_start', params.period_a_start);
+  formData.append('period_a_end', params.period_a_end);
+  formData.append('period_b_start', params.period_b_start);
+  formData.append('period_b_end', params.period_b_end);
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/ayathma/compare/periods`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `Period comparison failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Compare two segments
+ * @param {File} file - CSV or Excel file
+ * @param {Object} params - Segment parameters
+ * @returns {Promise<{ok: boolean, comparison: Object}>}
+ */
+export async function compareSegments(file, params) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('segment_col', params.segment_col);
+  formData.append('segment_a', params.segment_a);
+  formData.append('segment_b', params.segment_b);
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/ayathma/compare/segments`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `Segment comparison failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// --- Chart Data endpoints ---
+
+/**
+ * Get heatmap data for day/hour analysis
+ * @param {File} file - CSV or Excel file
+ * @param {Object} options - time_col and value_col
+ * @returns {Promise<{ok: boolean, heatmap: Object}>}
+ */
+export async function getHeatmapData(file, options = {}) {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (options.time_col) formData.append('time_col', options.time_col);
+  if (options.value_col) formData.append('value_col', options.value_col);
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/ayathma/charts/heatmap`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `Heatmap generation failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get scatter plot data
+ * @param {File} file - CSV or Excel file
+ * @param {Object} params - x_col, y_col, color_col
+ * @returns {Promise<{ok: boolean, scatter: Object}>}
+ */
+export async function getScatterData(file, params) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('x_col', params.x_col);
+  formData.append('y_col', params.y_col);
+  if (params.color_col) formData.append('color_col', params.color_col);
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/ayathma/charts/scatter`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `Scatter plot generation failed: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// --- PDF Export ---
+
+/**
+ * Download PDF report
+ * @returns {Promise<Blob>}
+ */
+export async function downloadPdfReport() {
+  const response = await fetch(`${API_BASE_URL}/api/v1/ayathma/export/pdf`);
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'PDF export failed' }));
+    throw new Error(error.error || error.detail || `PDF export failed: ${response.status}`);
+  }
+
+  return response.blob();
+}
+
 export default {
   analyzeDataset,
   downloadResults,
   pingModule,
+  analyzeDataQuality,
+  detectAnomalies,
+  autoCompare,
+  comparePeriods,
+  compareSegments,
+  getHeatmapData,
+  getScatterData,
+  downloadPdfReport,
 };
