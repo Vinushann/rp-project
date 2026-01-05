@@ -1,4 +1,4 @@
-/* App styles */
+/* App styles - Clean white design */
 
 * {
   box-sizing: border-box;
@@ -8,124 +8,162 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  background: #f0f2f5;
+  background: #ffffff;
+  color: #333;
 }
 
 .app {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  max-width: 900px;
-  margin: 0 auto;
-  background: white;
-  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+  background: #ffffff;
 }
 
-/* Header */
-.app-header {
-  background: linear-gradient(135deg, #6b4423 0%, #8b5a2b 100%);
-  color: white;
-  padding: 20px 24px;
-  text-align: center;
+/* Navigation Bar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 32px;
+  height: 56px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e5e5;
 }
 
-.header-content h1 {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 4px;
+.nav-brand {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111;
 }
 
-.header-content p {
+.nav-links {
+  display: flex;
+  gap: 8px;
+}
+
+.nav-link {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
   font-size: 14px;
-  opacity: 0.9;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.2s, color 0.2s;
 }
 
-/* Chat container */
-.chat-container {
+.nav-link:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.nav-link.active {
+  background: #f0f0f0;
+  color: #111;
+}
+
+/* Main content */
+.main-content {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
-  background: #fafafa;
+  padding: 24px 32px;
+  background: #ffffff;
+}
+
+/* Page content for stat and settings */
+.page-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.page-content h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 16px;
+}
+
+.page-content p {
+  color: #666;
+  font-size: 14px;
 }
 
 /* Welcome section */
 .welcome-section {
+  max-width: 600px;
+  margin: 40px auto;
   text-align: center;
-  padding: 40px 20px;
-  animation: fadeIn 0.5s ease;
-}
-
-.welcome-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
 }
 
 .welcome-section h2 {
   font-size: 28px;
-  color: #333;
-  margin-bottom: 12px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 8px;
 }
 
 .welcome-section > p {
   color: #666;
-  font-size: 16px;
-  margin-bottom: 24px;
-}
-
-.capabilities-list {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
+  font-size: 14px;
   margin-bottom: 32px;
 }
 
-.capabilities-list li {
-  background: white;
-  padding: 10px 16px;
-  border-radius: 20px;
-  font-size: 14px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+.capabilities-list {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 32px;
+}
+
+.capability-item {
+  background: #f7f7f7;
+  padding: 8px 14px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #555;
 }
 
 .example-questions {
-  background: white;
+  background: #fafafa;
   padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  border-radius: 8px;
+  border: 1px solid #eee;
 }
 
 .examples-label {
-  font-size: 14px;
-  color: #666;
+  font-size: 13px;
+  color: #888;
   margin-bottom: 16px;
 }
 
 .examples-grid {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .example-button {
-  background: #f5f5f5;
-  border: 1px solid #e0e0e0;
+  background: #ffffff;
+  border: 1px solid #ddd;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 14px;
+  color: #333;
   cursor: pointer;
   text-align: left;
-  transition: all 0.2s;
+  transition: border-color 0.2s, background 0.2s;
 }
 
 .example-button:hover {
-  background: #e3f2fd;
-  border-color: #1976d2;
-  color: #1976d2;
+  background: #f9f9f9;
+  border-color: #bbb;
 }
 
 /* Messages */
 .messages-list {
+  max-width: 800px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
 }
@@ -135,22 +173,22 @@ body {
   display: flex;
   gap: 12px;
   padding: 16px;
-  background: #f5f5f5;
-  border-radius: 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
   margin-bottom: 12px;
-  animation: fadeIn 0.3s ease;
 }
 
 .loading-avatar {
-  font-size: 24px;
-  width: 40px;
-  height: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: white;
-  border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: #333;
+  color: #fff;
+  border-radius: 4px;
 }
 
 .loading-content {
@@ -165,9 +203,9 @@ body {
 }
 
 .loading-dots span {
-  width: 8px;
-  height: 8px;
-  background: #1976d2;
+  width: 6px;
+  height: 6px;
+  background: #888;
   border-radius: 50%;
   animation: bounce 1.4s infinite ease-in-out both;
 }
@@ -183,55 +221,50 @@ body {
 
 .loading-content p {
   font-size: 13px;
-  color: #666;
+  color: #888;
 }
 
 /* Error banner */
 .error-banner {
-  background: #ffebee;
-  color: #c62828;
+  background: #fef2f2;
+  color: #991b1b;
   padding: 12px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
+  border-top: 1px solid #fecaca;
 }
 
 .error-banner button {
   background: none;
   border: none;
-  color: #c62828;
-  font-size: 20px;
+  color: #991b1b;
+  font-size: 16px;
   cursor: pointer;
   padding: 0 8px;
 }
 
 /* Input section */
 .input-section {
-  background: white;
-  border-top: 1px solid #e0e0e0;
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  background: #ffffff;
+  border-top: 1px solid #e5e5e5;
 }
 
 /* Scrollbar */
-.chat-container::-webkit-scrollbar {
-  width: 8px;
+.main-content::-webkit-scrollbar {
+  width: 6px;
 }
 
-.chat-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
+.main-content::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.chat-container::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+.main-content::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 3px;
 }
 
-.chat-container::-webkit-scrollbar-thumb:hover {
-  background: #a1a1a1;
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: #ccc;
 }

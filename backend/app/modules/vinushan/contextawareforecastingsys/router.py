@@ -21,8 +21,8 @@ AGENT_CAPABILITIES = {
         "task_name": "historical_task",
     },
     "forecasting": {
-        "description": "Predict future demand, daily sales forecast, busiest days, staffing needs based on demand",
-        "keywords": ["forecast", "predict", "future", "demand", "expect", "next month", "upcoming", "staff", "busy"],
+        "description": "Predict future demand using trained Prophet ML model, daily sales forecast, busiest days, staffing needs",
+        "keywords": ["forecast", "predict", "future", "demand", "expect", "next month", "next week", "upcoming", "staff", "busy", "busiest", "projection", "anticipate", "what will", "how much will", "estimate"],
         "agent_name": "forecasting_specialist", 
         "task_name": "forecasting_task",
     },
@@ -130,6 +130,8 @@ def route_question(question: str) -> dict:
                 "agents_needed": [],
                 "reasoning": result.get("reasoning", "This is a conversational message - no business analysis needed."),
                 "is_comprehensive": False,
+                "is_conversational": True,
+                "needs_visualization": False,
             }
         
         # Validate agents for business questions
@@ -139,10 +141,15 @@ def route_question(question: str) -> dict:
         if not valid_agents:
             valid_agents = ["historical"]
         
+        # Check if visualization is requested
+        needs_visualization = "visualization" in valid_agents
+        
         return {
             "agents_needed": valid_agents,
             "reasoning": result.get("reasoning", ""),
             "is_comprehensive": result.get("is_comprehensive", False),
+            "is_conversational": False,
+            "needs_visualization": needs_visualization,
         }
         
     except Exception as e:
@@ -173,10 +180,15 @@ def _keyword_fallback(question: str) -> dict:
         for phrase in ["should i do", "plan", "recommend", "prepare"]
     )
     
+    # Check if visualization is requested
+    needs_visualization = "visualization" in agents_needed
+    
     return {
         "agents_needed": agents_needed,
         "reasoning": "Matched based on keywords in question",
         "is_comprehensive": is_comprehensive,
+        "is_conversational": False,
+        "needs_visualization": needs_visualization,
     }
 
 

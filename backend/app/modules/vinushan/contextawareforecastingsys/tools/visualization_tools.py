@@ -704,3 +704,236 @@ def create_holiday_impact_chart() -> Dict[str, Any]:
         "explanation": explanation,
         "chart_data": chart_payload,
     }
+
+
+def create_holiday_period_analysis_chart(
+    holiday_name: Optional[str] = None,
+    window_days: int = 7
+) -> Dict[str, Any]:
+    """
+    Create a chart showing sales patterns around holiday periods.
+    Shows pre-holiday, holiday, and post-holiday sales patterns.
+    
+    Args:
+        holiday_name: Specific holiday to analyze (None for general patterns)
+        window_days: Days before/after holiday to analyze
+    
+    Returns:
+        Dict with 'image', 'title', 'explanation', and 'chart_data'
+    """
+    df = _get_dataframe()
+    
+    if 'is_holiday' not in df.columns:
+        return {
+            "image": None,
+            "title": "Holiday Data Not Available", 
+            "explanation": "Holiday columns not found in the dataset.",
+            "chart_data": None,
+        }
+    
+    # Find holiday dates
+    holiday_dates = df[df['is_holiday'] == 1]['system_date'].unique()
+    
+    if len(holiday_dates) == 0:
+        return {
+            "image": None,
+            "title": "No Holiday Data",
+            "explanation": "No holiday data found in the dataset.",
+            "chart_data": None,
+        }
+    
+    # Analyze sales patterns around holidays
+    pre_holiday_sales = []
+    holiday_sales_list = []
+    post_holiday_sales = []
+    
+    for hdate in holiday_dates:
+        # Pre-holiday period
+        pre_start = hdate - pd.Timedelta(days=window_days)
+        pre_end = hdate - pd.Timedelta(days=1)
+        pre_mask = (df['system_date'] >= pre_start) & (df['system_date'] <= pre_end)
+        pre_sales = df[pre_mask]['qty'].sum()
+        if pre_sales > 0:
+            pre_holiday_sales.append(pre_sales)
+        
+        # Holiday day
+        holiday_mask = df['system_date'] == hdate
+        h_sales = df[holiday_mask]['qty'].sum()
+        if h_sales > 0:
+            holiday_sales_list.append(h_sales)
+        
+        # Post-holiday period
+        post_start = hdate + pd.Timedelta(days=1)
+        post_end = hdate + pd.Timedelta(days=window_days)
+        post_mask = (df['system_date'] >= post_start) & (df['system_date'] <= post_end)
+        post_sales = df[post_mask]['qty'].sum()
+        if post_sales > 0:
+            post_holiday_sales.append(post_sales)
+    
+    # Calculate averages
+    avg_pre = np.mean(pre_holiday_sales) if pre_holiday_sales else 0
+    avg_holiday = np.mean(holiday_sales_list) if holiday_sales_list else 0
+    avg_post = np.mean(post_holiday_sales) if post_holiday_sales else 0
+    
+    # Normalize to daily averages
+    avg_pre_daily = avg_pre / window_days if window_days > 0 else 0
+    avg_post_daily = avg_post / window_days if window_days > 0 else 0
+    
+    # Regular day average
+    regular_mask = df['is_holiday'] == 0
+    avg_regular = df[regular_mask].groupby('system_date')['qty'].sum().mean()
+    
+    # Create figure
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    periods = ['Regular Days', f'Pre-Holiday\n({window_days} days before)', 'Holiday Day', f'Post-Holiday\n({window_days} days after)']
+    values = [avg_regular, avg_pre_daily, avg_holiday, avg_post_daily]
+    colors = [COLORS[0], COLORS[1], COLORS[2], COLORS[3]]
+    
+    bars = ax.bar(periods, values, color=colors, edgecolor='white', linewidth=2)
+    
+    ax.set_ylabel('Average Daily Sales (units)', fontsize=11, fontweight='bold')
+    ax.set_title('Sales Pattern Around Holiday Periods', fontsize=14, fontweight='bold', pad=15)
+    
+    # Add value labels with % change
+    for i, (bar, val) in enumerate(zip(bars, values)):
+        height = bar.get_height()
+        pct_change = ((val - avg_regular) / avg_regular * 100) if avg_regular > 0 else 0
+        label = f'{height:.0f}\n({pct_change:+.1f}%)' if i > 0 else f'{height:.0f}'
+        ax.text(bar.get_x() + bar.get_width()/2., height,
+                label, ha='center', va='bottom', fontsize=10, fontweight='bold')
+    
+    ax.grid(True, alpha=0.3, axis='y')
+    plt.tight_layout()
+    
+    # Calculate insights
+    pre_pct = ((avg_pre_daily - avg_regular) / avg_regular * 100) if avg_regular > 0 else 0
+    holiday_pct = ((avg_holiday - avg_regular) / avg_regular * 100) if avg_regular > 0 else 0
+    post_pct = ((avg_post_daily - avg_regular) / avg_regular * 100) if avg_regular > 0 else 0
+    
+    explanation = f"""**Historical Holiday Impact Analysis**
+
+This chart shows how sales typically change around holiday periods based on historical data:
+
+- **Regular Day Average:** {avg_regular:.0f} units
+- **Pre-Holiday Effect:** {pre_pct:+.1f}% {"📈" if pre_pct > 0 else "📉"}
+- **Holiday Day Effect:** {holiday_pct:+.1f}% {"📈" if holiday_pct > 0 else "📉"}
+- **Post-Holiday Effect:** {post_pct:+.1f}% {"📈" if post_pct > 0 else "📉"}
+
+**Historical Evidence:**
+Based on analysis of {len(holiday_dates)} holiday periods in the dataset, this pattern helps inform promotional strategies."""
+
+    chart_payload = {
+        "chart_type": "bar",
+        "labels": periods,
+        "datasets": [
+            {
+                "label": "Avg daily sales",
+                "data": [float(v) for v in values],
+            }
+        ],
+    }
+    
+    return {
+        "image": _fig_to_base64(fig),
+        "title": "Holiday Period Impact - Historical Evidence",
+        "explanation": explanation,
+        "chart_data": chart_payload,
+    }
+
+
+def create_top_items_holiday_chart(
+    top_n: int = 5
+) -> Dict[str, Any]:
+    """
+    Create a chart comparing top items performance on holidays vs regular days.
+    
+    Args:
+        top_n: Number of top items to show
+    
+    Returns:
+        Dict with 'image', 'title', 'explanation', and 'chart_data'
+    """
+    df = _get_dataframe()
+    
+    if 'is_holiday' not in df.columns:
+        return {
+            "image": None,
+            "title": "Holiday Data Not Available", 
+            "explanation": "Holiday columns not found in the dataset.",
+            "chart_data": None,
+        }
+    
+    # Get top items overall
+    top_items = df.groupby('food_name')['qty'].sum().nlargest(top_n).index.tolist()
+    
+    # Compare holiday vs regular for these items
+    regular_df = df[df['is_holiday'] == 0]
+    holiday_df = df[df['is_holiday'] == 1]
+    
+    regular_days = regular_df['system_date'].nunique()
+    holiday_days = holiday_df['system_date'].nunique()
+    
+    regular_avg = []
+    holiday_avg = []
+    
+    for item in top_items:
+        reg_sales = regular_df[regular_df['food_name'] == item]['qty'].sum() / max(regular_days, 1)
+        hol_sales = holiday_df[holiday_df['food_name'] == item]['qty'].sum() / max(holiday_days, 1)
+        regular_avg.append(reg_sales)
+        holiday_avg.append(hol_sales)
+    
+    # Create figure
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    x = np.arange(len(top_items))
+    width = 0.35
+    
+    bars1 = ax.bar(x - width/2, regular_avg, width, label='Regular Days', color=COLORS[0], edgecolor='white')
+    bars2 = ax.bar(x + width/2, holiday_avg, width, label='Holidays', color=COLORS[2], edgecolor='white')
+    
+    ax.set_xlabel('Product', fontsize=11, fontweight='bold')
+    ax.set_ylabel('Average Daily Sales (units)', fontsize=11, fontweight='bold')
+    ax.set_title(f'Top {top_n} Items: Holiday vs Regular Day Performance', fontsize=14, fontweight='bold', pad=15)
+    ax.set_xticks(x)
+    ax.set_xticklabels([item[:20] + '...' if len(item) > 20 else item for item in top_items], rotation=30, ha='right')
+    ax.legend()
+    ax.grid(True, alpha=0.3, axis='y')
+    
+    plt.tight_layout()
+    
+    # Generate insights
+    item_insights = []
+    for i, item in enumerate(top_items):
+        pct_change = ((holiday_avg[i] - regular_avg[i]) / regular_avg[i] * 100) if regular_avg[i] > 0 else 0
+        item_insights.append(f"- **{item[:25]}:** {pct_change:+.1f}% on holidays")
+    
+    explanation = f"""**Top Items Holiday Performance - Historical Evidence**
+
+How your best-selling items perform on holidays compared to regular days:
+
+{chr(10).join(item_insights)}
+
+This historical pattern helps predict which items to promote or stock more during upcoming holidays."""
+
+    chart_payload = {
+        "chart_type": "bar",
+        "labels": [item[:15] for item in top_items],
+        "datasets": [
+            {
+                "label": "Regular Days",
+                "data": [float(v) for v in regular_avg],
+            },
+            {
+                "label": "Holidays",
+                "data": [float(v) for v in holiday_avg],
+            }
+        ],
+    }
+    
+    return {
+        "image": _fig_to_base64(fig),
+        "title": "Top Items: Holiday vs Regular Performance",
+        "explanation": explanation,
+        "chart_data": chart_payload,
+    }

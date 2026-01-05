@@ -87,9 +87,10 @@ export async function sendVinushanChat(message, conversationHistory = []) {
  * @param {Function} callbacks.onAgentEnd - Called when an agent completes
  * @param {Function} callbacks.onRunEnd - Called with final response
  * @param {Function} callbacks.onError - Called on error
+ * @param {AbortSignal} signal - Optional abort signal to cancel the request
  * @returns {Promise<void>}
  */
-export async function streamVinushanChat(message, conversationHistory = [], callbacks = {}) {
+export async function streamVinushanChat(message, conversationHistory = [], callbacks = {}, signal = null) {
   const url = `${API_BASE_URL}/api/v1/vinushan/chat/stream`;
   
   const response = await fetch(url, {
@@ -101,6 +102,7 @@ export async function streamVinushanChat(message, conversationHistory = [], call
       message,
       conversation_history: conversationHistory,
     }),
+    signal, // Pass abort signal to fetch
   });
   
   if (!response.ok) {
@@ -151,6 +153,21 @@ export async function streamVinushanChat(message, conversationHistory = [], call
             case 'agent_output':
               callbacks.onAgentOutput?.(data);
               break;
+            case 'agent_thought':
+              callbacks.onAgentThought?.(data);
+              break;
+            case 'agent_query':
+              callbacks.onAgentQuery?.(data);
+              break;
+            case 'agent_self_check':
+              callbacks.onAgentSelfCheck?.(data);
+              break;
+            case 'agent_result_snapshot':
+              callbacks.onAgentResultSnapshot?.(data);
+              break;
+            case 'router_thought':
+              callbacks.onRouterThought?.(data);
+              break;
             case 'agent_end':
               callbacks.onAgentEnd?.(data);
               break;
@@ -199,6 +216,113 @@ export async function getApiInfo() {
   return apiRequest('/');
 }
 
+// ============================================
+// ATHENA EMAIL SETTINGS API
+// ============================================
+
+/**
+ * Get saved email settings for report recipients
+ * @returns {Promise<{manager_email: string|null, owner_email: string|null, finance_email: string|null, slack_webhook_url: string|null}>}
+ */
+export async function getEmailSettings() {
+  return apiRequest('/api/v1/vinushan/settings/emails');
+}
+
+/**
+ * Update email settings for report recipients
+ * @param {Object} settings - Settings to update
+ * @param {string|null} settings.manager_email
+ * @param {string|null} settings.owner_email
+ * @param {string|null} settings.finance_email
+ * @param {string|null} settings.slack_webhook_url
+ * @returns {Promise<Object>}
+ */
+export async function updateEmailSettings(settings) {
+  return apiRequest('/api/v1/vinushan/settings/emails', {
+    method: 'PUT',
+    body: JSON.stringify(settings),
+  });
+}
+
+// ============================================
+// ATHENA SEND REPORTS API
+// ============================================
+
+/**
+ * Get available date range for reports
+ * @returns {Promise<{min_date: string, max_date: string}>}
+ */
+export async function getReportDateRange() {
+  return apiRequest('/api/v1/vinushan/reports/date-range');
+}
+
+/**
+ * Preview report data for a specific date
+ * @param {string} date - Date in YYYY-MM-DD format
+ * @returns {Promise<Object>}
+ */
+export async function previewReportData(date) {
+  return apiRequest(`/api/v1/vinushan/reports/preview/${date}`);
+}
+
+/**
+ * Send reports for a specific date
+ * @param {string} date - Date in YYYY-MM-DD format
+ * @param {boolean} sendEmails - Whether to send email reports
+ * @param {boolean} sendSlack - Whether to post Slack update
+ * @returns {Promise<Object>}
+ */
+export async function sendReports(date, sendEmails = true, sendSlack = true) {
+  return apiRequest('/api/v1/vinushan/reports/send', {
+    method: 'POST',
+    body: JSON.stringify({
+      date,
+      send_emails: sendEmails,
+      send_slack: sendSlack,
+    }),
+  });
+}
+
+// ============================================
+// ATHENA STATISTICS API
+// ============================================
+
+/**
+ * Get comprehensive statistics for the dashboard
+ * @returns {Promise<Object>}
+ */
+export async function getStatistics() {
+  return apiRequest('/api/v1/vinushan/statistics');
+}
+
+/**
+ * Get sales trend data for a specific period
+ * @param {string} period - 'daily', 'weekly', or 'monthly'
+ * @param {number} limit - Number of periods to return
+ * @returns {Promise<Object>}
+ */
+export async function getTrendStatistics(period = 'daily', limit = 60) {
+  return apiRequest(`/api/v1/vinushan/statistics/trend/${period}?limit=${limit}`);
+}
+
+/**
+ * Get real-time weather data for a location
+ * @param {string} location - City name (e.g., 'Katunayake')
+ * @returns {Promise<Object>}
+ */
+export async function getWeather(location = 'Katunayake') {
+  return apiRequest(`/api/v1/vinushan/weather/${encodeURIComponent(location)}`);
+}
+
+/**
+ * Get Sri Lankan public holidays for a year
+ * @param {number} year - The year (e.g., 2026)
+ * @returns {Promise<Object>}
+ */
+export async function getHolidays(year = 2026) {
+  return apiRequest(`/api/v1/vinushan/holidays/${year}`);
+}
+
 export default {
   pingModule,
   sendChatMessage,
@@ -206,4 +330,13 @@ export default {
   streamVinushanChat,
   checkHealth,
   getApiInfo,
+  getEmailSettings,
+  updateEmailSettings,
+  getReportDateRange,
+  previewReportData,
+  sendReports,
+  getStatistics,
+  getTrendStatistics,
+  getWeather,
+  getHolidays,
 };

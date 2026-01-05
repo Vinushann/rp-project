@@ -24,6 +24,7 @@ from contextawareforecastingsys.tools import (
     CategoryPieChartTool,
     WeatherImpactChartTool,
     HolidayImpactChartTool,
+    TimeSeriesForecastTool,
 )
 
 load_dotenv(override=False)
@@ -44,6 +45,9 @@ class DynamicCrewBuilder:
         self.forecasting_tool = ForecastingTool()
         self.holiday_tool = HolidayContextTool()
         self.weather_tool = WeatherContextTool()
+        
+        # Time series model tool (uses trained Prophet model)
+        self.time_series_forecast_tool = TimeSeriesForecastTool()
         
         # Visualization tools
         self.sales_trend_chart = SalesTrendChartTool()
@@ -69,12 +73,15 @@ class DynamicCrewBuilder:
     def _create_forecasting_agent(self) -> Agent:
         return Agent(
             role="Daily demand forecaster",
-            goal="Predict future daily demand and identify busiest days",
-            backstory="Specialist in time-series forecasting for retail coffee shop demand.",
+            goal="Predict future daily demand using the trained Prophet time series model, identify busiest days, and provide confidence intervals",
+            backstory="""Expert forecasting specialist who uses a trained Prophet time series model 
+            to predict daily coffee shop demand. The model incorporates Sri Lankan holidays, 
+            weather patterns, and weekly/yearly seasonality. Always use the Time Series Forecast Tool 
+            for predictions as it provides accurate ML-based forecasts with uncertainty bounds.""",
             verbose=False,
-            tools=[self.forecasting_tool],
+            tools=[self.time_series_forecast_tool, self.forecasting_tool],
             llm=self.llm,
-            max_iter=3,
+            max_iter=4,
             allow_delegation=False,
         )
 
@@ -164,12 +171,22 @@ class DynamicCrewBuilder:
     def _create_forecasting_task(self, inputs: dict) -> Task:
         return Task(
             description=f"""Forecast daily demand for {inputs.get('target_month_name', '')} {inputs.get('target_year', '')}.
-            Use the Daily Forecast Tool to predict:
-            - Total expected quantity
-            - Busiest days
-            - Accuracy metrics (MAE/MAPE)
+            
+            IMPORTANT: Use the "Time Series Forecast Tool" to generate predictions using the trained Prophet model.
+            This tool provides ML-based forecasts with confidence intervals.
+            
+            For next month forecasts, use horizon_days=30.
+            For specific periods, use start_date and end_date parameters.
+            
+            Analyze the tool output to provide:
+            - Total expected quantity for the period
+            - The 5 busiest predicted days
+            - Confidence level (from yhat_lower to yhat_upper bounds)
+            - Model metrics (MAE, accuracy)
+            - Actionable staffing/inventory recommendations
+            
             Context: {inputs.get('user_question', '')}""",
-            expected_output="JSON with predictions, total_qty, busiest_days, and accuracy",
+            expected_output="Summary of Prophet model predictions with total_qty, busiest_days, confidence intervals, and recommendations",
             agent=self._create_forecasting_agent(),
         )
 

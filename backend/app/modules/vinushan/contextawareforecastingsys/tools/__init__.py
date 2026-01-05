@@ -17,6 +17,8 @@ from .chart_tools import (
 	HolidayImpactChartTool,
 )
 
+from .time_series_forecast_tool import TimeSeriesForecastTool
+
 __all__ = [
 	"ForecastingTool",
 	"HolidayContextTool",
@@ -29,4 +31,5 @@ __all__ = [
 	"CategoryPieChartTool",
 	"WeatherImpactChartTool",
 	"HolidayImpactChartTool",
+	"TimeSeriesForecastTool",
 ]

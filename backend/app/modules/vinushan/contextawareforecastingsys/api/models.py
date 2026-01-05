@@ -34,13 +34,22 @@ class AgentStep(BaseModel):
 
 class ChartData(BaseModel):
     """Data for a generated chart/visualization."""
-    image: Optional[str] = Field(None, description="Base64-encoded PNG image")
+    image: Optional[str] = Field(None, description="Base64-encoded PNG image (alias for image_base64)")
+    image_base64: Optional[str] = Field(None, description="Base64-encoded PNG image")
     title: str = Field(default="", description="Chart title")
     explanation: str = Field(default="", description="Explanation of the chart")
+    chart_type: Optional[str] = Field(None, description="Type of chart (bar, line, pie, etc.)")
     chart_data: Optional[dict] = Field(
         default=None,
         description="Structured data for interactive charts (labels/datasets/chart_type)",
     )
+    
+    def model_post_init(self, __context):
+        """Ensure image and image_base64 are in sync."""
+        if self.image_base64 and not self.image:
+            object.__setattr__(self, 'image', self.image_base64)
+        elif self.image and not self.image_base64:
+            object.__setattr__(self, 'image_base64', self.image)
 
 
 class ChatResponse(BaseModel):

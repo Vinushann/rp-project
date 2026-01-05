@@ -1,5 +1,5 @@
 /**
- * Main App component - Chat interface.
+ * Main App component - Chat interface with navigation.
  */
 
 import { useState, useRef, useEffect } from 'react';
@@ -26,10 +26,13 @@ const exampleQuestions = [
   "What holidays are coming up?",
 ];
 
+type Page = 'athena' | 'stat' | 'settings';
+
 function App() {
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<Page>('athena');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -38,10 +41,8 @@ function App() {
   }, [messages]);
 
   const handleSendMessage = async (content: string) => {
-    // Clear any previous error
     setError(null);
 
-    // Add user message to chat
     const userMessage: DisplayMessage = {
       role: 'user',
       content,
@@ -51,17 +52,14 @@ function App() {
     setIsLoading(true);
 
     try {
-      // Prepare conversation history (without metadata)
       const history: Message[] = messages.map(m => ({
         role: m.role,
         content: m.content,
         timestamp: m.timestamp,
       }));
 
-      // Send to backend
       const response = await sendChatMessage(content, history);
 
-      // Add assistant message to chat
       const assistantMessage: DisplayMessage = {
         role: 'assistant',
         content: response.response,
@@ -77,7 +75,6 @@ function App() {
       console.error('Error sending message:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message');
       
-      // Add error message
       const errorMessage: DisplayMessage = {
         role: 'assistant',
         content: `Sorry, I encountered an error: ${err instanceof Error ? err.message : 'Unknown error'}. Please try again.`,
@@ -95,98 +92,139 @@ function App() {
     }
   };
 
+  const renderContent = () => {
+    switch (currentPage) {
+      case 'stat':
+        return (
+          <div className="page-content">
+            <h2>Statistics</h2>
+            <p>Statistics and analytics will be displayed here.</p>
+          </div>
+        );
+      case 'settings':
+        return (
+          <div className="page-content">
+            <h2>Settings</h2>
+            <p>Settings and preferences will be displayed here.</p>
+          </div>
+        );
+      default:
+        return (
+          <>
+            {messages.length === 0 && (
+              <div className="welcome-section">
+                <h2>Welcome to Athena</h2>
+                <p>Your AI assistant for sales forecasting and business analytics.</p>
+                
+                <div className="capabilities-list">
+                  <div className="capability-item">Historical sales analysis</div>
+                  <div className="capability-item">Demand forecasting</div>
+                  <div className="capability-item">Holiday impact analysis</div>
+                  <div className="capability-item">Weather effects on sales</div>
+                  <div className="capability-item">Charts and visualizations</div>
+                  <div className="capability-item">Strategic recommendations</div>
+                </div>
+                
+                <div className="example-questions">
+                  <p className="examples-label">Try asking:</p>
+                  <div className="examples-grid">
+                    {exampleQuestions.map((q, idx) => (
+                      <button 
+                        key={idx}
+                        className="example-button"
+                        onClick={() => handleExampleClick(q)}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="messages-list">
+              {messages.map((msg, idx) => (
+                <ChatMessage
+                  key={idx}
+                  message={msg}
+                  agentSteps={msg.agentSteps}
+                  routingReasoning={msg.routingReasoning}
+                  agentsUsed={msg.agentsUsed}
+                  charts={msg.charts}
+                />
+              ))}
+              
+              {isLoading && (
+                <div className="loading-message">
+                  <div className="loading-avatar">A</div>
+                  <div className="loading-content">
+                    <div className="loading-dots">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                    <p>Analyzing your question...</p>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+          </>
+        );
+    }
+  };
+
   return (
     <div className="app">
-      {/* Header */}
-      <header className="app-header">
-        <div className="header-content">
-          <h1>☕ Coffee Shop AI Assistant</h1>
-          <p>Ask me anything about your business</p>
+      {/* Navigation Bar */}
+      <nav className="navbar">
+        <div className="nav-brand">Athena</div>
+        <div className="nav-links">
+          <button 
+            className={`nav-link ${currentPage === 'athena' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('athena')}
+          >
+            Athena
+          </button>
+          <button 
+            className={`nav-link ${currentPage === 'stat' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('stat')}
+          >
+            Stat
+          </button>
+          <button 
+            className={`nav-link ${currentPage === 'settings' ? 'active' : ''}`}
+            onClick={() => setCurrentPage('settings')}
+          >
+            Settings
+          </button>
         </div>
-      </header>
+      </nav>
 
-      {/* Chat container */}
-      <main className="chat-container">
-        {/* Welcome message when empty */}
-        {messages.length === 0 && (
-          <div className="welcome-section">
-            <div className="welcome-icon">🤖</div>
-            <h2>Welcome, Manager!</h2>
-            <p>I'm your AI assistant for Rossmann Coffee Shop. I can help you with:</p>
-            <ul className="capabilities-list">
-              <li>📜 Historical sales analysis</li>
-              <li>📈 Demand forecasting</li>
-              <li>🎉 Holiday impact analysis</li>
-              <li>🌦️ Weather effects on sales</li>
-              <li>📊 Charts & visualizations</li>
-              <li>🧠 Strategic recommendations</li>
-            </ul>
-            
-            <div className="example-questions">
-              <p className="examples-label">Try asking:</p>
-              <div className="examples-grid">
-                {exampleQuestions.map((q, idx) => (
-                  <button 
-                    key={idx}
-                    className="example-button"
-                    onClick={() => handleExampleClick(q)}
-                  >
-                    {q}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Messages */}
-        <div className="messages-list">
-          {messages.map((msg, idx) => (
-            <ChatMessage
-              key={idx}
-              message={msg}
-              agentSteps={msg.agentSteps}
-              routingReasoning={msg.routingReasoning}
-              agentsUsed={msg.agentsUsed}
-              charts={msg.charts}
-            />
-          ))}
-          
-          {/* Loading indicator */}
-          {isLoading && (
-            <div className="loading-message">
-              <div className="loading-avatar">🤖</div>
-              <div className="loading-content">
-                <div className="loading-dots">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-                <p>Analyzing your question...</p>
-              </div>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
+      {/* Main content */}
+      <main className="main-content">
+        {renderContent()}
       </main>
 
       {/* Error banner */}
       {error && (
         <div className="error-banner">
-          ⚠️ {error}
-          <button onClick={() => setError(null)}>×</button>
+          {error}
+          <button onClick={() => setError(null)}>x</button>
         </div>
       )}
 
-      {/* Input section */}
-      <footer className="input-section">
-        <ChatInput
-          onSend={handleSendMessage}
-          disabled={isLoading}
-          placeholder={isLoading ? "Thinking..." : "Ask anything about your coffee shop..."}
-        />
-      </footer>
+      {/* Input section - only show on Athena page */}
+      {currentPage === 'athena' && (
+        <footer className="input-section">
+          <ChatInput
+            onSend={handleSendMessage}
+            disabled={isLoading}
+            placeholder={isLoading ? "Thinking..." : "Ask anything about your business..."}
+          />
+        </footer>
+      )}
     </div>
   );
 }

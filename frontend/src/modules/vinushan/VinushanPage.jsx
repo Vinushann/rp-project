@@ -1,8 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { streamVinushanChat } from '../../lib/api';
 import AthenaChatMessage from './components/AthenaChatMessage';
-import ReasoningPanel from './components/ReasoningPanel';
+import AgentThoughtsPanel from './components/AgentThoughtsPanel';
+import SettingsPage from './components/SettingsPage';
+import StatsPage from './components/StatsPage';
+import GuidePage from './components/GuidePage';
 import './styles/Athena.css';
+import './styles/AgentThoughts.css';
+import './components/SettingsPage.css';
+import './components/StatsPage.css';
+import './components/GuidePage.css';
 
 /**
  * ATHENA - Context-Aware Forecasting and Decision Support System
@@ -23,6 +30,7 @@ function VinushanPage() {
   const [error, setError] = useState(null);
   const [showReasoning, setShowReasoning] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [activeTab, setActiveTab] = useState('athena');
   
   // Real-time event tracking
   const [currentRunId, setCurrentRunId] = useState(null);
@@ -32,10 +40,93 @@ function VinushanPage() {
   
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const abortControllerRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const cmdKey = isMac ? e.metaKey : e.ctrlKey;
+      const isInputFocused = document.activeElement?.tagName === 'TEXTAREA' || 
+                             document.activeElement?.tagName === 'INPUT';
+      
+      // Navigation shortcuts (Cmd/Ctrl + 1-4)
+      if (cmdKey && !e.shiftKey) {
+        switch (e.key) {
+          case '1':
+            e.preventDefault();
+            setActiveTab('overview');
+            return;
+          case '2':
+            e.preventDefault();
+            setActiveTab('athena');
+            return;
+          case '3':
+            e.preventDefault();
+            setActiveTab('guide');
+            return;
+          case '4':
+            e.preventDefault();
+            setActiveTab('settings');
+            return;
+          case 's':
+            // Cmd+S to stop execution (only when loading)
+            if (isLoading) {
+              e.preventDefault();
+              handleStopRequest();
+            }
+            return;
+          case 'r':
+            // Cmd+R to toggle reasoning panel (only in Athena tab)
+            if (activeTab === 'athena') {
+              e.preventDefault();
+              setShowReasoning(prev => !prev);
+            }
+            return;
+        }
+      }
+      
+      // Athena-specific shortcuts (only when in Athena tab and not in input)
+      if (activeTab === 'athena' && !isInputFocused) {
+        switch (e.key) {
+          case '/':
+            e.preventDefault();
+            inputRef.current?.focus();
+            return;
+          case 's':
+            // 's' for speaker - dispatch custom event to last message
+            e.preventDefault();
+            window.dispatchEvent(new CustomEvent('athena-shortcut-speaker'));
+            return;
+          case 'e':
+            // 'e' for export - dispatch custom event to last message
+            e.preventDefault();
+            window.dispatchEvent(new CustomEvent('athena-shortcut-export'));
+            return;
+          case 'Escape':
+            // Escape to close reasoning panel
+            if (showReasoning) {
+              e.preventDefault();
+              setShowReasoning(false);
+            }
+            return;
+        }
+      }
+      
+      // '/' to focus input even when in input (standard behavior)
+      if (e.key === '/' && !isInputFocused && activeTab === 'athena') {
+        e.preventDefault();
+        inputRef.current?.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [activeTab, isLoading, showReasoning]);
 
   // Clear reasoning state
   const clearReasoning = () => {
@@ -63,6 +154,9 @@ function VinushanPage() {
     // Open reasoning panel and reset state
     setShowReasoning(true);
     clearReasoning();
+    
+    // Create abort controller for this request
+    abortControllerRef.current = new AbortController();
 
     try {
       const history = [...messages, userMessage].map(({ role, content: text, timestamp }) => ({
@@ -100,6 +194,26 @@ function VinushanPage() {
           setEvents(prev => [...prev, data]);
         },
         
+        onAgentThought: (data) => {
+          setEvents(prev => [...prev, data]);
+        },
+        
+        onAgentQuery: (data) => {
+          setEvents(prev => [...prev, data]);
+        },
+        
+        onAgentSelfCheck: (data) => {
+          setEvents(prev => [...prev, data]);
+        },
+        
+        onAgentResultSnapshot: (data) => {
+          setEvents(prev => [...prev, data]);
+        },
+        
+        onRouterThought: (data) => {
+          setEvents(prev => [...prev, data]);
+        },
+        
         onAgentEnd: (data) => {
           setEvents(prev => [...prev, data]);
         },
@@ -126,9 +240,22 @@ function VinushanPage() {
           setEvents(prev => [...prev, data]);
           setIsLoading(false);
         },
-      });
+      }, abortControllerRef.current?.signal);
 
     } catch (err) {
+      // Check if this was an abort
+      if (err.name === 'AbortError') {
+        setMessages(prev => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: '⏹️ Request cancelled by user.',
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+        setIsLoading(false);
+        return;
+      }
       const message = err instanceof Error ? err.message : 'Failed to send message';
       setError(message);
       setMessages(prev => [
@@ -156,122 +283,204 @@ function VinushanPage() {
     }
   };
 
+  // Stop/cancel the current request
+  const handleStopRequest = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  };
+
   return (
     <div className="athena-container">
-      {/* Header */}
+      {/* Header with Title and Navigation */}
       <header className="athena-header">
         <div className="athena-logo">
           <h1 className="athena-title">ATHENA</h1>
           <p className="athena-subtitle">A Context-Aware Forecasting and Decision Support System</p>
         </div>
+        <nav className="athena-nav">
+          <button 
+            className={`nav-tab ${activeTab === 'overview' ? 'active' : ''}`}
+            onClick={() => setActiveTab('overview')}
+          >
+            Overview
+          </button>
+          <button 
+            className={`nav-tab ${activeTab === 'athena' ? 'active' : ''}`}
+            onClick={() => setActiveTab('athena')}
+          >
+            Athena
+          </button>
+          <button 
+            className={`nav-tab ${activeTab === 'guide' ? 'active' : ''}`}
+            onClick={() => setActiveTab('guide')}
+          >
+            Guide
+          </button>
+          <button 
+            className={`nav-tab ${activeTab === 'settings' ? 'active' : ''}`}
+            onClick={() => setActiveTab('settings')}
+          >
+            Settings
+          </button>
+        </nav>
       </header>
 
       {/* Main Content */}
       <main className="athena-main">
-        {/* Chat Section */}
-        <section className={`athena-chat-section ${showReasoning ? 'with-reasoning' : ''}`}>
-          {/* Messages Area */}
-          <div className="athena-messages">
-            {messages.length === 0 ? (
-              <div className="athena-welcome">
-                <h3>Welcome, Manager!</h3>
-                <p>
-                  I can analyze sales, forecast demand, explain holiday and weather impacts, and create charts.
-                </p>
-                <div className="athena-examples">
-                  {exampleQuestions.map((q) => (
+        {/* Settings Tab Content */}
+        {activeTab === 'settings' && (
+          <SettingsPage />
+        )}
+
+        {/* Guide Tab Content */}
+        {activeTab === 'guide' && (
+          <GuidePage />
+        )}
+
+        {/* Overview Tab Content */}
+        {activeTab === 'overview' && (
+          <StatsPage />
+        )}
+
+        {/* Athena Chat Tab Content */}
+        {activeTab === 'athena' && (
+          <>
+            {/* Chat Section */}
+            <section className={`athena-chat-section ${showReasoning ? 'with-reasoning' : ''}`}>
+              {/* Messages Area */}
+              <div className="athena-messages">
+                {messages.length === 0 ? (
+                  <div className="athena-welcome">
+                    <h3>Welcome, Vinushan!</h3>
+                    <p>
+                      I can analyze sales, forecast demand, explain holiday and weather impacts, and create charts.
+                    </p>
+                    <div className="athena-examples">
+                      {exampleQuestions.map((q) => (
+                        <button
+                          key={q}
+                          type="button"
+                          className="athena-example-btn"
+                          onClick={() => handleExampleClick(q)}
+                        >
+                          {q}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {messages.map((msg, idx) => (
+                      <AthenaChatMessage
+                        key={`${msg.timestamp}-${idx}`}
+                        message={msg}
+                        charts={msg.charts}
+                        isLast={idx === messages.length - 1 && msg.role === 'assistant'}
+                      />
+                    ))}
+                  </>
+                )}
+
+                {/* Loading indicator with Stop button */}
+                {isLoading && (
+                  <div className="athena-loading" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '16px 20px',
+                    marginRight: '80px',
+                    borderLeft: '3px solid var(--athena-primary)',
+                  }}>
+                    <div className="loading-dots">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </div>
+                    <p className="loading-text" style={{ margin: 0, color: 'var(--athena-text-secondary)', fontSize: '0.9rem', flex: 1 }}>
+                      {events.length > 0 
+                        ? events[events.length - 1]?.content || 'Analyzing your question...'
+                        : 'Analyzing your question...'}
+                    </p>
                     <button
-                      key={q}
-                      type="button"
-                      className="athena-example-btn"
-                      onClick={() => handleExampleClick(q)}
+                      onClick={handleStopRequest}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '8px 16px',
+                        background: 'rgba(239, 68, 68, 0.15)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: '8px',
+                        color: '#ef4444',
+                        fontSize: '0.85rem',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)';
+                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+                      }}
                     >
-                      {q}
+                      ⏹ Stop
                     </button>
-                  ))}
-                </div>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
               </div>
-            ) : (
-              <>
-                {messages.map((msg, idx) => (
-                  <AthenaChatMessage
-                    key={`${msg.timestamp}-${idx}`}
-                    message={msg}
-                    charts={msg.charts}
+
+              {/* Error Banner */}
+              {error && (
+                <div className="athena-error">
+                  <span>{error}</span>
+                  <button onClick={() => setError(null)}>Dismiss</button>
+                </div>
+              )}
+
+              {/* Input Section */}
+              <div className="athena-input-section">
+                <div className="athena-input-wrapper">
+                  <textarea
+                    ref={inputRef}
+                    className="athena-input"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={isLoading ? 'Thinking...' : 'Ask anything about your business...'}
+                    disabled={isLoading}
+                    rows={1}
                   />
-                ))}
-              </>
-            )}
-
-            {/* Loading indicator */}
-            {isLoading && (
-              <div className="athena-loading" style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '16px 20px',
-                marginRight: '80px',
-                borderLeft: '3px solid var(--athena-primary)',
-              }}>
-                <div className="loading-dots">
-                  <span></span>
-                  <span></span>
-                  <span></span>
+                  <button
+                    className="athena-send-btn"
+                    onClick={() => handleSendMessage(inputValue)}
+                    disabled={isLoading || !inputValue.trim()}
+                  >
+                    {isLoading ? '...' : 'Send'}
+                  </button>
                 </div>
-                <p className="loading-text" style={{ margin: 0, color: 'var(--athena-text-secondary)', fontSize: '0.9rem' }}>
-                  {events.length > 0 
-                    ? events[events.length - 1]?.content || 'Analyzing your question...'
-                    : 'Analyzing your question...'}
-                </p>
               </div>
-            )}
+            </section>
 
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Error Banner */}
-          {error && (
-            <div className="athena-error">
-              <span>⚠️ {error}</span>
-              <button onClick={() => setError(null)}>Dismiss</button>
-            </div>
-          )}
-
-          {/* Input Section */}
-          <div className="athena-input-section">
-            <div className="athena-input-wrapper">
-              <textarea
-                ref={inputRef}
-                className="athena-input"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={isLoading ? 'Thinking...' : 'Ask anything about your coffee shop...'}
-                disabled={isLoading}
-                rows={1}
-              />
-              <button
-                className="athena-send-btn"
-                onClick={() => handleSendMessage(inputValue)}
-                disabled={isLoading || !inputValue.trim()}
-              >
-                {isLoading ? '⏳' : 'Send ➤'}
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* Reasoning Panel */}
-        <ReasoningPanel
-          isOpen={showReasoning}
-          onClose={() => setShowReasoning(false)}
-          onClear={clearReasoning}
-          events={events}
-          currentRunId={currentRunId}
-          isLoading={isLoading}
-          routingReasoning={routingReasoning}
-          agentsNeeded={agentsNeeded}
-        />
+            {/* Agent Thoughts Panel */}
+            <AgentThoughtsPanel
+              isOpen={showReasoning}
+              onClose={() => setShowReasoning(false)}
+              onClear={clearReasoning}
+              events={events}
+              currentRunId={currentRunId}
+              isLoading={isLoading}
+              routingReasoning={routingReasoning}
+              agentsNeeded={agentsNeeded}
+            />
+          </>
+        )}
       </main>
     </div>
   );

@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Bar, Line, Pie } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -195,12 +196,33 @@ function renderInteractiveChart(chart) {
   return <Bar data={data} options={commonOptions} />;
 }
 
-function AthenaChatMessage({ message, charts = [] }) {
+function AthenaChatMessage({ message, charts = [], isLast = false }) {
   const isUser = message.role === 'user';
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const audioRef = useRef(null);
+
+  // Listen for keyboard shortcut events (only for last assistant message)
+  useEffect(() => {
+    if (!isLast || isUser) return;
+
+    const handleSpeakerShortcut = () => {
+      handleSpeak();
+    };
+
+    const handleExportShortcut = () => {
+      setShowExportModal(true);
+    };
+
+    window.addEventListener('athena-shortcut-speaker', handleSpeakerShortcut);
+    window.addEventListener('athena-shortcut-export', handleExportShortcut);
+
+    return () => {
+      window.removeEventListener('athena-shortcut-speaker', handleSpeakerShortcut);
+      window.removeEventListener('athena-shortcut-export', handleExportShortcut);
+    };
+  }, [isLast, isUser]);
 
   // Text-to-Speech Handler using OpenAI TTS API
   const handleSpeak = async () => {
@@ -522,17 +544,15 @@ function AthenaChatMessage({ message, charts = [] }) {
         display: 'flex',
         flexDirection: 'column',
         padding: '16px 20px',
-        borderRadius: '16px',
+        borderRadius: '6px',
         marginBottom: '12px',
-        animation: 'fadeInUp 0.3s ease',
         background: isUser 
-          ? 'linear-gradient(135deg, rgba(14, 165, 233, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%)' 
-          : 'transparent',
-        border: isUser ? '1px solid rgba(14, 165, 233, 0.2)' : 'none',
-        marginLeft: isUser ? '80px' : '0',
-        marginRight: isUser ? '0' : '80px',
-        borderLeft: !isUser ? '3px solid var(--athena-primary)' : 'none',
-        paddingLeft: !isUser ? '16px' : '20px',
+          ? 'var(--athena-surface)' 
+          : 'var(--athena-card)',
+        border: '1px solid var(--athena-border)',
+        marginLeft: isUser ? '60px' : '0',
+        marginRight: isUser ? '0' : '60px',
+        borderLeft: !isUser ? '3px solid var(--athena-primary)' : '1px solid var(--athena-border)',
       }}
     >
       {/* Content */}
@@ -547,11 +567,9 @@ function AthenaChatMessage({ message, charts = [] }) {
           <span style={{ 
             fontWeight: 600, 
             fontSize: '0.85rem',
-            color: isUser ? 'var(--athena-primary)' : 'var(--athena-accent)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
+            color: 'var(--athena-text)',
           }}>
-            {isUser ? 'You' : 'ATHENA'}
+            {isUser ? 'You' : 'Assistant'}
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {/* Action Buttons for Assistant Messages */}
@@ -567,9 +585,9 @@ function AthenaChatMessage({ message, charts = [] }) {
                     justifyContent: 'center',
                     width: '28px',
                     height: '28px',
-                    borderRadius: '6px',
+                    borderRadius: '4px',
                     border: '1px solid var(--athena-border)',
-                    background: isSpeaking ? 'var(--athena-primary)' : isLoadingAudio ? 'var(--athena-bg)' : 'transparent',
+                    background: isSpeaking ? 'var(--athena-primary)' : isLoadingAudio ? 'var(--athena-surface)' : 'transparent',
                     color: isSpeaking ? 'white' : 'var(--athena-text-secondary)',
                     cursor: isLoadingAudio ? 'wait' : 'pointer',
                     transition: 'all 0.2s ease',
@@ -641,7 +659,7 @@ function AthenaChatMessage({ message, charts = [] }) {
                   <div style={{ height: '300px' }}>
                     {renderInteractiveChart(chart)}
                   </div>
-                ) : chart.image ? (
+                ) : (chart.image || chart.image_base64) ? (
                   <div style={{ 
                     display: 'flex', 
                     justifyContent: 'center',
@@ -650,7 +668,7 @@ function AthenaChatMessage({ message, charts = [] }) {
                     padding: '12px',
                   }}>
                     <img
-                      src={`data:image/png;base64,${chart.image}`}
+                      src={`data:image/png;base64,${chart.image || chart.image_base64}`}
                       alt={chart.title || 'Chart'}
                       style={{ 
                         maxWidth: '100%', 
@@ -678,6 +696,7 @@ function AthenaChatMessage({ message, charts = [] }) {
             <p style={{ margin: 0 }}>{message.content}</p>
           ) : (
             <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
               components={{
                 h1: ({ children }) => (
                   <h1 style={{ 

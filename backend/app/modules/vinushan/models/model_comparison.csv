@@ -1,0 +1,4 @@
+Model,MAE,MAPE,RMSE,Seasonality,Holidays,Exogenous,Explainability
+Baseline,22.23,275.17,35.91,Weekly,No,No,Low
+SARIMA,17.6,181.07,27.44,Weekly,No,No,Medium
+Prophet,7.94,73.04,15.58,Weekly + Yearly,Yes (Sri Lankan),Yes (7 features),High

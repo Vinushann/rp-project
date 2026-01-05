@@ -1,47 +1,63 @@
-## Action Plan for January 2026
+# Action Plan for February 2026
 
-### Demand Outlook
-- **Total Predicted Quantity for January**: 1031 units based on December trends.
-- **Busiest Days**: Focus on January 13, 14, 15, 24, and 25, which are expected to have high demand.
-- **Key Items**: 
-  - **Top Sellers**: Crispy Pasta 12, Spicy Burger, Veggie Roll, Deluxe Pizza, and Herb Drink 9.
-  - **Falling Items**: Zesty Sandwich, Sweet Pasta, Deluxe Roll, Crispy Burger 22, Classic Pasta 19 – consider discontinuation or heavy discounting.
+## Demand Outlook
+- **Top Selling Items**:
+  - Crispy Pasta 12: 129 monthly qty
+  - Herb Drink 9: 126 monthly qty
+  - Veggie Roll: 118 monthly qty
+  - Sweet Chicken 19: 99 monthly qty
+  - Spicy Burger: 96 monthly qty
+- **Falling Items**:
+  - Spicy Burger 22: 0 latest qty (previously 5)
+  - Spicy Pizza 9: 0 latest qty (previously 3)
+  - Spicy Dessert 12: 0 latest qty (previously 5)
+  - Sweet Pasta: 0 latest qty (previously 1)
+  - Sweet Pasta 19: 0 latest qty (previously 14)
+- **Busiest Days**: January 19, 26, 5, 12, 20 (plan for increased demand around these dates)
 
-### Promotions
-- **Discount Focus**: 
-  - Promote items with high average tickets and discounts such as Herb Chicken 12 and Deluxe Pizza 22.
-  - Implement a "Buy One Get One 50% Off" for top sellers to increase volume.
-- **Holiday Promotions**: 
-  - **Christmas Day**: Stock up on best sellers and highlight them in marketing campaigns.
-  - **Post-Holiday**: Monitor sales closely after Christmas; maintain standard operations to manage inventory.
+## Promotions
+- **Pre-Holiday Promotions** (Duruthu Full Moon Poya Day):
+  - Implement light promotions to lift demand by approximately 5.64%.
+- **Post-Holiday Promotions** (Tamil Thai Pongal Day):
+  - Implement light promotions to lift demand by approximately 7.17%.
+- **Focus Items for Promotions**:
+  - Spicy Drink 22 (high avg ticket, high discount)
+  - Sweet Chicken (high avg ticket, high discount)
+  - Veggie Drink 9 (moderate avg ticket, moderate discount)
 
-### Staffing
-- **Peak Staffing Needs**: Increase staff on busy days (January 13-15, 24-25) to handle higher customer volume.
-- **Training**: Conduct training sessions for staff on new promotions and customer service enhancements.
+## Staffing
+- **Increase Staffing**:
+  - On the busiest days (January 19, 26, 5, 12, 20) to manage higher customer volume.
+- **Staff Training**:
+  - Ensure staff are trained on new promotions and top-selling items to enhance customer experience.
 
-### Inventory
-- **Stock Levels**: 
-  - Ensure adequate stock of top-selling items based on predicted demand.
-  - Reduce stock of falling items or consider promotional discounts to clear inventory.
-- **Replenishment Strategy**: 
-  - Schedule deliveries to ensure stock is available before busy days.
-  - Monitor inventory levels daily to avoid stockouts.
+## Inventory
+- **Top-Selling Items**:
+  - Ensure sufficient inventory of Crispy Pasta, Herb Drink, and Veggie Roll to meet expected demand.
+- **Falling Items**:
+  - Consider reducing inventory for Spicy Burger 22, Spicy Pizza 9, and other falling items to minimize waste.
+- **Inventory Monitoring**:
+  - Regularly monitor inventory levels and adjust orders based on sales trends.
 
-### Risks
-- **Demand Fluctuations**: Monitor sales closely, especially post-holiday, to adjust inventory and staffing as needed.
-- **Supply Chain Issues**: Prepare for potential delays in inventory replenishment; have alternative suppliers ready.
-- **Customer Preferences**: Stay agile to adapt to changing customer preferences, especially for items that are falling in sales.
+## Risks
+- **Demand Fluctuations**:
+  - Monitor for any unexpected drops in demand, especially for falling items.
+- **Staffing Shortages**:
+  - Prepare contingency plans for potential staffing shortages during peak days.
+- **Inventory Management**:
+  - Risk of overstocking falling items; adjust orders accordingly to avoid excess.
 
-### Summary Table of Key Metrics
+## Summary Table of Key Metrics
 
 | Metric                     | Value                |
 |----------------------------|----------------------|
-| Total Predicted Quantity    | 1031 units           |
-| Busiest Days               | Jan 13, 14, 15, 24, 25 |
-| Top Selling Items          | Crispy Pasta 12, Spicy Burger, Veggie Roll, Deluxe Pizza, Herb Drink 9 |
-| Falling Items              | Zesty Sandwich, Sweet Pasta, Deluxe Roll, Crispy Burger 22, Classic Pasta 19 |
-| Promotions Planned          | BOGO 50% on top sellers, Highlight best sellers for Christmas |
-| Staffing Increase           | On peak days         |
-| Inventory Strategy          | Stock up on best sellers, Reduce falling items |
+| Total Quantity              | 270.92               |
+| Busiest Days               | Jan 19, 26, 5, 12, 20|
+| Top-Selling Item           | Crispy Pasta 12      |
+| Monthly Quantity (Top Item)| 129                  |
+| Promotions Impact (Pre)    | -5.64%               |
+| Promotions Impact (Post)   | -7.17%               |
+| Staffing Increase Days      | Jan 19, 26, 5, 12, 20|
+| Inventory Focus Items      | Crispy Pasta, Herb Drink, Veggie Roll |
 
-This comprehensive action plan will ensure that the business is well-prepared for January 2026, maximizing sales while managing risks effectively.
+This comprehensive action plan outlines the necessary steps to optimize operations in February 2026, ensuring that demand is met while managing risks effectively.

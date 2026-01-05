@@ -18,24 +18,6 @@ interface ChatMessageProps {
   charts?: ChartData[];
 }
 
-// Agent icons mapping
-const agentIcons: Record<string, string> = {
-  historical: '📜',
-  forecasting: '📈',
-  holiday: '🎉',
-  weather: '🌦️',
-  strategy: '🧠',
-  visualization: '📊',
-};
-
-function getAgentIcon(agentName: string): string {
-  const lower = agentName.toLowerCase();
-  for (const [key, icon] of Object.entries(agentIcons)) {
-    if (lower.includes(key)) return icon;
-  }
-  return '🤖';
-}
-
 function renderInteractiveChart(chart: ChartData) {
   if (!chart.chart_data || !chart.chart_data.labels || !chart.chart_data.datasets?.length) return null;
 
@@ -75,7 +57,7 @@ export function ChatMessage({
   return (
     <div className={`chat-message ${isUser ? 'user' : 'assistant'}`}>
       <div className="message-avatar">
-        {isUser ? '👤' : '🤖'}
+        {isUser ? 'U' : 'A'}
       </div>
       <div className="message-content">
         <div className="message-header">
@@ -88,7 +70,7 @@ export function ChatMessage({
         {/* Show routing reasoning for assistant messages */}
         {!isUser && routingReasoning && (
           <div className="routing-info">
-            <span className="routing-label">🧠 Reasoning:</span>
+            <span className="routing-label">Reasoning:</span>
             <span className="routing-text">{routingReasoning}</span>
           </div>
         )}
@@ -100,7 +82,7 @@ export function ChatMessage({
             <div className="agents-list">
               {agentsUsed.map((agent, idx) => (
                 <span key={idx} className="agent-badge">
-                  {getAgentIcon(agent)} {agent}
+                  {agent}
                 </span>
               ))}
             </div>
@@ -115,7 +97,6 @@ export function ChatMessage({
               {agentSteps.map((step, idx) => (
                 <div key={idx} className="step">
                   <div className="step-header">
-                    <span className="step-icon">{getAgentIcon(step.agent_name)}</span>
                     <span className="step-agent">{step.agent_name}</span>
                   </div>
                   {step.summary && (
@@ -133,7 +114,7 @@ export function ChatMessage({
             {charts.map((chart, idx) => (
               <div key={idx} className="chart-wrapper">
                 {chart.title && (
-                  <h3 className="chart-title">📊 {chart.title}</h3>
+                  <h3 className="chart-title">{chart.title}</h3>
                 )}
                 {chart.chart_data ? (
                   <div className="chart-image-container interactive">

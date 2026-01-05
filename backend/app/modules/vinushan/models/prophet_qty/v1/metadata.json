@@ -1,0 +1,45 @@
+{
+  "model_name": "Prophet",
+  "version": "v1",
+  "target": "y_qty (daily quantity)",
+  "train_period": "2020-01-10 to 2025-06-12",
+  "test_period": "2025-06-13 to 2025-09-10",
+  "test_days": 90,
+  "metrics": {
+    "MAE": 7.94,
+    "MAPE": 73.04,
+    "RMSE": 15.58
+  },
+  "comparison": {
+    "baseline_mae": 22.23,
+    "sarima_mae": 17.6,
+    "prophet_mae": 7.94,
+    "improvement_over_baseline_pct": 64.28
+  },
+  "features": {
+    "holidays": "Sri Lankan holidays (Poya days, festivals)",
+    "regressors": [
+      "is_weekend",
+      "is_holiday",
+      "is_pre_holiday",
+      "is_post_holiday",
+      "temp_avg",
+      "rain_mm",
+      "is_rainy"
+    ],
+    "seasonality": [
+      "weekly",
+      "yearly"
+    ]
+  },
+  "justification": [
+    "Competitive accuracy metrics across MAE, MAPE, RMSE",
+    "Explicit holiday modeling for Sri Lankan context",
+    "Weather and calendar feature integration",
+    "Decomposable components for business explainability",
+    "Built-in uncertainty quantification",
+    "Robust handling of missing data and outliers"
+  ],
+  "created_at": "2026-01-02T14:46:03.181237",
+  "selected_for_production": true
+}

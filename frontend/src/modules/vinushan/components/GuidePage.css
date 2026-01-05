@@ -1,0 +1,248 @@
+.guide-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px;
+  color: var(--athena-text, #e2e8f0);
+}
+
+.guide-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.guide-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--athena-primary, #0ea5e9);
+  margin: 0 0 8px 0;
+}
+
+.guide-header p {
+  color: var(--athena-text-secondary, #94a3b8);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Tabs */
+.guide-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.guide-tab {
+  padding: 12px 24px;
+  border: 1px solid var(--athena-border, #334155);
+  background: var(--athena-card-bg, #1e293b);
+  border-radius: 12px;
+  color: var(--athena-text, #e2e8f0);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.guide-tab:hover {
+  background: var(--athena-hover, #334155);
+  border-color: var(--athena-primary, #0ea5e9);
+}
+
+.guide-tab.active {
+  background: var(--athena-primary, #0ea5e9);
+  border-color: var(--athena-primary, #0ea5e9);
+  color: white;
+}
+
+/* Content */
+.guide-content {
+  background: var(--athena-card-bg, #1e293b);
+  border-radius: 16px;
+  padding: 32px;
+  border: 1px solid var(--athena-border, #334155);
+}
+
+.guide-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 24px 0;
+  color: var(--athena-text, #e2e8f0);
+}
+
+/* Shortcuts Section */
+.shortcuts-intro {
+  margin-bottom: 24px;
+}
+
+.shortcuts-intro p {
+  color: var(--athena-text-secondary, #94a3b8);
+  margin: 8px 0 0 0;
+}
+
+.shortcut-category {
+  margin-bottom: 28px;
+}
+
+.shortcut-category h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--athena-primary, #0ea5e9);
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--athena-border, #334155);
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--athena-bg, #0f172a);
+  border-radius: 8px;
+  border: 1px solid var(--athena-border, #334155);
+}
+
+.shortcut-keys {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+kbd {
+  display: inline-block;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #334155, #1e293b);
+  border: 1px solid #475569;
+  border-radius: 6px;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  box-shadow: 0 2px 0 #1e293b;
+  min-width: 24px;
+  text-align: center;
+}
+
+.key-plus {
+  color: var(--athena-text-secondary, #94a3b8);
+  margin: 0 2px;
+  font-size: 0.8rem;
+}
+
+.shortcut-description {
+  color: var(--athena-text-secondary, #94a3b8);
+  font-size: 0.9rem;
+}
+
+.shortcut-note {
+  margin-top: 24px;
+  padding: 16px;
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  border-radius: 8px;
+}
+
+.shortcut-note p {
+  margin: 0;
+  color: var(--athena-text-secondary, #94a3b8);
+  font-size: 0.9rem;
+}
+
+/* Features Section */
+.features-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.feature-card {
+  padding: 24px;
+  background: var(--athena-bg, #0f172a);
+  border: 1px solid var(--athena-border, #334155);
+  border-radius: 12px;
+}
+
+.feature-card h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: var(--athena-text, #e2e8f0);
+}
+
+.feature-card p {
+  color: var(--athena-text-secondary, #94a3b8);
+  margin: 0 0 16px 0;
+  line-height: 1.6;
+}
+
+.feature-card ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.feature-card li {
+  color: var(--athena-text-secondary, #94a3b8);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+/* Tips Section */
+.tips-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tip-card {
+  padding: 20px;
+  background: var(--athena-bg, #0f172a);
+  border: 1px solid var(--athena-border, #334155);
+  border-radius: 12px;
+  border-left: 4px solid var(--athena-primary, #0ea5e9);
+}
+
+.tip-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--athena-text, #e2e8f0);
+}
+
+.tip-card p {
+  color: var(--athena-text-secondary, #94a3b8);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.tip-card kbd {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .guide-container {
+    padding: 24px 16px;
+  }
+  
+  .guide-content {
+    padding: 20px;
+  }
+  
+  .shortcuts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .shortcut-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

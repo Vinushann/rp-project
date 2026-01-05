@@ -14,7 +14,7 @@ interface ChatInputProps {
 export function ChatInput({ 
   onSend, 
   disabled = false, 
-  placeholder = "Ask anything about your coffee shop..." 
+  placeholder = "Ask anything about your business..." 
 }: ChatInputProps) {
   const [input, setInput] = useState('');
 
@@ -49,11 +49,7 @@ export function ChatInput({
         onClick={handleSend}
         disabled={disabled || !input.trim()}
       >
-        {disabled ? (
-          <span className="loading-spinner">⏳</span>
-        ) : (
-          <span>Send ➤</span>
-        )}
+        {disabled ? 'Sending...' : 'Send'}
       </button>
     </div>
   );

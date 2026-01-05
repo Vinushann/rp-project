@@ -32,6 +32,8 @@ from ..tools.visualization_tools import (
     create_category_pie_chart,
     create_weather_impact_chart,
     create_holiday_impact_chart,
+    create_holiday_period_analysis_chart,
+    create_top_items_holiday_chart,
 )
 from .models import Message, AgentStep, ChatResponse, ChartData
 
@@ -44,7 +46,89 @@ load_dotenv()
 class EventType:
     RUN_START = "run_start"
     QUERY_ANALYSIS = "query_analysis"
+    ROUTER_THOUGHT = "router_thought"
     AGENT_START = "agent_start"
+    AGENT_THOUGHT = "agent_thought"
+    AGENT_QUERY = "agent_query"
+    AGENT_SELF_CHECK = "agent_self_check"
+    AGENT_RESULT_SNAPSHOT = "agent_result_snapshot"
+    TOOL_START = "tool_start"
+    TOOL_RESULT = "tool_result"
+    AGENT_OUTPUT = "agent_output"
+    AGENT_END = "agent_end"
+    RUN_END = "run_end"
+    ERROR = "error"
+
+
+# ============================================================================
+# Date Extraction Helper
+# ============================================================================
+MONTH_MAP = {
+    'january': 1, 'jan': 1,
+    'february': 2, 'feb': 2,
+    'march': 3, 'mar': 3,
+    'april': 4, 'apr': 4,
+    'may': 5,
+    'june': 6, 'jun': 6,
+    'july': 7, 'jul': 7,
+    'august': 8, 'aug': 8,
+    'september': 9, 'sep': 9, 'sept': 9,
+    'october': 10, 'oct': 10,
+    'november': 11, 'nov': 11,
+    'december': 12, 'dec': 12,
+}
+
+def _extract_target_month_year(message: str) -> tuple:
+    """
+    Extract target month and year from user message.
+    Falls back to current month/year if not found.
+    
+    Examples:
+        "What should I do for February 2026?" -> (2, 2026)
+        "Actions for March?" -> (3, current_year)
+        "Plan for next month" -> (next_month, year)
+    
+    Returns:
+        Tuple of (month_number, year)
+    """
+    message_lower = message.lower()
+    now = datetime.now()
+    
+    # Default to current month/year
+    target_month = now.month
+    target_year = now.year
+    
+    # Try to find month name in message
+    for month_str, month_num in MONTH_MAP.items():
+        if month_str in message_lower:
+            target_month = month_num
+            break
+    
+    # Try to find year in message (4 digit number like 2025, 2026)
+    year_match = re.search(r'\b(20\d{2})\b', message)
+    if year_match:
+        target_year = int(year_match.group(1))
+    
+    # Handle relative terms
+    if 'next month' in message_lower:
+        target_month = now.month + 1
+        if target_month > 12:
+            target_month = 1
+            target_year = now.year + 1
+    elif 'this month' in message_lower:
+        target_month = now.month
+        target_year = now.year
+    elif 'last month' in message_lower:
+        target_month = now.month - 1
+        if target_month < 1:
+            target_month = 12
+            target_year = now.year - 1
+    
+    return (target_month, target_year)
+    AGENT_THOUGHT = "agent_thought"
+    AGENT_QUERY = "agent_query"
+    AGENT_SELF_CHECK = "agent_self_check"
+    AGENT_RESULT_SNAPSHOT = "agent_result_snapshot"
     AGENT_OUTPUT = "agent_output"
     TOOL_START = "tool_start"
     TOOL_RESULT = "tool_result"
@@ -68,7 +152,9 @@ def _create_event(
     agent: Optional[str] = None,
     task: Optional[str] = None,
     content: Optional[str] = None,
-    data: Optional[Dict[str, Any]] = None
+    data: Optional[Dict[str, Any]] = None,
+    phase: Optional[str] = None,
+    text: Optional[str] = None
 ) -> dict:
     """Create a standardized event payload."""
     return {
@@ -78,6 +164,8 @@ def _create_event(
         "agent": agent,
         "task": task,
         "content": content,
+        "phase": phase,
+        "text": text,
         "data": data or {}
     }
 
@@ -146,9 +234,216 @@ class StreamingCallbackHandler:
             EventType.AGENT_START,
             agent=agent_name,
             task=task_description[:200],
-            content=f"{agent_name} is starting to analyze...",
+            content=f"{agent_name} starting analysis...",
             data={"step_number": self.step_count}
         )
+
+
+# ============================================================================
+# Agent Thought Templates - Structured reasoning output
+# ============================================================================
+def _generate_router_thought(message: str, agents_needed: list, is_comprehensive: bool) -> str:
+    """Generate structured router thought text."""
+    agents_list = "\n".join([f"- {a}" for a in agents_needed])
+    
+    return f"""alright, the manager asked: "{message[:100]}..."
+
+step 1: decide what kind of question this is.
+- analyzing the intent and required data sources
+- determining which specialists are needed
+
+agents i will run:
+{agents_list}
+
+{"this is a comprehensive planning request, so all relevant specialists will be activated." if is_comprehensive else "selecting only the necessary specialists for this specific question."}"""
+
+
+def _generate_agent_plan(agent_name: str, task: str, target_month: str = None, target_year: int = None) -> str:
+    """Generate agent planning thought."""
+    agent_lower = agent_name.lower()
+    
+    if "historical" in agent_lower or "historian" in agent_lower:
+        return f"""i need to anchor planning using evidence from historical data.
+i will look at past records and find:
+- best sellers, worst sellers
+- weekend vs weekday patterns
+- discount-heavy items
+- revenue and volume trends"""
+    
+    elif "forecast" in agent_lower:
+        return f"""the manager needs demand predictions, so i must forecast future demand.
+i will call the trained Prophet model for daily_total_qty.
+i will output:
+- total expected quantity
+- busiest days
+- uncertainty (best/worst case)"""
+    
+    elif "holiday" in agent_lower:
+        return f"""i need to flag holidays because demand shifts around them.
+i will identify:
+- upcoming holidays
+- pre-holiday spikes
+- post-holiday drops
+and suggest practical actions."""
+    
+    elif "weather" in agent_lower:
+        return f"""i will check how weather historically affects demand and menu mix.
+i will focus on:
+- rainy vs non-rainy sales differences
+- temperature impact on orders"""
+    
+    elif "strategy" in agent_lower or "planner" in agent_lower:
+        return f"""i will combine all insights into a single actionable plan.
+i will produce actions under:
+- demand expectations
+- staffing recommendations
+- inventory adjustments
+- promotional strategies
+- risks and monitoring"""
+    
+    elif "visualization" in agent_lower:
+        return f"""i need to create a visual representation of the data.
+i will:
+- determine the best chart type
+- extract relevant data
+- generate the visualization"""
+    
+    else:
+        return f"""i need to analyze the request and provide relevant insights.
+task: {task[:100]}"""
+
+
+def _generate_data_query(agent_name: str, tool_name: str = None) -> str:
+    """Generate data query pseudo-code."""
+    agent_lower = agent_name.lower()
+    
+    if "historical" in agent_lower or "historian" in agent_lower:
+        return f"""DATASET: data/the_rossmann_coffee_shop_sales_dataset.csv
+
+PSEUDO-QUERY:
+FROM sales_rows
+WHERE month = target_month AND year BETWEEN (target_year - 5) AND (target_year - 1)
+SELECT
+  food_name,
+  SUM(qty) AS total_qty,
+  SUM(total_price) AS total_revenue,
+  AVG(discount_rate) AS avg_discount
+GROUP BY food_name
+ORDER BY total_qty DESC
+LIMIT 10;"""
+    
+    elif "forecast" in agent_lower:
+        return f"""MODEL: models/prophet_qty/v1/model.pkl
+TARGET: daily_total_qty
+
+PSEUDO-QUERY (model inference):
+FORECAST daily_total_qty
+FOR date BETWEEN start_date AND end_date
+WITH regressors:
+  is_weekend = derived from date
+  is_holiday = from calendar table
+  weather = historical averages"""
+    
+    elif "holiday" in agent_lower:
+        return f"""DATASET: calendar/holiday table
+
+PSEUDO-QUERY:
+FROM calendar
+WHERE year = target_year AND month = target_month
+SELECT
+  date,
+  holiday_name,
+  is_pre_holiday,
+  is_post_holiday;"""
+    
+    elif "weather" in agent_lower:
+        return f"""DATASET: data/the_rossmann_coffee_shop_sales_dataset.csv
+
+PSEUDO-QUERY:
+FROM sales_rows
+WHERE month = target_month
+SELECT
+  is_rainy,
+  AVG(temp_avg) AS avg_temp,
+  SUM(qty) AS total_qty
+GROUP BY is_rainy;"""
+    
+    else:
+        return f"""invoking {tool_name or 'analysis tool'}
+querying relevant data sources..."""
+
+
+def _generate_self_check(agent_name: str) -> str:
+    """Generate self-check validation thought."""
+    agent_lower = agent_name.lower()
+    
+    if "historical" in agent_lower or "historian" in agent_lower:
+        return f"""before i trust results, i will validate:
+- do i have data for the requested time period?
+- are qty and total_price mostly non-null?
+- is total_qty reasonable compared to nearby periods?"""
+    
+    elif "forecast" in agent_lower:
+        return f"""i will validate the forecast output:
+- yhat must not be negative
+- predictions should be within historical ranges
+- uncertainty bands should not be too wide
+- referencing model backtest error (MAE/RMSE)"""
+    
+    elif "holiday" in agent_lower:
+        return f"""validation checks:
+- confirm holiday dates align with Sri Lankan calendar
+- confirm no overlapping holiday labels
+- if no holidays exist, clearly state that"""
+    
+    elif "weather" in agent_lower:
+        return f"""validation checks:
+- ensure temp_avg and rain_mm exist and are numeric
+- if weather columns are missing, report insufficient data"""
+    
+    elif "strategy" in agent_lower or "planner" in agent_lower:
+        return f"""validation checks:
+- do recommendations match forecast magnitude?
+- are actions tied to evidence from at least one agent?
+- if something is uncertain, label it as risk not fact"""
+    
+    else:
+        return f"""validating output quality and completeness..."""
+
+
+def _generate_result_snapshot(agent_name: str, result_preview: str) -> str:
+    """Generate result snapshot summary."""
+    agent_lower = agent_name.lower()
+    
+    # Truncate result for display
+    truncated = result_preview[:200] + "..." if len(result_preview) > 200 else result_preview
+    
+    if "historical" in agent_lower or "historian" in agent_lower:
+        return f"""historical analysis complete:
+{truncated}
+
+this provides a stable baseline for planning."""
+    
+    elif "forecast" in agent_lower:
+        return f"""forecast summary:
+{truncated}
+
+this drives staffing and inventory planning."""
+    
+    elif "holiday" in agent_lower:
+        return f"""holiday impact analysis:
+{truncated}"""
+    
+    elif "weather" in agent_lower:
+        return f"""weather signal analysis:
+{truncated}"""
+    
+    elif "strategy" in agent_lower or "planner" in agent_lower:
+        return f"""action plan generated:
+{truncated}"""
+    
+    else:
+        return truncated
     
     def on_tool_start(self, tool_name: str, tool_input: str):
         """Called when a tool is invoked."""
@@ -458,6 +753,118 @@ def _handle_visualization_directly(
     return charts, explanation
 
 
+def _generate_promotion_evidence_charts(
+    response_text: str,
+    emitter: Optional['EventEmitter'] = None
+) -> List[ChartData]:
+    """
+    Generate supporting charts when the response contains promotion recommendations.
+    These charts show historical evidence backing up the recommendations.
+    
+    Args:
+        response_text: The AI response text to analyze
+        emitter: Optional event emitter for streaming events
+        
+    Returns:
+        List of ChartData objects with supporting visualizations
+    """
+    charts = []
+    response_lower = response_text.lower()
+    
+    # Check if response contains promotion/holiday recommendations
+    promotion_keywords = [
+        'promotion', 'discount', 'offer', 'bundle', 'holiday',
+        'poya', 'festival', 'recommend', 'strategy', 'boost',
+        'falling items', 'demand effect', 'effect on demand'
+    ]
+    
+    has_promotion_content = any(kw in response_lower for kw in promotion_keywords)
+    
+    if not has_promotion_content:
+        return charts
+    
+    try:
+        if emitter:
+            emitter.emit(
+                EventType.AGENT_START,
+                agent="Evidence Visualizer",
+                task="Generating supporting charts",
+                content="Creating historical evidence charts for recommendations..."
+            )
+        
+        # Generate holiday period analysis chart
+        if emitter:
+            emitter.emit(
+                EventType.TOOL_START,
+                agent="Evidence Visualizer",
+                content="Analyzing historical holiday patterns...",
+                data={"tool_name": "HolidayPeriodAnalysisTool"}
+            )
+        
+        period_result = create_holiday_period_analysis_chart(window_days=7)
+        
+        if period_result.get("image"):
+            charts.append(ChartData(
+                chart_type="holiday_period",
+                title=period_result.get("title", "Holiday Period Analysis"),
+                image_base64=period_result["image"],
+                chart_data=period_result.get("chart_data")
+            ))
+        
+        if emitter:
+            emitter.emit(
+                EventType.TOOL_RESULT,
+                agent="Evidence Visualizer",
+                content="Holiday period chart generated",
+                data={"has_chart": bool(period_result.get("image"))}
+            )
+        
+        # Generate top items holiday comparison chart
+        if emitter:
+            emitter.emit(
+                EventType.TOOL_START,
+                agent="Evidence Visualizer",
+                content="Comparing product performance on holidays...",
+                data={"tool_name": "TopItemsHolidayComparisonTool"}
+            )
+        
+        items_result = create_top_items_holiday_chart(top_n=5)
+        
+        if items_result.get("image"):
+            charts.append(ChartData(
+                chart_type="items_holiday",
+                title=items_result.get("title", "Items Holiday Performance"),
+                image_base64=items_result["image"],
+                chart_data=items_result.get("chart_data")
+            ))
+        
+        if emitter:
+            emitter.emit(
+                EventType.TOOL_RESULT,
+                agent="Evidence Visualizer",
+                content="Items comparison chart generated",
+                data={"has_chart": bool(items_result.get("image"))}
+            )
+        
+        if emitter:
+            emitter.emit(
+                EventType.AGENT_END,
+                agent="Evidence Visualizer",
+                task="Generating supporting charts",
+                content=f"Generated {len(charts)} evidence charts",
+                data={"charts_count": len(charts)}
+            )
+            
+    except Exception as e:
+        if emitter:
+            emitter.emit(
+                EventType.ERROR,
+                content=f"Evidence chart generation error: {str(e)}"
+            )
+    
+    return charts
+
+
 # ============================================================================
 # Main Streaming Function
 # ============================================================================
@@ -500,10 +907,15 @@ async def stream_chat_realtime(
         is_conversational = routing_result.get("is_conversational", False)
         needs_visualization = routing_result.get("needs_visualization", False)
         
+        # Generate structured router thought
+        router_thought = _generate_router_thought(message, agents_needed, is_comprehensive)
+        
         yield _format_sse(EventType.QUERY_ANALYSIS, _create_event(
             EventType.QUERY_ANALYSIS,
             run_id,
-            content=reasoning,
+            content=router_thought,
+            phase="router",
+            text=router_thought,
             data={
                 "agents_needed": agents_needed,
                 "is_comprehensive": is_comprehensive,
@@ -621,9 +1033,8 @@ async def stream_chat_realtime(
             
         else:
             # Run CrewAI multi-agent analysis
-            now = datetime.now()
-            target_month = now.month
-            target_year = now.year
+            # Extract target month/year from user message, default to current
+            target_month, target_year = _extract_target_month_year(message)
             target_month_name = month_name[target_month]
             
             inputs = {
@@ -645,59 +1056,87 @@ async def stream_chat_realtime(
             
             # Emit agent_start for each task before running
             for i, info in enumerate(task_info):
+                agent_name = info["agent_name"]
+                task_desc = info["description"]
+                
+                # AGENT_START
                 yield _format_sse(EventType.AGENT_START, _create_event(
                     EventType.AGENT_START,
                     run_id,
-                    agent=info["agent_name"],
-                    task=info["description"],
-                    content=f"{info['agent_name']} starting analysis...",
+                    agent=agent_name,
+                    task=task_desc,
+                    content=f"{agent_name} starting analysis...",
                     data={
                         "step_number": i + 1,
                         "total_steps": total_tasks,
                         "expected_output": info["expected_output"]
                     }
                 ))
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.08)
                 
-                # Emit tool usage hints based on agent type
-                agent_lower = info["agent_name"].lower()
+                # AGENT_THOUGHT: PLAN phase
+                plan_thought = _generate_agent_plan(agent_name, task_desc, target_month_name, target_year)
+                yield _format_sse(EventType.AGENT_THOUGHT, _create_event(
+                    EventType.AGENT_THOUGHT,
+                    run_id,
+                    agent=agent_name,
+                    phase="plan",
+                    content=plan_thought,
+                    text=plan_thought
+                ))
+                await asyncio.sleep(0.08)
+                
+                # Determine tool name based on agent type
+                agent_lower = agent_name.lower()
+                tool_name = "AnalysisTool"
+                tool_content = "querying data..."
+                
                 if "historical" in agent_lower or "historian" in agent_lower:
-                    yield _format_sse(EventType.TOOL_START, _create_event(
-                        EventType.TOOL_START,
-                        run_id,
-                        agent=info["agent_name"],
-                        content="Querying historical sales data...",
-                        data={"tool_name": "ItemHistoryTool"}
-                    ))
+                    tool_name = "ItemHistoryTool"
+                    tool_content = "querying historical sales data..."
                 elif "forecast" in agent_lower:
-                    yield _format_sse(EventType.TOOL_START, _create_event(
-                        EventType.TOOL_START,
-                        run_id,
-                        agent=info["agent_name"],
-                        content="Running demand forecasting model...",
-                        data={"tool_name": "ForecastingTool"}
-                    ))
+                    tool_name = "TimeSeriesForecastTool"
+                    tool_content = "invoking trained Prophet model..."
                 elif "holiday" in agent_lower:
-                    yield _format_sse(EventType.TOOL_START, _create_event(
-                        EventType.TOOL_START,
-                        run_id,
-                        agent=info["agent_name"],
-                        content="Analyzing holiday calendar and impacts...",
-                        data={"tool_name": "HolidayContextTool"}
-                    ))
+                    tool_name = "HolidayContextTool"
+                    tool_content = "analyzing holiday calendar..."
                 elif "weather" in agent_lower:
-                    yield _format_sse(EventType.TOOL_START, _create_event(
-                        EventType.TOOL_START,
-                        run_id,
-                        agent=info["agent_name"],
-                        content="Analyzing weather patterns and effects...",
-                        data={"tool_name": "WeatherContextTool"}
-                    ))
+                    tool_name = "WeatherContextTool"
+                    tool_content = "analyzing weather patterns..."
+                elif "strategy" in agent_lower or "planner" in agent_lower:
+                    tool_name = "StrategySynthesisTool"
+                    tool_content = "synthesizing insights..."
+                
+                # AGENT_QUERY: DATA_QUERY phase
+                query_thought = _generate_data_query(agent_name, tool_name)
+                yield _format_sse(EventType.AGENT_QUERY, _create_event(
+                    EventType.AGENT_QUERY,
+                    run_id,
+                    agent=agent_name,
+                    phase="data_query",
+                    content=query_thought,
+                    text=query_thought,
+                    data={"tool_name": tool_name}
+                ))
+                await asyncio.sleep(0.08)
+                
+                # TOOL_START
+                yield _format_sse(EventType.TOOL_START, _create_event(
+                    EventType.TOOL_START,
+                    run_id,
+                    agent=agent_name,
+                    content=tool_content,
+                    data={
+                        "tool_name": tool_name,
+                        "model": "Prophet (trained on 2020-2025 data)" if "forecast" in agent_lower else None
+                    }
+                ))
                 
                 await asyncio.sleep(0.1)
             
-            # Run the crew (blocking operation)
-            result = crew.kickoff(inputs=inputs)
+            # Run the crew in thread pool (blocking operation)
+            loop = asyncio.get_event_loop()
+            result = await loop.run_in_executor(None, lambda: crew.kickoff(inputs=inputs))
             
             # Extract results and emit completion events
             # In CrewAI, tasks_output is on the result object, not the crew
@@ -708,18 +1147,30 @@ async def stream_chat_realtime(
                 output_str = str(task_output)
                 output_preview = output_str[:300] + "..." if len(output_str) > 300 else output_str
                 
+                # AGENT_SELF_CHECK: validation phase
+                self_check = _generate_self_check(agent_name)
+                yield _format_sse(EventType.AGENT_SELF_CHECK, _create_event(
+                    EventType.AGENT_SELF_CHECK,
+                    run_id,
+                    agent=agent_name,
+                    phase="self_check",
+                    content=self_check,
+                    text=self_check
+                ))
+                await asyncio.sleep(0.05)
+                
                 # Extract summary
                 summary = ""
                 if "top" in output_str.lower()[:100]:
-                    summary = "Identified key items and patterns"
+                    summary = "identified key items and patterns"
                 elif "forecast" in output_str.lower()[:100]:
-                    summary = "Generated demand predictions"
+                    summary = "generated demand predictions"
                 elif "holiday" in output_str.lower()[:100]:
-                    summary = "Analyzed holiday impacts"
+                    summary = "analyzed holiday impacts"
                 elif "weather" in output_str.lower()[:100]:
-                    summary = "Assessed weather effects"
+                    summary = "assessed weather effects"
                 else:
-                    summary = "Analysis complete"
+                    summary = "analysis complete"
                 
                 # Tool result event
                 yield _format_sse(EventType.TOOL_RESULT, _create_event(
@@ -731,6 +1182,18 @@ async def stream_chat_realtime(
                         "result_preview": output_preview,
                         "result_length": len(output_str)
                     }
+                ))
+                await asyncio.sleep(0.05)
+                
+                # AGENT_RESULT_SNAPSHOT: result phase
+                result_snapshot = _generate_result_snapshot(agent_name, output_preview)
+                yield _format_sse(EventType.AGENT_RESULT_SNAPSHOT, _create_event(
+                    EventType.AGENT_RESULT_SNAPSHOT,
+                    run_id,
+                    agent=agent_name,
+                    phase="result",
+                    content=result_snapshot,
+                    text=result_snapshot
                 ))
                 await asyncio.sleep(0.05)
                 
@@ -763,6 +1226,12 @@ async def stream_chat_realtime(
                 chart_data = _extract_chart_from_result(response_text)
                 if chart_data:
                     charts.append(chart_data)
+            
+            # DISABLED: Evidence chart generation was causing long delays
+            # TODO: Re-enable after optimizing chart generation performance
+            # if any(agent in agents_needed for agent in ["holiday", "strategy"]):
+            #     ... (chart generation code)
+            # DISABLED - Evidence Visualizer was causing 8+ minute delays
         
         # RUN_END - Final response
         final_data = {
@@ -782,7 +1251,9 @@ async def stream_chat_realtime(
                 {
                     "chart_type": c.chart_type,
                     "title": c.title,
-                    "image_base64": c.image_base64
+                    "image_base64": c.image_base64,
+                    "image": c.image_base64,  # Alias for frontend compatibility
+                    "chart_data": c.chart_data,  # Interactive chart data
                 }
                 for c in charts
             ] if charts else None

@@ -27,12 +27,12 @@ ChartJS.register(
 );
 
 const agentIcons = {
-  historical: '📜',
-  forecasting: '📈',
-  holiday: '🎉',
-  weather: '🌦️',
-  strategy: '🧠',
-  visualization: '📊',
+  historical: 'H',
+  forecasting: 'F',
+  holiday: 'Ho',
+  weather: 'W',
+  strategy: 'S',
+  visualization: 'V',
 };
 
 function getAgentIcon(agentName = '') {
@@ -40,7 +40,7 @@ function getAgentIcon(agentName = '') {
   for (const [key, icon] of Object.entries(agentIcons)) {
     if (lower.includes(key)) return icon;
   }
-  return 'AI';
+  return '';
 }
 
 function renderInteractiveChart(chart) {
@@ -76,7 +76,7 @@ function VinushanChatMessage({ message, agentSteps, routingReasoning, agentsUsed
   return (
     <div className={`chat-message ${isUser ? 'user' : 'assistant'}`}>
       <div className="message-avatar" aria-label={isUser ? 'You' : 'ATHENA assistant'}>
-        {isUser ? '👤' : 'ATH'}
+        {isUser ? 'U' : 'A'}
       </div>
       <div className="message-content">
         <div className="message-header">
@@ -87,7 +87,7 @@ function VinushanChatMessage({ message, agentSteps, routingReasoning, agentsUsed
         </div>
         {!isUser && routingReasoning && (
           <div className="routing-info">
-            <span className="routing-label">🧠 Reasoning:</span>
+            <span className="routing-label">Reasoning:</span>
             <span className="routing-text">{routingReasoning}</span>
           </div>
         )}
