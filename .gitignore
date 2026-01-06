@@ -51,5 +51,10 @@ coverage/
 .cache
 
 
+*.safetensors
+*.bin
+*.pt
+node_modules/
+__pycache__/
 .env.example
 .env
