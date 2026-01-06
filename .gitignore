@@ -56,3 +56,5 @@ coverage/
 *.pt
 node_modules/
 __pycache__/
+.env.example
+.env

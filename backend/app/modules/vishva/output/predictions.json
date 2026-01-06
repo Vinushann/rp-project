@@ -1,0 +1,309 @@
+{
+  "timestamp": "2025-12-26T19:46:05.125897",
+  "model_info": {
+    "vectorizer": "Bag-of-Words",
+    "feature_selector": "Chi-Square",
+    "model": "SVM",
+    "accuracy": 0.9
+  },
+  "statistics": {
+    "total_items": 18,
+    "average_confidence": 0.7818498775105129,
+    "low_confidence_count": 0,
+    "category_distribution": {
+      "BURGERS REINVENTED": 14,
+      "SIDES": 2,
+      "DRIFTMAS SPECIALS": 2
+    }
+  },
+  "predictions": [
+    {
+      "name": "HYBRID",
+      "price": "Rs. 2450",
+      "description": "Beef Patty | Crispy Chicken Breast | Iceberg Lettuce | 2x Cheese | Grilled Chicken Bacon | Tomato Relish | Garlic Mayo",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.8299105682114138,
+      "all_probabilities": {
+        "ADD-ONS": 0.025227627046984946,
+        "BEVERAGES": 0.01647210559205101,
+        "BURGERS REINVENTED": 0.8299105682114138,
+        "DRIFTMAS SPECIALS": 0.036450489895820434,
+        "KIDS MEAL": 0.020730841807593593,
+        "SAUCE & DIPS": 0.01521554782062376,
+        "SIDES": 0.05599281962551283
+      }
+    },
+    {
+      "name": "THE CLUTCH - Chicken",
+      "price": "Rs. 1550",
+      "description": "Iceberg Lettuce | Red Onions | Garlic Mayo | Tomato Relish",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.7782567295478546,
+      "all_probabilities": {
+        "ADD-ONS": 0.06796966945790336,
+        "BEVERAGES": 0.0266577578923969,
+        "BURGERS REINVENTED": 0.7782567295478546,
+        "DRIFTMAS SPECIALS": 0.024546248403460532,
+        "KIDS MEAL": 0.022145423714608016,
+        "SAUCE & DIPS": 0.019801038127891392,
+        "SIDES": 0.060623132855885185
+      }
+    },
+    {
+      "name": "THE CLUTCH - Beef",
+      "price": "Rs. 1550",
+      "description": "Iceberg Lettuce | Red Onions | Garlic Mayo | Tomato Relish",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.8013024782952677,
+      "all_probabilities": {
+        "ADD-ONS": 0.053670668260987785,
+        "BEVERAGES": 0.024849793858871524,
+        "BURGERS REINVENTED": 0.8013024782952677,
+        "DRIFTMAS SPECIALS": 0.02470689330996122,
+        "KIDS MEAL": 0.022479551379622598,
+        "SAUCE & DIPS": 0.021117455982241556,
+        "SIDES": 0.05187315891304816
+      }
+    },
+    {
+      "name": "DRIFTER (SINGLE PATTIE) - Crispy",
+      "price": "Rs. 1850",
+      "description": "Cheddar Cheese | Gherkin Chips | Dijon Mustard | Tomato Relish | Garlic Mayo",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.8111132996474577,
+      "all_probabilities": {
+        "ADD-ONS": 0.036730837264920865,
+        "BEVERAGES": 0.023428525870817625,
+        "BURGERS REINVENTED": 0.8111132996474577,
+        "DRIFTMAS SPECIALS": 0.02527570125740258,
+        "KIDS MEAL": 0.02209296593026679,
+        "SAUCE & DIPS": 0.023178690782772772,
+        "SIDES": 0.05817997924636171
+      }
+    },
+    {
+      "name": "DRIFTER (SINGLE PATTIE) - Beef",
+      "price": "Rs. 1850",
+      "description": "Cheddar Cheese | Gherkin Chips | Dijon Mustard | Tomato Relish | Garlic Mayo",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.8176686602457952,
+      "all_probabilities": {
+        "ADD-ONS": 0.03717445349985425,
+        "BEVERAGES": 0.029698794222508,
+        "BURGERS REINVENTED": 0.8176686602457952,
+        "DRIFTMAS SPECIALS": 0.024434367396656324,
+        "KIDS MEAL": 0.02216115796551016,
+        "SAUCE & DIPS": 0.023721650486340163,
+        "SIDES": 0.045140916183336426
+      }
+    },
+    {
+      "name": "DRIFTER (SINGLE PATTIE) - Vege",
+      "price": "Rs. 1300",
+      "description": "Cheddar Cheese | Gherkin Chips | Dijon Mustard | Tomato Relish | Garlic Mayo",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.8056666714198558,
+      "all_probabilities": {
+        "ADD-ONS": 0.04189361399280495,
+        "BEVERAGES": 0.03360343376238482,
+        "BURGERS REINVENTED": 0.8056666714198558,
+        "DRIFTMAS SPECIALS": 0.02246882037984131,
+        "KIDS MEAL": 0.022044350205350782,
+        "SAUCE & DIPS": 0.023832645891824877,
+        "SIDES": 0.05049046434793788
+      }
+    },
+    {
+      "name": "TWIN DRIFTER (2X PATTIE) - Beef",
+      "price": "Rs. 2450",
+      "description": "Cheddar Cheese | Gherkin Chips | Dijon Mustard | Tomato Relish | Garlic Mayo",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.7963518321331439,
+      "all_probabilities": {
+        "ADD-ONS": 0.0420519849929724,
+        "BEVERAGES": 0.03238084815250855,
+        "BURGERS REINVENTED": 0.7963518321331439,
+        "DRIFTMAS SPECIALS": 0.02503036246757945,
+        "KIDS MEAL": 0.022386584154096462,
+        "SAUCE & DIPS": 0.023996466147770158,
+        "SIDES": 0.0578019219519288
+      }
+    },
+    {
+      "name": "SILENCER - Crispy",
+      "price": "Rs. 1850",
+      "description": "Description not fully visible.",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.7992926323589965,
+      "all_probabilities": {
+        "ADD-ONS": 0.04520420026419446,
+        "BEVERAGES": 0.04388694962581593,
+        "BURGERS REINVENTED": 0.7992926323589965,
+        "DRIFTMAS SPECIALS": 0.024189777455828437,
+        "KIDS MEAL": 0.023052496333944027,
+        "SAUCE & DIPS": 0.0193787270645253,
+        "SIDES": 0.044995216896695174
+      }
+    },
+    {
+      "name": "SILENCER - Beef",
+      "price": "Rs. 1800",
+      "description": "Description not fully visible.",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.8082834725823018,
+      "all_probabilities": {
+        "ADD-ONS": 0.046358130430701194,
+        "BEVERAGES": 0.04328707456198583,
+        "BURGERS REINVENTED": 0.8082834725823018,
+        "DRIFTMAS SPECIALS": 0.023801096239924175,
+        "KIDS MEAL": 0.023426984150175134,
+        "SAUCE & DIPS": 0.020309184246210216,
+        "SIDES": 0.03453405778870158
+      }
+    },
+    {
+      "name": "STREET COOPER - Chicken Slider",
+      "price": "Rs. 1150",
+      "description": "Cheddar Cheese | Iceberg Lettuce | Garlic Mayo",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.8081628719521871,
+      "all_probabilities": {
+        "ADD-ONS": 0.04020208964717867,
+        "BEVERAGES": 0.028111987726808826,
+        "BURGERS REINVENTED": 0.8081628719521871,
+        "DRIFTMAS SPECIALS": 0.025329806061263192,
+        "KIDS MEAL": 0.021603570273448655,
+        "SAUCE & DIPS": 0.01896929376244262,
+        "SIDES": 0.05762038057667066
+      }
+    },
+    {
+      "name": "STREET COOPER - Beef Slider",
+      "price": "Rs. 1150",
+      "description": "Cheddar Cheese | Iceberg Lettuce | Garlic Mayo",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.8035659740275195,
+      "all_probabilities": {
+        "ADD-ONS": 0.04157831620430352,
+        "BEVERAGES": 0.0338954424358015,
+        "BURGERS REINVENTED": 0.8035659740275195,
+        "DRIFTMAS SPECIALS": 0.02550208873064308,
+        "KIDS MEAL": 0.022137230236179348,
+        "SAUCE & DIPS": 0.019704374742582874,
+        "SIDES": 0.05361657362297006
+      }
+    },
+    {
+      "name": "COUPE SLIDER",
+      "price": "Rs. 1150",
+      "description": "Crispy Chicken | Iceberg Lettuce | Sriracha Mayo",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.5283829617267761,
+      "all_probabilities": {
+        "ADD-ONS": 0.11666716356978682,
+        "BEVERAGES": 0.1283846267824521,
+        "BURGERS REINVENTED": 0.5283829617267761,
+        "DRIFTMAS SPECIALS": 0.06501349792846067,
+        "KIDS MEAL": 0.030419809936572898,
+        "SAUCE & DIPS": 0.023892258975065233,
+        "SIDES": 0.10723968108088613
+      }
+    },
+    {
+      "name": "SILENCER SLIDER",
+      "price": "Rs. 1150",
+      "description": "Crispy Chicken | Iceberg Lettuce | Hot Sauce | Garlic Mayo",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.8017864434972506,
+      "all_probabilities": {
+        "ADD-ONS": 0.036129557743920945,
+        "BEVERAGES": 0.02252800408716989,
+        "BURGERS REINVENTED": 0.8017864434972506,
+        "DRIFTMAS SPECIALS": 0.03373941548008841,
+        "KIDS MEAL": 0.02152400597005457,
+        "SAUCE & DIPS": 0.025395307459381122,
+        "SIDES": 0.058897265762134714
+      }
+    },
+    {
+      "name": "BBQ SLIDER",
+      "price": "Rs. 1150",
+      "description": "Crispy Chicken | Iceberg Lettuce | BBQ Sauce | Garlic Mayo",
+      "predicted_category": "BURGERS REINVENTED",
+      "confidence": 0.7979074704351388,
+      "all_probabilities": {
+        "ADD-ONS": 0.03687856712354814,
+        "BEVERAGES": 0.02350304126122108,
+        "BURGERS REINVENTED": 0.7979074704351388,
+        "DRIFTMAS SPECIALS": 0.035115124547854475,
+        "KIDS MEAL": 0.02161624148863402,
+        "SAUCE & DIPS": 0.02646243608675879,
+        "SIDES": 0.058517119056845035
+      }
+    },
+    {
+      "name": "FRIES",
+      "price": "Rs. 950",
+      "description": "Crispy Fries | Served with Garlic Mayo Dip and Ketchup",
+      "predicted_category": "SIDES",
+      "confidence": 0.8001268304060498,
+      "all_probabilities": {
+        "ADD-ONS": 0.059434122039115335,
+        "BEVERAGES": 0.027030690824794704,
+        "BURGERS REINVENTED": 0.030143779160658753,
+        "DRIFTMAS SPECIALS": 0.030939758802765397,
+        "KIDS MEAL": 0.023818928170047392,
+        "SAUCE & DIPS": 0.02850589059656891,
+        "SIDES": 0.8001268304060498
+      }
+    },
+    {
+      "name": "RIPPLE STRIPES",
+      "price": "Rs. 990",
+      "description": "Char-Grilled Chicken Tenderloins with Rosemary & Basil Served with Ripple Sauce",
+      "predicted_category": "SIDES",
+      "confidence": 0.8089963478021901,
+      "all_probabilities": {
+        "ADD-ONS": 0.06911234890944472,
+        "BEVERAGES": 0.027651725990768396,
+        "BURGERS REINVENTED": 0.01625515380392861,
+        "DRIFTMAS SPECIALS": 0.022965233269485102,
+        "KIDS MEAL": 0.02394875086482154,
+        "SAUCE & DIPS": 0.031070439359361598,
+        "SIDES": 0.8089963478021901
+      }
+    },
+    {
+      "name": "Fries | Gochujang Mayo | Crispy Fried Pulled Beef | Driftmas Sauce",
+      "price": "Rs. 1850",
+      "description": "",
+      "predicted_category": "DRIFTMAS SPECIALS",
+      "confidence": 0.7341307469922486,
+      "all_probabilities": {
+        "ADD-ONS": 0.05070324642817348,
+        "BEVERAGES": 0.031129368077652285,
+        "BURGERS REINVENTED": 0.03493907988797758,
+        "DRIFTMAS SPECIALS": 0.7341307469922486,
+        "KIDS MEAL": 0.03414341774873111,
+        "SAUCE & DIPS": 0.035680302558645016,
+        "SIDES": 0.07927383830657171
+      }
+    },
+    {
+      "name": "Fries | Gochujang Mayo | Crispy Chicken Bites | Driftmas Sauce | Fried Shallots",
+      "price": "Rs. 1850",
+      "description": "",
+      "predicted_category": "DRIFTMAS SPECIALS",
+      "confidence": 0.7423918039077861,
+      "all_probabilities": {
+        "ADD-ONS": 0.048765912328402314,
+        "BEVERAGES": 0.026891811094000562,
+        "BURGERS REINVENTED": 0.03214644749985939,
+        "DRIFTMAS SPECIALS": 0.7423918039077861,
+        "KIDS MEAL": 0.033610321724696066,
+        "SAUCE & DIPS": 0.03524465212584164,
+        "SIDES": 0.08094905131941334
+      }
+    }
+  ]
+}

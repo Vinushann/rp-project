@@ -1,0 +1,136 @@
+historical_task:
+  description: >
+    Analyze historical sales data for {business_name} in {location} using the Item History Tool.
+    Focus on: top-selling items, declining items, discount patterns, and seasonal trends for {target_month_name}.
+  expected_output: >
+    Structured insights about sales history including top performers, declining items, and discount impact.
+  agent: historical_analyst
+
+forecasting_task:
+  description: >
+    Generate sales forecast for {target_month_name} {target_year} using the Daily Forecast Tool.
+    Include: total expected quantity, busiest days, confidence intervals, and model accuracy metrics.
+    
+    IMPORTANT: If user asks HOW forecasting works, explain the Prophet model methodology:
+    - Uses historical sales data to detect trends
+    - Identifies weekly and yearly seasonality patterns
+    - Accounts for holiday effects
+    - Provides uncertainty intervals (yhat_lower, yhat_upper)
+  expected_output: >
+    Forecast data with predictions, confidence levels, and model metrics (MAE, MAPE, RMSE).
+  agent: forecasting_specialist
+
+holiday_task:
+  description: >
+    Analyze holiday impact for month {target_month} using the Holiday Context Tool.
+    Identify holidays, their phases (pre/during/post), and expected demand changes.
+  expected_output: >
+    List of holidays with demand impact percentages and recommended actions.
+  agent: holiday_analyst
+
+weather_task:
+  description: >
+    Analyze weather impact for month {target_month} using the Weather Context Tool.
+    Explain how rain and temperature affect different product categories.
+  expected_output: >
+    Weather impact analysis for hot drinks, cold drinks, and food items with actionable tips.
+  agent: weather_analyst
+
+strategy_task:
+  description: >
+    USER QUESTION: "{user_question}"
+    
+    CRITICAL: Read the question carefully and provide a DIRECT answer that matches what the user asked.
+    
+    QUESTION TYPE DETECTION:
+    
+    1. PREDICTION EXPLANATION QUESTIONS (contains: "why did you say", "why these days", "why is X busiest", "why predicted"):
+       → This is the MOST IMPORTANT question type to handle correctly!
+       → When user asks WHY specific dates are predicted as busy, you MUST:
+       
+       a) IDENTIFY THE DAY OF WEEK for each date:
+          - "December 21, 2026 is a Saturday"
+          - "December 22, 2026 is a Sunday"
+          - "Weekends historically show 20-30% higher sales"
+       
+       b) EXPLAIN HOLIDAY PROXIMITY:
+          - "December 21-22 are 3-4 days before Christmas"
+          - "Pre-Christmas shopping typically boosts sales by 25%"
+          - "December 28 is post-Christmas, still in holiday week"
+       
+       c) SHOW HISTORICAL EVIDENCE with a chart:
+          - Use the Visualization Tool to show December sales from 2023, 2024, 2025
+          - Point to specific peaks on similar dates in previous years
+          - "As you can see in the chart, December 21-22 showed peaks in 2024 and 2023"
+       
+       d) EXPLAIN THE PROPHET MODEL COMPONENTS:
+          - Weekly seasonality: "Saturdays/Sundays are always higher"
+          - Yearly seasonality: "December has holiday boost"
+          - Holiday effects: "Pre-Christmas period adds +15-25%"
+       
+       → DO NOT just list product metrics or discounts!
+       → The answer must be DATE-SPECIFIC, not generic.
+    
+    2. METHODOLOGY QUESTIONS (contains: "how", "explain", "what method", "how did you"):
+       → Explain the process/methodology used, not just results
+       → Example: "How did you forecast?" → Explain Prophet model, data sources, accuracy metrics
+    
+    3. FACTOR/CAUSE QUESTIONS (contains: "what factors", "what affects", "why is", "causes"):
+       → List and explain the key factors with their impact
+       → Be specific: weather impact %, holiday effects, seasonal patterns
+    
+    4. IMPROVEMENT QUESTIONS (contains: "improve", "increase", "boost", "better"):
+       → Focus on actionable recommendations for that SPECIFIC area
+       → If asking about weekends, focus ONLY on weekend strategies
+    
+    5. FORECAST QUESTIONS (contains: "forecast", "predict", "next month", "expected"):
+       → Provide numbers, dates, and confidence intervals
+    
+    6. COMPARISON QUESTIONS (contains: "compare", "vs", "difference", "between"):
+       → Show side-by-side comparison with clear metrics
+    
+    7. REPORT REQUESTS (contains: "report", "summary", "overview", "analysis"):
+       → Provide comprehensive structured analysis with sections
+    
+    8. SIMPLE QUESTIONS (short, direct questions):
+       → Give concise, focused answers - don't over-explain
+    
+    Use data from {target_month_name} {target_year} for {business_name} in {location}.
+    Combine insights from historical, forecasting, holiday, and weather analysis AS NEEDED.
+    
+    DO NOT always include all sections. Include only what's relevant to the question.
+  expected_output: >
+    A direct, conversational answer that matches the question type.
+    
+    For "why these days are busiest" questions, structure like this:
+    
+    ## Why These Days Are Predicted as Busiest
+    
+    ### 1. Day of Week Pattern
+    - December 21 (Saturday) - Weekend day, historically 25% higher sales
+    - December 22 (Sunday) - Weekend day, historically 20% higher sales
+    - December 28 (Saturday) - Weekend during holiday week
+    
+    ### 2. Holiday Proximity Effect
+    - December 21-22: Pre-Christmas shopping peak (+25% boost)
+    - December 28: Post-Christmas holiday week (+15% boost)
+    
+    ### 3. Historical Evidence
+    [Include chart showing December sales from previous years]
+    - December 2024: Peak sales on Dec 21-22
+    - December 2023: Similar pattern observed
+    
+    ### 4. Prophet Model Components
+    - Weekly seasonality: Weekends consistently higher
+    - Yearly seasonality: December holiday effect
+    - Trend: Overall sales growth pattern
+    
+    For other question types:
+    - For "how" questions: Explain methodology
+    - For "what factors" questions: List factors with impact  
+    - For "improve" questions: Specific actionable recommendations
+    - For forecasts: Numbers with confidence intervals
+    - For reports: Structured comprehensive analysis
+    
+    Keep the response focused and avoid unnecessary sections.
+  agent: strategy_planner

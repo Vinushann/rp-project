@@ -1,0 +1,400 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Results</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 40px; max-width: 1100px; }
+      a { text-decoration: none; color: inherit; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; gap: 12px; }
+      .btn { padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; display:inline-block; }
+      .btn:hover { background: #f6f6f6; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .card { border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px; background: #fff; }
+      .card h3 { margin: 0 0 8px 0; }
+      .muted { color: #666; font-size: 14px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+      th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; font-size: 14px; vertical-align: top; }
+      details { margin-top: 10px; }
+      summary { cursor: pointer; }
+      .pill { display:inline-block; padding: 4px 8px; border:1px solid #eee; border-radius: 999px; font-size: 13px; margin-right: 6px; margin-top: 6px; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 13px; }
+      .warn { background: #fff7e6; border: 1px solid #ffe2a8; padding: 10px; border-radius: 10px; margin-top: 10px; }
+      .info { background: #f4f8ff; border: 1px solid #cfe1ff; padding: 10px; border-radius: 10px; margin-top: 10px; }
+      .chartwrap { margin-top: 12px; }
+      canvas { width: 100% !important; height: 320px !important; }
+      .section-title { margin: 18px 0 10px 0; }
+      .cols { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+
+  <body>
+    {% set ml = results.get("ml_recommendation") or {} %}
+    {% set roles = results.get("roles") or {} %}
+    {% set pack = ml.get("pack") %}
+    {% set pack_conf = ml.get("pack_confidence") %}
+    {% set cards_sel = ml.get("cards_selected") or [] %}
+    {% set summary = results.get("insights", {}).get("kpi_summary") %}
+    {% set experimental = results.get("insights", {}).get("experimental") or {} %}
+
+    <div class="topbar">
+      <div>
+        <a href="/">← Back</a>
+        <h2 style="margin: 8px 0 0 0;">{{ results["dataset_name"] }}</h2>
+        <div class="muted">Rows: {{ results["profile"]["rows"] }} | Cols: {{ results["profile"]["cols"] }}</div>
+
+        <div class="muted" style="margin-top:6px;">
+          {% if results.get("ml_recommendation") and results["ml_recommendation"] %}
+            <span class="pill">Predicted Pack: <b>{{ results["ml_recommendation"].get("pack_pred", "N/A") }}</b></span>
+            {% if results["ml_recommendation"].get("pack_confidence") is not none %}
+              <span class="pill">Confidence: <b>{{ "%.2f"|format(results["ml_recommendation"].get("pack_confidence", 0.0)) }}</b></span>
+            {% endif %}
+          {% else %}
+            <span class="pill">Predicted Pack: <b>not available</b></span>
+          {% endif %}
+        </div>
+
+        {% if results.get("ui_warnings") and results["ui_warnings"]|length > 0 %}
+          <div class="warn">
+            <div style="font-weight:bold; margin-bottom:6px;">Warnings</div>
+            <ul style="margin:0; padding-left:18px;">
+              {% for w in results["ui_warnings"] %}
+                <li class="muted">{{ w }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% endif %}
+      </div>
+
+      <div>
+        <a class="btn" href="/download/json">Download JSON</a>
+        <a class="btn" href="/download/csv" style="margin-left: 8px;">Download CSV</a>
+        <a class="btn" href="/download/report" style="margin-left: 8px;">Download Report</a>
+        <a class="btn" href="/label" style="margin-left: 8px;">Label / Train</a>
+      </div>
+    </div>
+
+    <!-- KPI SUMMARY STRIP -->
+    {% if summary and summary.get("tiles") and summary["tiles"]|length > 0 %}
+      <div class="card" style="margin-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:10px;">
+          <div>
+            <h3 style="margin:0 0 6px 0;">KPI Summary</h3>
+            <div class="muted">Headline KPIs inferred from roles + selected columns.</div>
+          </div>
+
+          {% if summary.get("date_range") %}
+            <div class="muted" style="text-align:right;">
+              Period: <b>{{ summary["date_range"]["start"] }}</b> → <b>{{ summary["date_range"]["end"] }}</b>
+            </div>
+          {% endif %}
+        </div>
+
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-top: 12px;">
+          {% for t in summary["tiles"] %}
+            <div style="border:1px solid #eee; border-radius:12px; padding:12px;">
+              <div class="muted" style="font-size:13px;">{{ t["label"] }}</div>
+              <div style="font-size:20px; font-weight:700; margin-top:6px;">
+                {{ t["value"] }}
+              </div>
+              {% if t.get("hint") %}
+                <div class="muted" style="font-size:12px; margin-top:6px;">
+                  based on <span class="mono">{{ t["hint"] }}</span>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+
+        <details>
+          <summary class="muted">What columns were used?</summary>
+          <div class="mono" style="margin-top:10px;">
+            {{ summary.get("used") }}
+          </div>
+        </details>
+      </div>
+    {% endif %}
+
+    <div class="cols" style="margin-top:16px;">
+      <div class="card">
+        <h3>Selected columns (Hybrid)</h3>
+        <div class="muted">
+          <span class="pill">Measure: <b>{{ results["insights"]["selected"]["measure"] }}</b></span>
+
+          {% set dims = results["insights"]["selected"].get("dimensions") %}
+          {% if dims and dims|length > 0 %}
+            <span class="pill">Dimensions:
+              <b>
+                {% for d in dims %}
+                  {{ d }}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+              </b>
+            </span>
+          {% else %}
+            <span class="pill">Dimension: <b>{{ results["insights"]["selected"]["dimension"] }}</b></span>
+          {% endif %}
+
+          <span class="pill">Time: <b>{{ results["insights"]["selected"]["time"] }}</b></span>
+        </div>
+
+        <details>
+          <summary class="muted">Why these were selected?</summary>
+          <div class="muted" style="margin-top:8px;">
+            If you left overrides blank, the system auto-picked columns using semantic + roles + heuristics.
+            For best results, map roles (Revenue/Product/Date) in the Label page.
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <h3>Business mapping (Roles → Columns)</h3>
+
+        {% if roles and roles|length > 0 %}
+          <table>
+            <tr><th>Role</th><th>Column</th><th style="font-size:13px;" class="muted">Score</th></tr>
+            {% for role, info in roles.items() %}
+              {% if info and info.get("col") %}
+                <tr>
+                  <td><b>{{ role }}</b></td>
+                  <td>{{ info.get("col") }}</td>
+                  <td style="font-size:13px;" class="muted">{{ "%.2f"|format(info.get("score", 0.0)) }}</td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+          </table>
+        {% else %}
+          <div class="muted">
+            No role mapping available for this run yet. Use Label / Train to map Revenue/Product/Date.
+          </div>
+        {% endif %}
+
+        {% if cards_sel and cards_sel|length > 0 %}
+          <div style="margin-top:10px;">
+            <div class="muted"><b>Model-recommended cards</b></div>
+            <div class="muted">
+              {% for c in cards_sel %}
+                <span class="pill"><span class="mono">{{ c }}</span></span>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="margin-top:16px;">
+      <h2 class="section-title">Analyst-ready insights</h2>
+
+      {% for card in results["insights"]["cards"] %}
+        <div class="card" style="margin-bottom:14px;">
+          <h3>{{ card["title"] }}</h3>
+          <div class="muted">{{ card["why"] }}</div>
+
+          {% if card.get("chart_data") and card["chart_data"].get("labels") and card["chart_data"].get("values") %}
+            <div class="chartwrap">
+              <canvas id="chart_{{ loop.index }}"></canvas>
+            </div>
+          {% endif %}
+
+          {% if card.get("table") and card["table"]|length > 0 %}
+            <table>
+              <tr>
+                {% for k in card["table"][0].keys() %}
+                  <th>{{ k }}</th>
+                {% endfor %}
+              </tr>
+              {% for row in card["table"] %}
+                <tr>
+                  {% for v in row.values() %}
+                    <td>{{ v }}</td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </table>
+          {% else %}
+            <div class="muted" style="margin-top:10px;">No data available for this insight.</div>
+          {% endif %}
+
+          <details>
+            <summary class="muted">Chart spec (debug)</summary>
+            <div class="mono" style="margin-top:8px;">{{ card.get("chart") }}</div>
+          </details>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- ✅ Experimental signals -->
+    <div style="margin-top:16px;">
+      <h2 class="section-title">Experimental signals (FA-based)</h2>
+
+      {% if experimental.get("ok") %}
+        {% for card in experimental.get("cards", []) %}
+          <div class="card" style="margin-bottom:14px;">
+            <h3>{{ card["title"] }}</h3>
+            <div class="muted">{{ card["why"] }}</div>
+
+            {% if card.get("chart_data") and card["chart_data"].get("labels") and card["chart_data"].get("values") %}
+              <div class="chartwrap">
+                <canvas id="exp_chart_{{ loop.index }}"></canvas>
+              </div>
+            {% endif %}
+
+            {% if card.get("table") and card["table"]|length > 0 %}
+              <table>
+                <tr>
+                  {% for k in card["table"][0].keys() %}
+                    <th>{{ k }}</th>
+                  {% endfor %}
+                </tr>
+                {% for row in card["table"] %}
+                  <tr>
+                    {% for v in row.values() %}
+                      <td>{{ v }}</td>
+                    {% endfor %}
+                  </tr>
+                {% endfor %}
+              </table>
+            {% else %}
+              <div class="muted" style="margin-top:10px;">No data available for this signal.</div>
+            {% endif %}
+
+            <details>
+              <summary class="muted">Chart spec (debug)</summary>
+              <div class="mono" style="margin-top:8px;">{{ card.get("chart") }}</div>
+            </details>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="info">
+          <div style="font-weight:bold; margin-bottom:6px;">Not available yet</div>
+          <div class="muted">{{ experimental.get("reason", "Experimental FA signals not available.") }}</div>
+          <div class="muted" style="margin-top:6px;">
+            Once your factor_engine returns <span class="mono">loadings</span> and <span class="mono">scores</span>, this section will auto-populate.
+          </div>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="grid" style="margin-top:16px;">
+      <div class="card">
+        <h3>Smart KPIs</h3>
+        {% if results["smart_kpis"]["ok"] %}
+          <table>
+            <tr><th>KPI</th><th>Value</th></tr>
+            {% for k, v in results["smart_kpis"]["smart_kpis"].items() %}
+              <tr><td>{{ k }}</td><td>{{ "%.6f"|format(v) }}</td></tr>
+            {% endfor %}
+          </table>
+        {% else %}
+          <div class="muted">{{ results["smart_kpis"]["reason"] }}</div>
+        {% endif %}
+      </div>
+
+      <div class="card">
+        <h3>Dataset health</h3>
+        <table>
+          <tr><th>Missing cells</th><td>{{ results["traditional_kpis"]["missing_cells"] }}</td></tr>
+          <tr><th>Missing rate</th><td>{{ "%.4f"|format(results["traditional_kpis"]["missing_rate"]) }}</td></tr>
+          <tr><th>Row count</th><td>{{ results["traditional_kpis"]["row_count"] }}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Put template JSON into non-JS script tags (prevents VSCode JS parsing errors) -->
+    <script id="stdCardsData" type="application/json">
+      {{ (results.get("insights", {}).get("cards", []) ) | tojson | safe }}
+    </script>
+
+    <script id="expData" type="application/json">
+      {{ (results.get("insights", {}).get("experimental", {}) ) | tojson | safe }}
+    </script>
+
+    <script>
+      (function () {
+        function readJsonScript(id, fallback) {
+          const el = document.getElementById(id);
+          if (!el) return fallback;
+          const txt = (el.textContent || "").trim();
+          if (!txt) return fallback;
+          try { return JSON.parse(txt); } catch (e) { return fallback; }
+        }
+
+        const stdCards = readJsonScript("stdCardsData", []);
+        for (let i = 0; i < stdCards.length; i++) {
+          const card = stdCards[i];
+          const cd = card && card.chart_data;
+          if (!cd || !cd.labels || !cd.values) continue;
+
+          const canvasId = "chart_" + (i + 1);
+          const el = document.getElementById(canvasId);
+          if (!el) continue;
+
+          const type = (card.chart && card.chart.type) ? card.chart.type : "bar";
+
+          new Chart(el, {
+            type: type === "line" ? "line" : "bar",
+            data: {
+              labels: cd.labels,
+              datasets: [{
+                label: card.title || "Chart",
+                data: cd.values,
+                tension: 0.25
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: { enabled: true }
+              },
+              scales: {
+                x: { ticks: { maxRotation: 0, autoSkip: true } },
+                y: { beginAtZero: true }
+              }
+            }
+          });
+        }
+
+        const exp = readJsonScript("expData", {});
+        const expCards = (exp && exp.cards) ? exp.cards : [];
+        for (let i = 0; i < expCards.length; i++) {
+          const card = expCards[i];
+          const cd = card && card.chart_data;
+          if (!cd || !cd.labels || !cd.values) continue;
+
+          const canvasId = "exp_chart_" + (i + 1);
+          const el = document.getElementById(canvasId);
+          if (!el) continue;
+
+          const type = (card.chart && card.chart.type) ? card.chart.type : "bar";
+
+          new Chart(el, {
+            type: type === "line" ? "line" : "bar",
+            data: {
+              labels: cd.labels,
+              datasets: [{
+                label: card.title || "Chart",
+                data: cd.values,
+                tension: 0.25
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: { enabled: true }
+              },
+              scales: {
+                x: { ticks: { maxRotation: 0, autoSkip: true } },
+                y: { beginAtZero: true }
+              }
+            }
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,92 @@
+[
+  {
+    "name": "HYBRID",
+    "price": "Rs. 2450",
+    "description": "Beef Patty | Crispy Chicken Breast | Iceberg Lettuce | 2x Cheese | Grilled Chicken Bacon | Tomato Relish | Garlic Mayo"
+  },
+  {
+    "name": "THE CLUTCH - Chicken",
+    "price": "Rs. 1550",
+    "description": "Iceberg Lettuce | Red Onions | Garlic Mayo | Tomato Relish"
+  },
+  {
+    "name": "THE CLUTCH - Beef",
+    "price": "Rs. 1550",
+    "description": "Iceberg Lettuce | Red Onions | Garlic Mayo | Tomato Relish"
+  },
+  {
+    "name": "DRIFTER (SINGLE PATTIE) - Crispy",
+    "price": "Rs. 1850",
+    "description": "Cheddar Cheese | Gherkin Chips | Dijon Mustard | Tomato Relish | Garlic Mayo"
+  },
+  {
+    "name": "DRIFTER (SINGLE PATTIE) - Beef",
+    "price": "Rs. 1850",
+    "description": "Cheddar Cheese | Gherkin Chips | Dijon Mustard | Tomato Relish | Garlic Mayo"
+  },
+  {
+    "name": "DRIFTER (SINGLE PATTIE) - Vege",
+    "price": "Rs. 1300",
+    "description": "Cheddar Cheese | Gherkin Chips | Dijon Mustard | Tomato Relish | Garlic Mayo"
+  },
+  {
+    "name": "TWIN DRIFTER (2X PATTIE) - Beef",
+    "price": "Rs. 2450",
+    "description": "Cheddar Cheese | Gherkin Chips | Dijon Mustard | Tomato Relish | Garlic Mayo"
+  },
+  {
+    "name": "SILENCER - Crispy",
+    "price": "Rs. 1850",
+    "description": "Description not fully visible."
+  },
+  {
+    "name": "SILENCER - Beef",
+    "price": "Rs. 1800",
+    "description": "Description not fully visible."
+  },
+  {
+    "name": "STREET COOPER - Chicken Slider",
+    "price": "Rs. 1150",
+    "description": "Cheddar Cheese | Iceberg Lettuce | Garlic Mayo"
+  },
+  {
+    "name": "STREET COOPER - Beef Slider",
+    "price": "Rs. 1150",
+    "description": "Cheddar Cheese | Iceberg Lettuce | Garlic Mayo"
+  },
+  {
+    "name": "COUPE SLIDER",
+    "price": "Rs. 1150",
+    "description": "Crispy Chicken | Iceberg Lettuce | Sriracha Mayo"
+  },
+  {
+    "name": "SILENCER SLIDER",
+    "price": "Rs. 1150",
+    "description": "Crispy Chicken | Iceberg Lettuce | Hot Sauce | Garlic Mayo"
+  },
+  {
+    "name": "BBQ SLIDER",
+    "price": "Rs. 1150",
+    "description": "Crispy Chicken | Iceberg Lettuce | BBQ Sauce | Garlic Mayo"
+  },
+  {
+    "name": "FRIES",
+    "price": "Rs. 950",
+    "description": "Crispy Fries | Served with Garlic Mayo Dip and Ketchup"
+  },
+  {
+    "name": "RIPPLE STRIPES",
+    "price": "Rs. 990",
+    "description": "Char-Grilled Chicken Tenderloins with Rosemary & Basil Served with Ripple Sauce"
+  },
+  {
+    "name": "Fries | Gochujang Mayo | Crispy Fried Pulled Beef | Driftmas Sauce",
+    "price": "Rs. 1850",
+    "description": ""
+  },
+  {
+    "name": "Fries | Gochujang Mayo | Crispy Chicken Bites | Driftmas Sauce | Fried Shallots",
+    "price": "Rs. 1850",
+    "description": ""
+  }
+]

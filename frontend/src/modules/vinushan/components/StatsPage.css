@@ -1,0 +1,710 @@
+/* ============================================
+   Professional Dashboard - Modern Design
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px 28px;
+  background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ============================================
+   Section Headers
+   ============================================ */
+
+.section-header {
+  margin-bottom: 16px;
+  margin-top: 8px;
+}
+
+.section-header:first-of-type {
+  margin-top: 0;
+}
+
+.section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.01em;
+}
+
+.section-subtitle {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 4px 0 0;
+  font-weight: 400;
+}
+
+/* ============================================
+   Insights Row (Weather & Holidays)
+   ============================================ */
+
+.insights-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .insights-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.insights-row .card {
+  min-height: 200px;
+}
+
+/* ============================================
+   Loading & Error States
+   ============================================ */
+
+.dashboard-loading,
+.dashboard-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 20px;
+}
+
+.loader {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.loader-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: #3b82f6;
+  animation: spin 1s linear infinite;
+}
+
+.loader-ring:nth-child(2) {
+  width: 80%;
+  height: 80%;
+  top: 10%;
+  left: 10%;
+  border-top-color: #10b981;
+  animation-duration: 0.8s;
+  animation-direction: reverse;
+}
+
+.loader-ring:nth-child(3) {
+  width: 60%;
+  height: 60%;
+  top: 20%;
+  left: 20%;
+  border-top-color: #8b5cf6;
+  animation-duration: 0.6s;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.dashboard-loading p {
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.error-content {
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 56px;
+  margin-bottom: 8px;
+}
+
+.error-content h3 {
+  color: #0f172a;
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+}
+
+.error-content p {
+  color: #64748b;
+  margin: 0 0 20px;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+}
+
+.btn-primary svg {
+  width: 18px;
+  height: 18px;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+/* ============================================
+   Filter Dropdown
+   ============================================ */
+
+.filter-select-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.filter-select {
+  appearance: none;
+  padding: 8px 32px 8px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.filter-select:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-chevron {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+/* ============================================
+   KPI Section
+   ============================================ */
+
+.kpi-section {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+  .kpi-section {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .kpi-section {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px 24px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 6px 16px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.3), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+.kpi-card:hover::before {
+  opacity: 1;
+}
+
+.kpi-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kpi-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.kpi-icon.blue {
+  background: linear-gradient(145deg, #dbeafe 0%, #bfdbfe 100%);
+  color: #2563eb;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.kpi-icon.green {
+  background: linear-gradient(145deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #059669;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.kpi-icon.purple {
+  background: linear-gradient(145deg, #ede9fe 0%, #ddd6fe 100%);
+  color: #7c3aed;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+.kpi-icon.orange {
+  background: linear-gradient(145deg, #fef3c7 0%, #fde68a 100%);
+  color: #d97706;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.kpi-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.kpi-value {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.kpi-label {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.kpi-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.kpi-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+.kpi-badge.success {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #15803d;
+}
+
+.kpi-badge.danger {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: #dc2626;
+}
+
+/* ============================================
+   Dashboard Grid
+   ============================================ */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  flex: 1;
+}
+
+@media (max-width: 1400px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================
+   Card Styles
+   ============================================ */
+
+.card {
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 6px 16px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+.card-revenue {
+  grid-column: span 2;
+}
+
+@media (max-width: 900px) {
+  .card-revenue {
+    grid-column: span 1;
+  }
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 22px 0;
+  gap: 12px;
+}
+
+.card-title-group h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.card-title-group p {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+/* Chart Containers */
+.card-chart-lg {
+  flex: 1;
+  padding: 20px 22px 22px;
+  min-height: 280px;
+  position: relative;
+}
+
+.card-chart {
+  flex: 1;
+  padding: 16px 20px 20px;
+  min-height: 220px;
+  position: relative;
+}
+
+.donut-chart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 260px;
+}
+
+/* ============================================
+   Weather Card
+   ============================================ */
+
+.card-weather .weather-content {
+  flex: 1;
+  padding: 16px 20px 20px;
+}
+
+.weather-loading,
+.weather-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  min-height: 180px;
+  color: #94a3b8;
+}
+
+.weather-loading .mini-loader,
+.holidays-loading .mini-loader {
+  width: 24px;
+  height: 24px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.weather-icon-lg {
+  font-size: 52px;
+}
+
+.weather-current {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.weather-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.weather-temp-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.weather-temp {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.weather-condition {
+  font-size: 0.95rem;
+  color: #64748b;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.weather-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.weather-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px;
+  background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  gap: 4px;
+}
+
+.weather-stat .stat-icon {
+  font-size: 20px;
+}
+
+.weather-stat .stat-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.weather-stat .stat-label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.weather-forecast {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.forecast-day {
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border-radius: 10px;
+  gap: 12px;
+}
+
+.forecast-name {
+  font-weight: 600;
+  color: #334155;
+  flex: 1;
+}
+
+.forecast-icon {
+  font-size: 24px;
+}
+
+.forecast-temps {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+/* ============================================
+   Holidays Card
+   ============================================ */
+
+.card-holidays .holidays-content {
+  flex: 1;
+  padding: 12px 20px 20px;
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+.holidays-loading,
+.holidays-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  height: 100%;
+  min-height: 150px;
+  color: #94a3b8;
+}
+
+.holidays-empty span {
+  font-size: 40px;
+}
+
+.holidays-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.holiday-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  transition: all 0.2s ease;
+}
+
+.holiday-item:hover {
+  background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%);
+  transform: translateX(4px);
+}
+
+.holiday-date-badge {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+.holiday-day {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: white;
+  line-height: 1;
+}
+
+.holiday-month {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.holiday-details {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.holiday-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.holiday-type {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* ============================================
+   Scrollbar Styling
+   ============================================ */
+
+.dashboard-container::-webkit-scrollbar,
+.holidays-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-container::-webkit-scrollbar-track,
+.holidays-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-container::-webkit-scrollbar-thumb,
+.holidays-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.dashboard-container::-webkit-scrollbar-thumb:hover,
+.holidays-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
