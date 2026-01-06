@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ATHENA Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #09090b;
+      --bg-secondary: #0a0a0b;
+      --card: rgba(255, 255, 255, 0.02);
+      --border: rgba(255, 255, 255, 0.06);
+      --border-hover: rgba(255, 255, 255, 0.12);
+      --text: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --primary: #3b82f6;
+      --primary-light: #60a5fa;
+      --accent: #8b5cf6;
+      --success: #22c55e;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Layout */
+    .docs-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      min-width: 260px;
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border);
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 24px 16px;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 24px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .sidebar-title {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* Search */
+    .search-container {
+      position: relative;
+      margin-bottom: 24px;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 40px 10px 38px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .search-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .search-input:focus {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .search-shortcut {
+      position: absolute;
+      right: 10px;
+      opacity: 0.5;
+      font-size: 10px;
+      padding: 2px 6px;
+    }
+
+    .search-input:focus + .search-shortcut {
+      display: none;
+    }
+
+    .search-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      margin-top: 8px;
+      background: #1a1a1c;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      max-height: 400px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .search-results.active {
+      display: block;
+    }
+
+    .search-result-item {
+      display: block;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      text-decoration: none;
+      transition: background 0.15s ease;
+      cursor: pointer;
+    }
+
+    .search-result-item:last-child {
+      border-bottom: none;
+    }
+
+    .search-result-item:hover,
+    .search-result-item.selected {
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .search-result-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .search-result-section {
+      font-size: 11px;
+      color: var(--primary-light);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .search-result-preview {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .search-result-preview mark {
+      background: rgba(59, 130, 246, 0.3);
+      color: var(--text);
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+
+    .search-no-results {
+      padding: 24px 16px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .search-no-results span {
+      display: block;
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .nav-section {
+      margin-bottom: 28px;
+    }
+
+    .nav-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      padding: 0 12px;
+      margin-bottom: 8px;
+    }
+
+    .nav-link {
+      display: block;
+      padding: 10px 12px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .nav-link.active {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      padding: 48px 80px;
+      max-width: 100%;
+    }
+
+    .content-wrapper {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    /* Section */
+    section {
+      margin-bottom: 80px;
+      scroll-margin-top: 40px;
+    }
+
+    /* Typography */
+    .section-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--primary-light);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 42px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+
+    .lead {
+      font-size: 18px;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 48px 0 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 8px;
+    }
+
+    p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* Cards */
+    .card {
+      padding: 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card.highlight {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(139, 92, 246, 0.05));
+      border-color: rgba(59, 130, 246, 0.15);
+    }
+
+    .card p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Feature Grid */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .feature-card {
+      padding: 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.2s ease;
+    }
+
+    .feature-card:hover {
+      border-color: var(--border-hover);
+    }
+
+    .feature-icon {
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    .feature-card h3 {
+      margin-bottom: 6px;
+    }
+
+    .feature-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    /* Steps */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .step {
+      display: flex;
+      gap: 16px;
+      padding: 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .step-number {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .step-content h3 {
+      margin-bottom: 4px;
+    }
+
+    .step-content p {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    /* Code */
+    code {
+      display: inline-block;
+      padding: 8px 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      font-family: 'SF Mono', Monaco, Consolas, monospace;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .code-block {
+      display: block;
+      padding: 16px 20px;
+      margin: 16px 0;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    code em {
+      color: var(--primary-light);
+      font-style: normal;
+    }
+
+    /* Callout */
+    .callout {
+      display: flex;
+      gap: 14px;
+      padding: 16px 20px;
+      background: rgba(59, 130, 246, 0.06);
+      border: 1px solid rgba(59, 130, 246, 0.12);
+      border-radius: 10px;
+      margin: 24px 0;
+    }
+
+    .callout.warning {
+      background: rgba(245, 158, 11, 0.06);
+      border-color: rgba(245, 158, 11, 0.15);
+    }
+
+    .callout-icon {
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .callout-content {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .callout-content strong {
+      color: var(--text);
+    }
+
+    /* Navigation Items */
+    .nav-items {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .nav-item {
+      display: flex;
+      gap: 16px;
+      padding: 20px 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.2s ease;
+    }
+
+    .nav-item:hover {
+      border-color: var(--border-hover);
+    }
+
+    .nav-item.primary {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(139, 92, 246, 0.04));
+      border-color: rgba(59, 130, 246, 0.15);
+    }
+
+    .nav-item-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .nav-item-content h3 {
+      display: inline;
+      margin-right: 12px;
+    }
+
+    .nav-item-content p {
+      margin: 8px 0 0;
+      font-size: 13px;
+    }
+
+    /* Kbd */
+    kbd {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      padding: 3px 7px;
+      background: linear-gradient(180deg, #27272a, #18181b);
+      border: 1px solid #3f3f46;
+      border-radius: 5px;
+      box-shadow: 0 2px 0 #18181b;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      color: #e4e4e7;
+    }
+
+    .shortcut {
+      display: inline-flex;
+      gap: 4px;
+      margin-left: 8px;
+    }
+
+    /* Table */
+    .table {
+      width: 100%;
+      margin: 24px 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .table-row {
+      display: flex;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-row:last-child {
+      border-bottom: none;
+    }
+
+    .table-row:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .table-icon {
+      width: 40px;
+      font-size: 18px;
+    }
+
+    .table-name {
+      width: 150px;
+      font-weight: 600;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .table-desc {
+      flex: 1;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Agents */
+    .agents {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .agent {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .agent.primary {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(139, 92, 246, 0.04));
+      border-color: rgba(59, 130, 246, 0.15);
+    }
+
+    .agent-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 24px;
+      cursor: pointer;
+    }
+
+    .agent-icon {
+      font-size: 28px;
+    }
+
+    .agent-info {
+      flex: 1;
+    }
+
+    .agent-info h3 {
+      margin-bottom: 2px;
+    }
+
+    .agent-role {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .agent.primary .agent-role {
+      color: var(--primary-light);
+    }
+
+    .agent-toggle {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 18px;
+      transition: transform 0.2s ease;
+    }
+
+    .agent.expanded .agent-toggle {
+      transform: rotate(180deg);
+    }
+
+    .agent-body {
+      display: none;
+      padding: 0 24px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .agent.expanded .agent-body {
+      display: block;
+      padding-top: 16px;
+    }
+
+    .agent-body strong {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--text-muted);
+    }
+
+    .agent-body ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+
+    .agent-body li {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    /* Question Types */
+    .question-types {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .question-type {
+      padding: 24px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      position: relative;
+    }
+
+    .question-type.recommended {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.06), rgba(34, 197, 94, 0.02));
+      border-color: rgba(34, 197, 94, 0.2);
+    }
+
+    .question-type h3 {
+      margin-bottom: 12px;
+    }
+
+    .examples {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .examples code {
+      display: block;
+      text-align: left;
+      background: rgba(0, 0, 0, 0.3);
+      font-size: 12px;
+    }
+
+    .keywords {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .keyword {
+      padding: 4px 10px;
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--primary-light);
+      font-size: 11px;
+      font-weight: 500;
+      border-radius: 4px;
+    }
+
+    .recommended-badge {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 4px 10px;
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      border-radius: 4px;
+    }
+
+    /* Formula */
+    .formula {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 28px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin: 32px 0;
+    }
+
+    .formula-part {
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .formula-part.action {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--primary-light);
+    }
+
+    .formula-part.subject {
+      background: rgba(139, 92, 246, 0.15);
+      color: #a78bfa;
+    }
+
+    .formula-part.time {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+    }
+
+    .formula-plus {
+      color: var(--text-muted);
+      font-size: 18px;
+    }
+
+    /* Shortcuts Grid */
+    .shortcuts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin: 24px 0;
+    }
+
+    .shortcut-group h3 {
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .shortcut-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .shortcut-row:last-child {
+      border-bottom: none;
+    }
+
+    .shortcut-keys {
+      display: flex;
+      gap: 4px;
+    }
+
+    .shortcut-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* List */
+    ul.styled-list {
+      list-style: none;
+      padding: 0;
+      margin: 16px 0;
+    }
+
+    ul.styled-list li {
+      position: relative;
+      padding-left: 24px;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    ul.styled-list li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+    }
+
+    /* Two Column */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      margin: 24px 0;
+    }
+
+    .col h3 {
+      margin-bottom: 12px;
+    }
+
+    /* Footer */
+    .footer {
+      margin-top: 80px;
+      padding: 32px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .sidebar {
+        width: 220px;
+        min-width: 220px;
+      }
+      
+      .main-content {
+        margin-left: 220px;
+        padding: 40px 48px;
+      }
+      
+      .feature-grid,
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+      
+      .shortcuts-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        position: static;
+        width: 100%;
+        min-width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 16px;
+      }
+      
+      .nav-section {
+        display: none;
+      }
+      
+      .nav-section:first-child {
+        display: block;
+        margin-bottom: 0;
+      }
+      
+      .nav-section-title {
+        display: none;
+      }
+      
+      .nav-section:first-child .nav-section-title {
+        display: block;
+      }
+      
+      .main-content {
+        margin-left: 0;
+        padding: 32px 24px;
+      }
+      
+      h1 {
+        font-size: 32px;
+      }
+      
+      .shortcuts-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .formula {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="docs-container">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">A</div>
+        <span class="sidebar-title">ATHENA Docs</span>
+      </div>
+
+      <!-- Search Box -->
+      <div class="search-container">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="M21 21l-4.35-4.35"></path>
+          </svg>
+          <input type="text" id="docs-search" class="search-input" placeholder="Search docs..." autocomplete="off">
+          <kbd class="search-shortcut">/</kbd>
+        </div>
+        <div id="search-results" class="search-results"></div>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Getting Started</div>
+        <a href="#introduction" class="nav-link active">Introduction</a>
+        <a href="#quick-start" class="nav-link">Quick Start</a>
+        <a href="#navigation" class="nav-link">Navigation</a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Athena Chat</div>
+        <a href="#chat-interface" class="nav-link">Chat Interface</a>
+        <a href="#ai-agents" class="nav-link">AI Agents</a>
+        <a href="#asking-questions" class="nav-link">Asking Questions</a>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-title">Reference</div>
+        <a href="#features" class="nav-link">Features</a>
+        <a href="#shortcuts" class="nav-link">Keyboard Shortcuts</a>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="content-wrapper">
+
+        <!-- Introduction -->
+        <section id="introduction">
+          <span class="section-badge">Getting Started</span>
+          <h1>Welcome to ATHENA</h1>
+          <p class="lead">Context-Aware Forecasting and Decision Support System for intelligent coffee shop management.</p>
+
+          <div class="card highlight">
+            <p><strong>ATHENA</strong> is an AI-powered decision support system that helps coffee shop managers make data-driven decisions by analyzing historical sales, weather patterns, holidays, and seasonal trends.</p>
+          </div>
+
+          <h2>What makes ATHENA different?</h2>
+          <p>Unlike traditional forecasting tools, ATHENA uses a multi-agent AI architecture where specialized agents collaborate to provide comprehensive insights. Each agent brings unique expertise — from historical analysis to weather impact assessment.</p>
+
+          <div class="feature-grid">
+            <div class="feature-card">
+              <div class="feature-icon">📊</div>
+              <h3>Smart Forecasting</h3>
+              <p>XGBoost-powered predictions with confidence intervals</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">🌤️</div>
+              <h3>Weather Aware</h3>
+              <p>Real-time weather integration for accurate planning</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">📅</div>
+              <h3>Holiday Intelligence</h3>
+              <p>Sri Lankan holidays and festivals factored in</p>
+            </div>
+            <div class="feature-card">
+              <div class="feature-icon">🎯</div>
+              <h3>Actionable Insights</h3>
+              <p>Specific staffing and inventory recommendations</p>
+            </div>
+          </div>
+
+          <h2>System Requirements</h2>
+          <ul class="styled-list">
+            <li>Modern web browser (Chrome, Firefox, Safari, Edge)</li>
+            <li>Internet connection for AI processing</li>
+            <li>Microphone access (optional, for voice features)</li>
+          </ul>
+        </section>
+
+        <!-- Quick Start -->
+        <section id="quick-start">
+          <span class="section-badge">Tutorial</span>
+          <h1>Quick Start Guide</h1>
+          <p class="lead">Get up and running with ATHENA in under 2 minutes.</p>
+
+          <div class="steps">
+            <div class="step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h3>Navigate to Athena Tab</h3>
+                <p>Click on the <strong>Athena</strong> tab in the navigation bar, or press <kbd>⌘</kbd> + <kbd>2</kbd></p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h3>Ask Your First Question</h3>
+                <p>Type a question like:</p>
+                <code>"What actions should I take for February 2026?"</code>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h3>Watch the Agents Work</h3>
+                <p>The Agent Thoughts panel shows real-time reasoning from each AI agent as they analyze your question.</p>
+              </div>
+            </div>
+            <div class="step">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <h3>Review & Act</h3>
+                <p>Read the comprehensive response, export as PDF, or send directly to your manager via email.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout">
+            <div class="callout-icon">💡</div>
+            <div class="callout-content">
+              <strong>Pro Tip:</strong> Be specific with dates. "February 2026" gives better results than "next month".
+            </div>
+          </div>
+        </section>
+
+        <!-- Navigation -->
+        <section id="navigation">
+          <span class="section-badge">Interface</span>
+          <h1>Navigation Guide</h1>
+          <p class="lead">Understanding the main sections of the application.</p>
+
+          <div class="nav-items">
+            <div class="nav-item">
+              <div class="nav-item-icon">📊</div>
+              <div class="nav-item-content">
+                <h3>Overview</h3>
+                <span class="shortcut"><kbd>⌘</kbd><kbd>1</kbd></span>
+                <p>Dashboard with real-time metrics, weather widget, upcoming holidays, and sales charts. Get a quick snapshot of your business performance.</p>
+              </div>
+            </div>
+            <div class="nav-item primary">
+              <div class="nav-item-icon">🤖</div>
+              <div class="nav-item-content">
+                <h3>Athena</h3>
+                <span class="shortcut"><kbd>⌘</kbd><kbd>2</kbd></span>
+                <p>The AI chat interface. Ask questions in natural language and get intelligent, context-aware responses with visualizations and recommendations.</p>
+              </div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">📖</div>
+              <div class="nav-item-content">
+                <h3>Guide</h3>
+                <span class="shortcut"><kbd>⌘</kbd><kbd>3</kbd></span>
+                <p>You are here! Documentation, tutorials, and reference materials.</p>
+              </div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">⚙️</div>
+              <div class="nav-item-content">
+                <h3>Settings</h3>
+                <span class="shortcut"><kbd>⌘</kbd><kbd>4</kbd></span>
+                <p>Configure email preferences, notifications, and system options.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Chat Interface -->
+        <section id="chat-interface">
+          <span class="section-badge">Core Feature</span>
+          <h1>Athena Chat</h1>
+          <p class="lead">Your AI-powered business intelligence assistant.</p>
+
+          <h2>Interface Overview</h2>
+          <p>The Athena chat interface consists of two main areas:</p>
+
+          <div class="two-col">
+            <div class="col">
+              <h3>Chat Area (Left)</h3>
+              <ul class="styled-list">
+                <li>Message history with your questions</li>
+                <li>AI responses with charts</li>
+                <li>Action buttons (speak, export, email)</li>
+                <li>Input field at the bottom</li>
+              </ul>
+            </div>
+            <div class="col">
+              <h3>Agent Thoughts (Right)</h3>
+              <ul class="styled-list">
+                <li>Real-time agent reasoning</li>
+                <li>Processing time per agent</li>
+                <li>Tool usage indicators</li>
+                <li>Toggle with <kbd>⌘</kbd><kbd>R</kbd></li>
+              </ul>
+            </div>
+          </div>
+
+          <h2>Message Actions</h2>
+          <div class="table">
+            <div class="table-row">
+              <div class="table-icon">🔊</div>
+              <div class="table-name">Text-to-Speech</div>
+              <div class="table-desc">Listen to the response read aloud</div>
+            </div>
+            <div class="table-row">
+              <div class="table-icon">📥</div>
+              <div class="table-name">Export</div>
+              <div class="table-desc">Download as PDF or Word document</div>
+            </div>
+            <div class="table-row">
+              <div class="table-icon">📧</div>
+              <div class="table-name">Send to Manager</div>
+              <div class="table-desc">AI composes email, opens Gmail</div>
+            </div>
+            <div class="table-row">
+              <div class="table-icon">🗑️</div>
+              <div class="table-name">Delete</div>
+              <div class="table-desc">Remove Q&A from history</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- AI Agents -->
+        <section id="ai-agents">
+          <span class="section-badge">Architecture</span>
+          <h1>AI Agents</h1>
+          <p class="lead">Meet the team of specialized agents powering ATHENA.</p>
+
+          <p>ATHENA uses a multi-agent system where five specialized AI agents collaborate. Each agent analyzes your question from their unique perspective, then the Strategy Coordinator synthesizes everything into actionable recommendations.</p>
+
+          <div class="agents">
+            <div class="agent" onclick="this.classList.toggle('expanded')">
+              <div class="agent-header">
+                <span class="agent-icon">📜</span>
+                <div class="agent-info">
+                  <h3>Historical Data Analyst</h3>
+                  <span class="agent-role">Data Expert</span>
+                </div>
+                <span class="agent-toggle">▼</span>
+              </div>
+              <div class="agent-body">
+                <p>Analyzes 5 years of sales data to identify patterns, trends, and seasonal variations.</p>
+                <strong>Capabilities:</strong>
+                <ul>
+                  <li>Year-over-year comparisons</li>
+                  <li>Best/worst performing period identification</li>
+                  <li>Product performance history</li>
+                  <li>Sales trend analysis</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="agent" onclick="this.classList.toggle('expanded')">
+              <div class="agent-header">
+                <span class="agent-icon">🔮</span>
+                <div class="agent-info">
+                  <h3>Forecasting Specialist</h3>
+                  <span class="agent-role">Prediction Expert</span>
+                </div>
+                <span class="agent-toggle">▼</span>
+              </div>
+              <div class="agent-body">
+                <p>Uses XGBoost machine learning models to generate accurate sales predictions.</p>
+                <strong>Capabilities:</strong>
+                <ul>
+                  <li>Daily and weekly predictions</li>
+                  <li>Demand forecasting by product</li>
+                  <li>Confidence interval calculations</li>
+                  <li>Trend projections</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="agent" onclick="this.classList.toggle('expanded')">
+              <div class="agent-header">
+                <span class="agent-icon">🎄</span>
+                <div class="agent-info">
+                  <h3>Holiday Expert</h3>
+                  <span class="agent-role">Events Specialist</span>
+                </div>
+                <span class="agent-toggle">▼</span>
+              </div>
+              <div class="agent-body">
+                <p>Tracks Sri Lankan holidays, festivals, and special events that impact business.</p>
+                <strong>Capabilities:</strong>
+                <ul>
+                  <li>Poya day awareness</li>
+                  <li>Festival impact analysis</li>
+                  <li>School holiday patterns</li>
+                  <li>Special event recommendations</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="agent" onclick="this.classList.toggle('expanded')">
+              <div class="agent-header">
+                <span class="agent-icon">🌦️</span>
+                <div class="agent-info">
+                  <h3>Weather Analyst</h3>
+                  <span class="agent-role">Weather Expert</span>
+                </div>
+                <span class="agent-toggle">▼</span>
+              </div>
+              <div class="agent-body">
+                <p>Integrates real-time and forecasted weather to understand customer behavior.</p>
+                <strong>Capabilities:</strong>
+                <ul>
+                  <li>Current weather conditions</li>
+                  <li>Weather impact on foot traffic</li>
+                  <li>Product recommendations by weather</li>
+                  <li>Seasonal patterns</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="agent primary" onclick="this.classList.toggle('expanded')">
+              <div class="agent-header">
+                <span class="agent-icon">🎯</span>
+                <div class="agent-info">
+                  <h3>Strategy Coordinator</h3>
+                  <span class="agent-role">Lead Agent</span>
+                </div>
+                <span class="agent-toggle">▼</span>
+              </div>
+              <div class="agent-body">
+                <p>The lead agent that synthesizes all insights into cohesive, actionable strategies.</p>
+                <strong>Capabilities:</strong>
+                <ul>
+                  <li>Multi-source insight synthesis</li>
+                  <li>Staffing recommendations</li>
+                  <li>Inventory planning</li>
+                  <li>Promotional strategies</li>
+                  <li>Risk assessment</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Asking Questions -->
+        <section id="asking-questions">
+          <span class="section-badge">Best Practices</span>
+          <h1>Asking Questions</h1>
+          <p class="lead">How to phrase questions for optimal results.</p>
+
+          <h2>Question Types</h2>
+
+          <div class="question-types">
+            <div class="question-type">
+              <h3>📊 Forecasting</h3>
+              <div class="examples">
+                <code>"What are the predicted sales for February 2026?"</code>
+                <code>"How many customers should I expect next week?"</code>
+                <code>"What will be the busiest days in December?"</code>
+              </div>
+              <div class="keywords">
+                <span class="keyword">predict</span>
+                <span class="keyword">forecast</span>
+                <span class="keyword">expect</span>
+                <span class="keyword">future</span>
+                <span class="keyword">next</span>
+              </div>
+            </div>
+
+            <div class="question-type">
+              <h3>📜 Historical</h3>
+              <div class="examples">
+                <code>"How did we perform last December?"</code>
+                <code>"What were the top selling items in 2024?"</code>
+                <code>"Show me sales trends from last year"</code>
+              </div>
+              <div class="keywords">
+                <span class="keyword">last</span>
+                <span class="keyword">previous</span>
+                <span class="keyword">history</span>
+                <span class="keyword">past</span>
+                <span class="keyword">trend</span>
+              </div>
+            </div>
+
+            <div class="question-type recommended">
+              <h3>🎯 Action-Based</h3>
+              <div class="recommended-badge">Recommended</div>
+              <div class="examples">
+                <code>"What actions should I take for February 2026?"</code>
+                <code>"What should I prepare for Valentine's Day?"</code>
+                <code>"How should I staff for the holiday season?"</code>
+              </div>
+              <div class="keywords">
+                <span class="keyword">action</span>
+                <span class="keyword">should</span>
+                <span class="keyword">prepare</span>
+                <span class="keyword">recommend</span>
+                <span class="keyword">plan</span>
+              </div>
+            </div>
+
+            <div class="question-type">
+              <h3>📈 Comparison</h3>
+              <div class="examples">
+                <code>"Compare January vs February sales"</code>
+                <code>"Which day of the week performs best?"</code>
+              </div>
+              <div class="keywords">
+                <span class="keyword">compare</span>
+                <span class="keyword">versus</span>
+                <span class="keyword">vs</span>
+                <span class="keyword">best</span>
+                <span class="keyword">worst</span>
+              </div>
+            </div>
+          </div>
+
+          <h2>The Perfect Format</h2>
+          <div class="formula">
+            <span class="formula-part action">Action</span>
+            <span class="formula-plus">+</span>
+            <span class="formula-part subject">Subject</span>
+            <span class="formula-plus">+</span>
+            <span class="formula-part time">Time Period</span>
+          </div>
+          <code class="code-block">"What <em>actions</em> should I take for <em>inventory</em> in <em>February 2026</em>?"</code>
+
+          <div class="callout warning">
+            <div class="callout-icon">⚠️</div>
+            <div class="callout-content">
+              <strong>Avoid vague questions</strong> like "What's happening?" — be specific about what you want to know.
+            </div>
+          </div>
+        </section>
+
+        <!-- Features -->
+        <section id="features">
+          <span class="section-badge">Capabilities</span>
+          <h1>Features</h1>
+          <p class="lead">Everything ATHENA can do for you.</p>
+
+          <div class="nav-items">
+            <div class="nav-item">
+              <div class="nav-item-icon">🔊</div>
+              <div class="nav-item-content">
+                <h3>Text-to-Speech</h3>
+                <p>Have ATHENA read responses aloud using OpenAI's natural voice synthesis. Press <kbd>S</kbd> on any response or click the speaker icon.</p>
+              </div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">📥</div>
+              <div class="nav-item-content">
+                <h3>Export Reports</h3>
+                <p>Download any response as a professionally formatted PDF or Word document. Perfect for sharing with stakeholders or archiving.</p>
+              </div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">📧</div>
+              <div class="nav-item-content">
+                <h3>Email to Manager</h3>
+                <p>One-click email generation. AI composes a professional email summarizing the insights, then opens Gmail with everything pre-filled.</p>
+              </div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">📊</div>
+              <div class="nav-item-content">
+                <h3>Auto Charts</h3>
+                <p>ATHENA automatically generates visualizations when relevant. Bar charts, line graphs, and pie charts appear inline with responses.</p>
+              </div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">🧠</div>
+              <div class="nav-item-content">
+                <h3>Agent Thoughts</h3>
+                <p>Watch AI reasoning in real-time. See which agents are working, what tools they're using, and how long each takes.</p>
+              </div>
+            </div>
+            <div class="nav-item">
+              <div class="nav-item-icon">💾</div>
+              <div class="nav-item-content">
+                <h3>Chat Persistence</h3>
+                <p>Your conversation history is automatically saved. Return anytime to review past questions and answers.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Keyboard Shortcuts -->
+        <section id="shortcuts">
+          <span class="section-badge">Reference</span>
+          <h1>Keyboard Shortcuts</h1>
+          <p class="lead">Navigate faster with these keyboard commands.</p>
+
+          <div class="shortcuts-grid">
+            <div class="shortcut-group">
+              <h3>Navigation</h3>
+              <div class="shortcut-row">
+                <div class="shortcut-keys"><kbd>⌘</kbd><kbd>1</kbd></div>
+                <span class="shortcut-label">Overview</span>
+              </div>
+              <div class="shortcut-row">
+                <div class="shortcut-keys"><kbd>⌘</kbd><kbd>2</kbd></div>
+                <span class="shortcut-label">Athena</span>
+              </div>
+              <div class="shortcut-row">
+                <div class="shortcut-keys"><kbd>⌘</kbd><kbd>3</kbd></div>
+                <span class="shortcut-label">Guide</span>
+              </div>
+              <div class="shortcut-row">
+                <div class="shortcut-keys"><kbd>⌘</kbd><kbd>4</kbd></div>
+                <span class="shortcut-label">Settings</span>
+              </div>
+            </div>
+
+            <div class="shortcut-group">
+              <h3>Chat</h3>
+              <div class="shortcut-row">
+                <div class="shortcut-keys"><kbd>/</kbd></div>
+                <span class="shortcut-label">Focus input</span>
+              </div>
+              <div class="shortcut-row">
+                <div class="shortcut-keys"><kbd>Enter</kbd></div>
+                <span class="shortcut-label">Send message</span>
+              </div>
+              <div class="shortcut-row">
+                <div class="shortcut-keys"><kbd>⌘</kbd><kbd>S</kbd></div>
+                <span class="shortcut-label">Stop query</span>
+              </div>
+              <div class="shortcut-row">
+                <div class="shortcut-keys"><kbd>⌘</kbd><kbd>R</kbd></div>
+                <span class="shortcut-label">Toggle agents</span>
+              </div>
+            </div>
+
+            <div class="shortcut-group">
+              <h3>Message Actions</h3>
+              <div class="shortcut-row">
+                <div class="shortcut-keys"><kbd>S</kbd></div>
+                <span class="shortcut-label">Speak response</span>
+              </div>
+              <div class="shortcut-row">
+                <div class="shortcut-keys"><kbd>E</kbd></div>
+                <span class="shortcut-label">Export options</span>
+              </div>
+              <div class="shortcut-row">
+                <div class="shortcut-keys"><kbd>Esc</kbd></div>
+                <span class="shortcut-label">Close panels</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout">
+            <div class="callout-icon">💡</div>
+            <div class="callout-content">
+              On Windows/Linux, use <kbd>Ctrl</kbd> instead of <kbd>⌘</kbd>
+            </div>
+          </div>
+        </section>
+
+        <footer class="footer">
+          <p>ATHENA Documentation • Version 1.0.0 • © 2026</p>
+        </footer>
+
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Update active nav link on scroll
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    function updateActiveLink() {
+      const scrollPos = window.scrollY + 100;
+      
+      sections.forEach(section => {
+        const top = section.offsetTop;
+        const height = section.offsetHeight;
+        const id = section.getAttribute('id');
+        
+        if (scrollPos >= top && scrollPos < top + height) {
+          navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + id) {
+              link.classList.add('active');
+            }
+          });
+        }
+      });
+    }
+
+    window.addEventListener('scroll', updateActiveLink);
+    
+    // Smooth scroll for nav links
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+    });
+
+    // Search Functionality
+    const searchInput = document.getElementById('docs-search');
+    const searchResults = document.getElementById('search-results');
+    let selectedIndex = -1;
+
+    // Build searchable content index
+    const searchIndex = [];
+    sections.forEach(section => {
+      const id = section.getAttribute('id');
+      const badge = section.querySelector('.section-badge');
+      const title = section.querySelector('h1, h2');
+      const content = section.textContent;
+      
+      // Main section
+      searchIndex.push({
+        id: id,
+        title: title ? title.textContent : id,
+        section: badge ? badge.textContent : 'Documentation',
+        content: content.substring(0, 500),
+        element: section
+      });
+
+      // Also index h2 subsections
+      section.querySelectorAll('h2').forEach(h2 => {
+        searchIndex.push({
+          id: id,
+          title: h2.textContent,
+          section: badge ? badge.textContent : 'Documentation',
+          content: h2.nextElementSibling ? h2.nextElementSibling.textContent.substring(0, 200) : '',
+          element: h2
+        });
+      });
+    });
+
+    function performSearch(query) {
+      if (!query.trim()) {
+        searchResults.classList.remove('active');
+        return;
+      }
+
+      const q = query.toLowerCase();
+      const results = searchIndex.filter(item => 
+        item.title.toLowerCase().includes(q) || 
+        item.content.toLowerCase().includes(q)
+      ).slice(0, 8);
+
+      if (results.length === 0) {
+        searchResults.innerHTML = `
+          <div class="search-no-results">
+            <span>🔍</span>
+            No results for "${query}"
+          </div>
+        `;
+      } else {
+        searchResults.innerHTML = results.map((result, index) => {
+          // Find matching text snippet
+          const contentLower = result.content.toLowerCase();
+          const matchIndex = contentLower.indexOf(q);
+          let preview = '';
+          if (matchIndex > -1) {
+            const start = Math.max(0, matchIndex - 40);
+            const end = Math.min(result.content.length, matchIndex + query.length + 60);
+            preview = (start > 0 ? '...' : '') + 
+                      result.content.substring(start, end).replace(
+                        new RegExp(`(${query})`, 'gi'), 
+                        '<mark>$1</mark>'
+                      ) + 
+                      (end < result.content.length ? '...' : '');
+          }
+          
+          return `
+            <div class="search-result-item${index === 0 ? ' selected' : ''}" data-id="${result.id}" data-index="${index}">
+              <div class="search-result-section">${result.section}</div>
+              <div class="search-result-title">${result.title}</div>
+              ${preview ? `<div class="search-result-preview">${preview}</div>` : ''}
+            </div>
+          `;
+        }).join('');
+      }
+
+      selectedIndex = results.length > 0 ? 0 : -1;
+      searchResults.classList.add('active');
+
+      // Add click handlers
+      searchResults.querySelectorAll('.search-result-item').forEach(item => {
+        item.addEventListener('click', () => {
+          navigateToResult(item.dataset.id);
+        });
+      });
+    }
+
+    function navigateToResult(id) {
+      const target = document.getElementById(id);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth' });
+        searchInput.value = '';
+        searchResults.classList.remove('active');
+        searchInput.blur();
+      }
+    }
+
+    function updateSelection(newIndex) {
+      const items = searchResults.querySelectorAll('.search-result-item');
+      if (items.length === 0) return;
+      
+      items.forEach(item => item.classList.remove('selected'));
+      selectedIndex = Math.max(0, Math.min(newIndex, items.length - 1));
+      items[selectedIndex].classList.add('selected');
+      items[selectedIndex].scrollIntoView({ block: 'nearest' });
+    }
+
+    searchInput.addEventListener('input', (e) => {
+      performSearch(e.target.value);
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+      const items = searchResults.querySelectorAll('.search-result-item');
+      
+      switch (e.key) {
+        case 'ArrowDown':
+          e.preventDefault();
+          updateSelection(selectedIndex + 1);
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          updateSelection(selectedIndex - 1);
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (items[selectedIndex]) {
+            navigateToResult(items[selectedIndex].dataset.id);
+          }
+          break;
+        case 'Escape':
+          searchResults.classList.remove('active');
+          searchInput.blur();
+          break;
+      }
+    });
+
+    // Focus search with / key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== searchInput) {
+        e.preventDefault();
+        searchInput.focus();
+      }
+    });
+
+    // Close results when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.search-container')) {
+        searchResults.classList.remove('active');
+      }
+    });
+  </script>
+</body>
+</html>

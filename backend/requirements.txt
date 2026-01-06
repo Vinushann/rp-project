@@ -23,3 +23,27 @@ scipy
 PyMuPDF
 reportlab
 python-multipart
+fastapi==0.109.0
+# Align with chromadb/mcp which require uvicorn >=0.31.1
+uvicorn[standard]==0.32.1
+pydantic==2.12.1
+
+# Development dependencies
+python-dotenv>=1.1.1
+httpx==0.27.2  # For testing and chromadb
+
+# Vinushan module dependencies
+crewai[tools]==1.5.0
+langchain-groq>=1.0.1
+langchain-openai>=0.2.0
+litellm>=1.80.5
+pandas>=2.1
+numpy>=1.24
+matplotlib>=3.8
+python-multipart>=0.0.6
+
+# Time series forecasting
+prophet>=1.1.5
+
+# Analytics
+factor-analyzer

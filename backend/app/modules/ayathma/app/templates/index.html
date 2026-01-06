@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Smart KPI System (V1)</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 40px; max-width: 850px; }
+      .box { border: 1px solid #ddd; padding: 16px; border-radius: 10px; }
+      .row { margin: 10px 0; }
+      input[type="text"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+      button { padding: 10px 14px; cursor: pointer; border: 1px solid #ddd; border-radius: 8px; background: white; }
+      button:hover { background: #f6f6f6; }
+      .muted { color: #666; font-size: 14px; }
+      .inline { display: flex; gap: 8px; align-items: center; }
+      .smallbtn { padding: 8px 10px; font-size: 12px; }
+      .dim-item { margin: 8px 0; }
+    </style>
+  </head>
+  <body>
+    <h2>Smart KPI System (V1)</h2>
+
+    <div class="box">
+      <p class="muted">
+        Upload a CSV/Excel. Leave overrides blank to auto-pick the best columns.
+        If you know your business measure (like TOTAL PRICE), type it.
+      </p>
+
+      <form action="/analyze" method="post" enctype="multipart/form-data">
+        <div class="row">
+          <input type="file" name="file" required />
+        </div>
+
+        <div class="row">
+          <label class="muted">Measure override (numeric column, optional)</label>
+          <input type="text" name="measure_col" placeholder="Example: TOTAL PRICE" />
+        </div>
+
+        <div class="row">
+          <label class="muted">
+            Dimension overrides (category columns, optional) — add one or more
+          </label>
+
+          <div id="dims">
+            <div class="dim-item inline">
+              <input type="text" name="dimension_cols" placeholder="Example: FOOD NAME" />
+              <button type="button" class="smallbtn" onclick="removeDim(this)">Remove</button>
+            </div>
+          </div>
+
+          <div class="row">
+            <button type="button" class="smallbtn" onclick="addDim()">+ Add another dimension</button>
+          </div>
+
+          <p class="muted">
+            Tip: add columns like PRODUCT, CATEGORY, BRANCH, PAYMENT METHOD to get multiple business-style cards.
+          </p>
+        </div>
+
+        <div class="row">
+          <label class="muted">Time override (datetime column, optional)</label>
+          <input type="text" name="time_col" placeholder="Example: SYSTEM DATE" />
+        </div>
+
+        <div class="row">
+          <button type="submit">Analyze</button>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      function addDim() {
+        const wrap = document.getElementById("dims");
+        const div = document.createElement("div");
+        div.className = "dim-item inline";
+        div.innerHTML = `
+          <input type="text" name="dimension_cols" placeholder="Example: CATEGORY" />
+          <button type="button" class="smallbtn" onclick="removeDim(this)">Remove</button>
+        `;
+        wrap.appendChild(div);
+      }
+
+      function removeDim(btn) {
+        const wrap = document.getElementById("dims");
+        if (wrap.children.length <= 1) return; // keep at least one input
+        btn.parentElement.remove();
+      }
+    </script>
+  </body>
+</html>
