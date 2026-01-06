@@ -1,0 +1,139 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Label Dataset</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 40px; max-width: 900px; }
+      .card { border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+      .muted { color: #666; font-size: 14px; }
+      select, input { padding: 10px; border: 1px solid #ddd; border-radius: 8px; width: 100%; }
+      .row { margin-top: 10px; }
+      button { padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; background: white; cursor: pointer; }
+      button:hover { background: #f6f6f6; }
+      .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .check { display:flex; gap:10px; align-items:center; margin: 6px 0; }
+      code { background:#f6f6f6; padding:2px 6px; border-radius:6px; }
+      .pill { display:inline-block; padding: 4px 8px; border:1px solid #eee; border-radius: 999px; font-size: 13px; margin-right: 6px; }
+      .warn { background:#fff7ed; border:1px solid #fed7aa; padding:10px 12px; border-radius:10px; }
+    </style>
+  </head>
+
+  <body>
+    <a href="/">← Back</a>
+    <h2>Label latest dataset</h2>
+    <div class="muted">This creates training examples for your KPI recommender model.</div>
+
+    {% if not results %}
+      <div class="card">No runs found. Upload a dataset first.</div>
+    {% else %}
+
+      {% set ml = results.get("ml_recommendation") or {} %}
+      {% set ml_pack = ml.get("pack") %}
+      {% set ml_cards = ml.get("cards_selected") or [] %}
+
+      <div class="card">
+        <b>Dataset:</b> {{ results["dataset_name"] }}<br/>
+        <b>Rows:</b> {{ results["profile"]["rows"] }} | <b>Cols:</b> {{ results["profile"]["cols"] }}
+        <div style="margin-top:10px;">
+          {% if ml_pack %}
+            <span class="pill">ML pack: <b>{{ ml_pack }}</b></span>
+          {% else %}
+            <span class="pill">ML pack: <b>not available</b></span>
+          {% endif %}
+
+          {% if role_defaults %}
+            <span class="pill">Role defaults: <b>enabled</b></span>
+          {% else %}
+            <span class="pill">Role defaults: <b>missing</b></span>
+          {% endif %}
+        </div>
+      </div>
+
+      <form method="post" action="/label">
+
+        <div class="card">
+          <h3>Pack</h3>
+          <div class="muted">Pick the correct dataset type. This is the “domain pack”.</div>
+          <div class="row">
+            <select name="pack" required>
+              <option value="POS_RESTAURANT" {% if ml_pack == "POS_RESTAURANT" %}selected{% endif %}>POS/Restaurant</option>
+              <option value="ECOMMERCE" {% if ml_pack == "ECOMMERCE" %}selected{% endif %}>Ecommerce</option>
+              <option value="FINANCE_TXN" {% if ml_pack == "FINANCE_TXN" %}selected{% endif %}>Finance transactions</option>
+              <option value="INVENTORY_WAREHOUSE" {% if ml_pack == "INVENTORY_WAREHOUSE" %}selected{% endif %}>Inventory/Warehouse</option>
+            </select>
+          </div>
+
+          {% if ml_pack %}
+            <div class="row warn">
+              <div class="muted">
+                Model suggested: <b>{{ ml_pack }}</b>. If it’s wrong, change it — this is the best signal for training.
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="card">
+          <h3>Cards to show (multi-select)</h3>
+          <div class="muted">Pick the cards that would actually help a Business/Data Analyst.</div>
+
+          {% for cid in card_ids %}
+            {% set checked = (cid in ml_cards) or (ml_cards|length == 0) %}
+            <label class="check">
+              <input type="checkbox" name="cards" value="{{ cid }}" {% if checked %}checked{% endif %} />
+              <span><code>{{ cid }}</code></span>
+            </label>
+          {% endfor %}
+
+          {% if ml_cards and ml_cards|length > 0 %}
+            <div class="row warn">
+              <div class="muted">
+                Checkboxes were pre-filled using the model’s recommended cards. Adjust them to what you actually want shown.
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="card">
+          <h3>Role mapping (optional but powerful)</h3>
+          <div class="muted">
+            Map business roles to real columns. This improves:
+            (1) measure selection (Revenue vs Quantity),
+            (2) business naming, and
+            (3) business KPI cards like “Top products by revenue”.
+          </div>
+
+          <div class="grid">
+            {% for role in roles %}
+              <div class="row">
+                <div class="muted">{{ role }}</div>
+                <select name="role__{{ role }}">
+                  <option value="">(none)</option>
+                  {% for c in columns %}
+                    <option
+                      value="{{ c }}"
+                      {% if role_defaults and role_defaults.get(role) == c %}selected{% endif %}
+                    >
+                      {{ c }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="row warn">
+            <div class="muted">
+              Tip: if your dataset has <b>Sales_Amount / Total / Revenue</b>, map it to <b>REVENUE</b>.
+              That single mapping instantly makes the system output real business KPIs.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <button type="submit">Save training example</button>
+        </div>
+      </form>
+    {% endif %}
+  </body>
+</html>
