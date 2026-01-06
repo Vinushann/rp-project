@@ -6,3 +6,4 @@ pydantic==2.5.3
 # Development dependencies
 python-dotenv==1.0.0
 httpx==0.26.0  # For testing
+factor-analyzer
