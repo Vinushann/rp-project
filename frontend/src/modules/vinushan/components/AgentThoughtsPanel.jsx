@@ -60,10 +60,17 @@ function ThoughtBlock({ phase, text, timestamp, isActive }) {
 }
 
 // Agent Section - groups thoughts by agent
-function AgentSection({ agentName, thoughts, isActive, isCompleted }) {
+function AgentSection({ agentName, thoughts, isActive, isCompleted, durationSeconds }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   
   const displayName = agentName?.replace(/_/g, ' ') || 'unknown';
+  
+  // Format duration for display
+  const formatDuration = (seconds) => {
+    if (!seconds && seconds !== 0) return '';
+    if (seconds < 60) return `${seconds.toFixed(1)}s`;
+    return `${Math.floor(seconds / 60)}m ${Math.floor(seconds % 60)}s`;
+  };
   
   return (
     <div className={`agent-section ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}`}>
@@ -77,6 +84,19 @@ function AgentSection({ agentName, thoughts, isActive, isCompleted }) {
           {!isActive && !isCompleted && <span className="status-indicator pending" />}
         </div>
         <span className="agent-name">{displayName}</span>
+        {isCompleted && durationSeconds && (
+          <span className="agent-duration" style={{ 
+            marginLeft: 'auto', 
+            fontSize: '0.75rem', 
+            color: '#22c55e',
+            fontFamily: 'monospace',
+            background: 'rgba(34, 197, 94, 0.1)',
+            padding: '2px 6px',
+            borderRadius: '4px',
+          }}>
+            ⏱️ {formatDuration(durationSeconds)}
+          </span>
+        )}
         <span className="collapse-icon">{isCollapsed ? '+' : '-'}</span>
       </div>
       
@@ -160,6 +180,7 @@ function AgentThoughtsPanel({
   const processEvents = () => {
     const agentThoughts = {};
     const completedAgents = new Set();
+    const agentDurations = {};  // Track duration for each agent
     const activeAgent = { name: null };
     
     events.forEach(event => {
@@ -183,6 +204,10 @@ function AgentThoughtsPanel({
         activeAgent.name = agentName;
       } else if (event.type === 'agent_end') {
         completedAgents.add(event.agent);
+        // Extract duration from event data
+        if (event.data?.duration_seconds) {
+          agentDurations[event.agent] = event.data.duration_seconds;
+        }
         if (activeAgent.name === event.agent) {
           activeAgent.name = null;
         }
@@ -212,10 +237,10 @@ function AgentThoughtsPanel({
       }
     });
     
-    return { agentThoughts, completedAgents, activeAgent: activeAgent.name };
+    return { agentThoughts, completedAgents, activeAgent: activeAgent.name, agentDurations };
   };
 
-  const { agentThoughts, completedAgents, activeAgent } = processEvents();
+  const { agentThoughts, completedAgents, activeAgent, agentDurations } = processEvents();
   const hasContent = events.length > 0 || routingReasoning || agentsNeeded.length > 0;
   const isRunComplete = events.some(e => e.type === 'run_end');
 
@@ -276,6 +301,7 @@ function AgentThoughtsPanel({
                       thoughts={thoughts}
                       isActive={activeAgent === agentName}
                       isCompleted={completedAgents.has(agentName)}
+                      durationSeconds={agentDurations[agentName]}
                     />
                   ))}
                 </div>

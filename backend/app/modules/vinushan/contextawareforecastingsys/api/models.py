@@ -30,6 +30,7 @@ class AgentStep(BaseModel):
     task_name: str
     summary: Optional[str] = None
     output_preview: Optional[str] = None
+    duration_seconds: Optional[float] = Field(None, description="Time taken by this agent in seconds")
 
 
 class ChartData(BaseModel):

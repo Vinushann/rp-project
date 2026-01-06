@@ -95,113 +95,126 @@ function parseMarkdownForExport(markdown) {
   return sections;
 }
 
-function renderInteractiveChart(chart) {
+// Simple chart rendering function
+function renderSimpleChart(chart) {
   if (!chart?.chart_data || !chart.chart_data.labels || !chart.chart_data.datasets?.length) return null;
 
   const { chart_type, labels, datasets } = chart.chart_data;
   
-  // Apply dark theme colors to datasets
+  const colors = ['#0ea5e9', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
+  const bgColors = [
+    'rgba(14, 165, 233, 0.7)', 
+    'rgba(34, 197, 94, 0.7)', 
+    'rgba(245, 158, 11, 0.7)', 
+    'rgba(239, 68, 68, 0.7)', 
+    'rgba(139, 92, 246, 0.7)',
+  ];
+  
   const themedDatasets = datasets.map((ds, idx) => ({
     ...ds,
-    borderColor: ds.borderColor || ['#0ea5e9', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'][idx % 5],
-    backgroundColor: ds.backgroundColor || (chart_type === 'line' 
+    borderColor: colors[idx % colors.length],
+    backgroundColor: chart_type === 'line' 
       ? 'rgba(14, 165, 233, 0.1)' 
-      : ['rgba(14, 165, 233, 0.7)', 'rgba(34, 197, 94, 0.7)', 'rgba(245, 158, 11, 0.7)', 'rgba(239, 68, 68, 0.7)', 'rgba(139, 92, 246, 0.7)'][idx % 5]),
-    pointBackgroundColor: ds.pointBackgroundColor || '#0ea5e9',
-    pointBorderColor: ds.pointBorderColor || '#fff',
-    tension: ds.tension ?? 0.3,
+      : bgColors[idx % bgColors.length],
+    pointBackgroundColor: colors[idx % colors.length],
+    tension: 0.3,
   }));
 
   const data = { labels, datasets: themedDatasets };
   
-  // Dark theme chart options
-  const commonOptions = {
+  const options = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: { 
         position: 'top',
-        labels: {
-          color: '#94a3b8', // Light gray text
-          font: { size: 12 },
-        }
+        labels: { color: '#94a3b8' }
       },
       tooltip: { 
         enabled: true,
         backgroundColor: '#1e293b',
         titleColor: '#f1f5f9',
         bodyColor: '#94a3b8',
-        borderColor: '#334155',
-        borderWidth: 1,
       },
     },
-    scales: {
+    scales: chart_type === 'pie' ? {} : {
       x: { 
-        ticks: { 
-          autoSkip: true, 
-          maxTicksLimit: 12,
-          color: '#94a3b8', // Light gray axis labels
-        },
-        grid: {
-          color: 'rgba(51, 65, 85, 0.5)', // Subtle grid lines
-        },
-        border: {
-          color: '#334155',
-        }
+        ticks: { color: '#94a3b8', maxTicksLimit: 10 },
+        grid: { color: 'rgba(51, 65, 85, 0.3)' },
       },
       y: { 
         beginAtZero: true,
-        ticks: {
-          color: '#94a3b8', // Light gray axis labels
-        },
-        grid: {
-          color: 'rgba(51, 65, 85, 0.5)', // Subtle grid lines
-        },
-        border: {
-          color: '#334155',
-        }
-      },
-    },
-  };
-
-  // Pie chart specific options (no scales)
-  const pieOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { 
-        position: 'top',
-        labels: {
-          color: '#94a3b8',
-          font: { size: 12 },
-        }
-      },
-      tooltip: { 
-        enabled: true,
-        backgroundColor: '#1e293b',
-        titleColor: '#f1f5f9',
-        bodyColor: '#94a3b8',
-        borderColor: '#334155',
-        borderWidth: 1,
+        ticks: { color: '#94a3b8' },
+        grid: { color: 'rgba(51, 65, 85, 0.3)' },
       },
     },
   };
 
   if (chart_type === 'pie') {
-    return <Pie data={data} options={pieOptions} />;
+    return <Pie data={data} options={options} />;
   }
   if (chart_type === 'line') {
-    return <Line data={data} options={commonOptions} />;
+    return <Line data={data} options={options} />;
   }
-  return <Bar data={data} options={commonOptions} />;
+  return <Bar data={data} options={options} />;
 }
 
-function AthenaChatMessage({ message, charts = [], isLast = false }) {
+function AthenaChatMessage({ message, charts = [], isLast = false, onDelete = null, messageIndex, userQuestion = '' }) {
   const isUser = message.role === 'user';
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [isLoadingEmail, setIsLoadingEmail] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const audioRef = useRef(null);
+
+  // Handle Send to Manager - Call AI to generate email and open Gmail directly
+  const handleSendToManager = async () => {
+    if (isLoadingEmail) return;
+    
+    setIsLoadingEmail(true);
+    
+    try {
+      // Call backend to generate email using ChatGPT
+      const response = await fetch('/api/v1/vinushan/generate-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: userQuestion || 'ATHENA Analysis Request',
+          answer: message.content,
+          manager_email: 'vinushan.vimalraj@gmail.com',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate email');
+      }
+
+      const emailData = await response.json();
+      
+      // Create Gmail compose URL
+      const gmailUrl = new URL('https://mail.google.com/mail/?view=cm&fs=1');
+      gmailUrl.searchParams.set('to', emailData.to_email);
+      gmailUrl.searchParams.set('su', emailData.subject);
+      gmailUrl.searchParams.set('body', emailData.body);
+      
+      // Open Gmail in new tab
+      window.open(gmailUrl.toString(), '_blank');
+      
+    } catch (error) {
+      console.error('Error generating email:', error);
+      // Fallback: open Gmail with basic content
+      const gmailUrl = new URL('https://mail.google.com/mail/?view=cm&fs=1');
+      gmailUrl.searchParams.set('to', 'vinushan.vimalraj@gmail.com');
+      gmailUrl.searchParams.set('su', `ATHENA Report: ${userQuestion?.substring(0, 50) || 'Analysis'}`);
+      gmailUrl.searchParams.set('body', `Dear Manager,\n\nPlease find the ATHENA analysis below:\n\n${message.content.substring(0, 1000)}\n\nBest regards,\nATHENA System`);
+      window.open(gmailUrl.toString(), '_blank');
+    } finally {
+      setIsLoadingEmail(false);
+    }
+  };
 
   // Listen for keyboard shortcut events (only for last assistant message)
   useEffect(() => {
@@ -617,7 +630,72 @@ function AthenaChatMessage({ message, charts = [], isLast = false }) {
                 >
                   📥
                 </button>
+                {!isUser && (
+                  <button
+                    onClick={handleSendToManager}
+                    disabled={isLoadingEmail}
+                    title={isLoadingEmail ? 'Generating email...' : 'Send to Manager via Gmail'}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      height: '28px',
+                      padding: '0 10px',
+                      borderRadius: '6px',
+                      border: '1px solid rgba(34, 197, 94, 0.5)',
+                      background: isLoadingEmail ? 'rgba(34, 197, 94, 0.3)' : 'rgba(34, 197, 94, 0.1)',
+                      color: '#22c55e',
+                      cursor: isLoadingEmail ? 'wait' : 'pointer',
+                      transition: 'all 0.2s ease',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      gap: '4px',
+                      opacity: isLoadingEmail ? 0.7 : 1,
+                    }}
+                    onMouseOver={(e) => {
+                      if (!isLoadingEmail) e.currentTarget.style.background = 'rgba(34, 197, 94, 0.2)';
+                    }}
+                    onMouseOut={(e) => {
+                      if (!isLoadingEmail) e.currentTarget.style.background = 'rgba(34, 197, 94, 0.1)';
+                    }}
+                  >
+                    {isLoadingEmail ? '⏳ Preparing...' : '📧 Send to Manager'}
+                  </button>
+                )}
               </>
+            )}
+            {/* Delete Button - for both user and assistant messages */}
+            {onDelete && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                title="Delete this Q&A pair"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '4px',
+                  border: '1px solid var(--athena-border)',
+                  background: 'transparent',
+                  color: 'var(--athena-text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontSize: '0.8rem',
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.borderColor = '#ef4444';
+                  e.currentTarget.style.color = '#ef4444';
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--athena-border)';
+                  e.currentTarget.style.color = 'var(--athena-text-secondary)';
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                ✕
+              </button>
             )}
             <span style={{ 
               fontSize: '0.75rem', 
@@ -657,7 +735,7 @@ function AthenaChatMessage({ message, charts = [], isLast = false }) {
                 )}
                 {chart.chart_data ? (
                   <div style={{ height: '300px' }}>
-                    {renderInteractiveChart(chart)}
+                    {renderSimpleChart(chart)}
                   </div>
                 ) : (chart.image || chart.image_base64) ? (
                   <div style={{ 
@@ -918,6 +996,93 @@ function AthenaChatMessage({ message, charts = [], isLast = false }) {
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            animation: 'fadeIn 0.2s ease',
+          }}
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div 
+            style={{
+              background: 'var(--athena-card)',
+              borderRadius: '16px',
+              padding: '24px',
+              minWidth: '320px',
+              maxWidth: '90%',
+              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+              animation: 'fadeInUp 0.3s ease',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 style={{ 
+              margin: '0 0 8px 0', 
+              fontSize: '1.25rem',
+              fontWeight: 700,
+              color: 'var(--athena-text)',
+            }}>
+              🗑️ Delete Message
+            </h3>
+            <p style={{ 
+              margin: '0 0 20px 0', 
+              fontSize: '0.9rem',
+              color: 'var(--athena-text-secondary)',
+            }}>
+              This will delete both the question and its answer. This action cannot be undone.
+            </p>
+            
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: 'var(--athena-bg)',
+                  color: 'var(--athena-text-secondary)',
+                  border: '1px solid var(--athena-border)',
+                  borderRadius: '10px',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  if (onDelete) onDelete();
+                }}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

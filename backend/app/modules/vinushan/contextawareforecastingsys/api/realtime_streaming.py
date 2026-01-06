@@ -4,6 +4,7 @@ Implements comprehensive event schema for ChatGPT-like streaming experience.
 """
 
 import json
+import logging
 import os
 import re
 import uuid
@@ -13,10 +14,14 @@ from typing import AsyncGenerator, List, Dict, Any, Optional
 from threading import Thread
 from queue import Queue, Empty
 import asyncio
+import traceback
 
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from crewai import Agent, Crew, Process, Task
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # Disable CrewAI telemetry
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
@@ -224,19 +229,33 @@ class StreamingCallbackHandler:
         self.current_agent: Optional[str] = None
         self.current_task: Optional[str] = None
         self.step_count = 0
+        self.agent_start_times: Dict[str, float] = {}  # Track agent start times
     
     def on_agent_start(self, agent_name: str, task_description: str):
         """Called when an agent starts working on a task."""
+        import time
         self.current_agent = agent_name
         self.current_task = task_description
         self.step_count += 1
+        self.agent_start_times[agent_name] = time.time()
         self.emitter.emit(
             EventType.AGENT_START,
             agent=agent_name,
             task=task_description[:200],
             content=f"{agent_name} starting analysis...",
-            data={"step_number": self.step_count}
+            data={
+                "step_number": self.step_count,
+                "start_time": self.agent_start_times[agent_name]
+            }
         )
+    
+    def get_agent_duration(self, agent_name: str) -> float:
+        """Get duration in seconds since agent started."""
+        import time
+        start_time = self.agent_start_times.get(agent_name)
+        if start_time:
+            return round(time.time() - start_time, 2)
+        return 0.0
 
 
 # ============================================================================
@@ -487,7 +506,9 @@ this drives staffing and inventory planning."""
     
     def on_agent_end(self, agent_name: str, output: str):
         """Called when an agent completes its task."""
+        import time
         preview = output[:300] + "..." if len(output) > 300 else output
+        duration = self.get_agent_duration(agent_name)
         self.emitter.emit(
             EventType.AGENT_END,
             agent=agent_name,
@@ -495,7 +516,8 @@ this drives staffing and inventory planning."""
             content=f"{agent_name} completed analysis",
             data={
                 "output_preview": preview,
-                "step_number": self.step_count
+                "step_number": self.step_count,
+                "duration_seconds": duration
             }
         )
 
@@ -720,14 +742,16 @@ def _handle_visualization_directly(
                 EventType.TOOL_RESULT,
                 agent="Visualization Specialist",
                 content="Chart generated successfully",
-                data={"tool_name": f"{chart_type}_chart", "has_image": bool(result.get("image"))}
+                data={"tool_name": f"{chart_type}_chart", "has_image": bool(result.get("image")), "has_interactive_data": bool(result.get("chart_data"))}
             )
         
-        if result.get("image"):
+        if result.get("image") or result.get("chart_data"):
             charts.append(ChartData(
                 chart_type=chart_type,
                 title=result.get("title", "Sales Chart"),
-                image_base64=result["image"]
+                image_base64=result.get("image"),
+                chart_data=result.get("chart_data"),  # Pass interactive chart data
+                explanation=result.get("explanation", "")
             ))
             explanation = result.get("explanation", "Here's your visualization.")
         else:
@@ -1000,13 +1024,26 @@ async def stream_chat_realtime(
             ))
             await asyncio.sleep(0.1)
             
-            charts, response_text = _handle_visualization_directly(message)
+            # Run visualization in thread pool (blocking matplotlib operation)
+            try:
+                logger.info(f"[{run_id}] Starting visualization generation for: {message[:50]}...")
+                loop = asyncio.get_event_loop()
+                charts, response_text = await loop.run_in_executor(
+                    None, 
+                    lambda: _handle_visualization_directly(message)
+                )
+                logger.info(f"[{run_id}] Visualization completed. Charts: {len(charts)}, Response length: {len(response_text)}")
+            except Exception as viz_error:
+                logger.error(f"[{run_id}] Visualization error: {viz_error}")
+                logger.error(traceback.format_exc())
+                charts = []
+                response_text = f"Error generating visualization: {str(viz_error)}"
             
             yield _format_sse(EventType.TOOL_RESULT, _create_event(
                 EventType.TOOL_RESULT,
                 run_id,
                 agent="Visualization Specialist",
-                content="Chart generated successfully",
+                content="Chart generated successfully" if charts else "Chart generation completed",
                 data={
                     "tool_name": tool_name,
                     "charts_count": len(charts),
@@ -1028,7 +1065,7 @@ async def stream_chat_realtime(
                 agent_name="Visualization Specialist",
                 task_name="Creating visualization",
                 summary=f"Generated {len(charts)} chart(s)",
-                output_preview=response_text[:200]
+                output_preview=response_text[:200] if response_text else "Visualization completed"
             ))
             
         else:
@@ -1052,12 +1089,19 @@ async def stream_chat_realtime(
                 is_comprehensive
             )
             
+            # Track agent start times for duration calculation
+            import time
+            agent_start_times = {}
+            
             total_tasks = len(task_info)
             
             # Emit agent_start for each task before running
             for i, info in enumerate(task_info):
                 agent_name = info["agent_name"]
                 task_desc = info["description"]
+                
+                # Track start time
+                agent_start_times[agent_name] = time.time()
                 
                 # AGENT_START
                 yield _format_sse(EventType.AGENT_START, _create_event(
@@ -1069,7 +1113,8 @@ async def stream_chat_realtime(
                     data={
                         "step_number": i + 1,
                         "total_steps": total_tasks,
-                        "expected_output": info["expected_output"]
+                        "expected_output": info["expected_output"],
+                        "start_time": agent_start_times[agent_name]
                     }
                 ))
                 await asyncio.sleep(0.08)
@@ -1198,6 +1243,9 @@ async def stream_chat_realtime(
                 await asyncio.sleep(0.05)
                 
                 # Agent end event
+                # Calculate duration for this agent
+                duration_seconds = round(time.time() - agent_start_times.get(agent_name, time.time()), 2)
+                
                 yield _format_sse(EventType.AGENT_END, _create_event(
                     EventType.AGENT_END,
                     run_id,
@@ -1207,7 +1255,8 @@ async def stream_chat_realtime(
                     data={
                         "step_number": i + 1,
                         "total_steps": total_tasks,
-                        "output_preview": output_preview
+                        "output_preview": output_preview,
+                        "duration_seconds": duration_seconds
                     }
                 ))
                 await asyncio.sleep(0.05)
@@ -1216,7 +1265,8 @@ async def stream_chat_realtime(
                     agent_name=agent_name,
                     task_name=task_info[i]["description"][:100] if i < len(task_info) else "Analysis",
                     summary=summary,
-                    output_preview=output_preview
+                    output_preview=output_preview,
+                    duration_seconds=duration_seconds
                 ))
             
             response_text = str(result)
@@ -1234,6 +1284,8 @@ async def stream_chat_realtime(
             # DISABLED - Evidence Visualizer was causing 8+ minute delays
         
         # RUN_END - Final response
+        logger.info(f"[{run_id}] Preparing run_end. Charts: {len(charts)}, Response length: {len(response_text) if response_text else 0}")
+        
         final_data = {
             "response": response_text,
             "routing_reasoning": reasoning,
@@ -1243,7 +1295,8 @@ async def stream_chat_realtime(
                     "agent_name": step.agent_name,
                     "task_name": step.task_name,
                     "summary": step.summary,
-                    "output_preview": step.output_preview
+                    "output_preview": step.output_preview,
+                    "duration_seconds": getattr(step, 'duration_seconds', None)
                 }
                 for step in reasoning_steps
             ],
@@ -1259,14 +1312,18 @@ async def stream_chat_realtime(
             ] if charts else None
         }
         
+        logger.info(f"[{run_id}] Sending run_end event...")
         yield _format_sse(EventType.RUN_END, _create_event(
             EventType.RUN_END,
             run_id,
             content="Analysis complete",
             data=final_data
         ))
+        logger.info(f"[{run_id}] run_end sent successfully")
         
     except Exception as e:
+        logger.error(f"[{run_id}] Stream error: {e}")
+        logger.error(traceback.format_exc())
         yield _format_sse(EventType.ERROR, _create_event(
             EventType.ERROR,
             run_id,

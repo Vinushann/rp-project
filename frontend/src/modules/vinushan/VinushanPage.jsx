@@ -4,17 +4,17 @@ import AthenaChatMessage from './components/AthenaChatMessage';
 import AgentThoughtsPanel from './components/AgentThoughtsPanel';
 import SettingsPage from './components/SettingsPage';
 import StatsPage from './components/StatsPage';
-import GuidePage from './components/GuidePage';
 import './styles/Athena.css';
 import './styles/AgentThoughts.css';
 import './components/SettingsPage.css';
 import './components/StatsPage.css';
-import './components/GuidePage.css';
 
 /**
  * ATHENA - Context-Aware Forecasting and Decision Support System
  * Main page component with chat interface and real-time streaming reasoning panel
  */
+
+const STORAGE_KEY = 'athena-chat-history';
 
 const exampleQuestions = [
   'What are the top selling items this month?',
@@ -24,8 +24,35 @@ const exampleQuestions = [
   'What holidays are coming up?',
 ];
 
+// Helper to load messages from localStorage
+const loadMessagesFromStorage = () => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      // Validate it's an array
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to load chat history:', e);
+  }
+  return [];
+};
+
+// Helper to save messages to localStorage
+const saveMessagesToStorage = (messages) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+  } catch (e) {
+    console.error('Failed to save chat history:', e);
+  }
+};
+
 function VinushanPage() {
-  const [messages, setMessages] = useState([]);
+  // Initialize messages from localStorage
+  const [messages, setMessages] = useState(() => loadMessagesFromStorage());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showReasoning, setShowReasoning] = useState(false);
@@ -45,6 +72,54 @@ function VinushanPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Persist messages to localStorage whenever they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      saveMessagesToStorage(messages);
+    }
+  }, [messages]);
+
+  // Delete a Q&A pair (user message and its following assistant response)
+  const handleDeleteMessage = (messageIndex) => {
+    setMessages(prev => {
+      const newMessages = [...prev];
+      const targetMessage = newMessages[messageIndex];
+      
+      if (targetMessage.role === 'user') {
+        // If it's a user message, also delete the following assistant message
+        if (newMessages[messageIndex + 1]?.role === 'assistant') {
+          newMessages.splice(messageIndex, 2);
+        } else {
+          newMessages.splice(messageIndex, 1);
+        }
+      } else {
+        // If it's an assistant message, also delete the preceding user message
+        if (newMessages[messageIndex - 1]?.role === 'user') {
+          newMessages.splice(messageIndex - 1, 2);
+        } else {
+          newMessages.splice(messageIndex, 1);
+        }
+      }
+      
+      // Update localStorage (handle empty case)
+      if (newMessages.length === 0) {
+        localStorage.removeItem(STORAGE_KEY);
+      } else {
+        saveMessagesToStorage(newMessages);
+      }
+      
+      return newMessages;
+    });
+  };
+
+  // Clear all chat history
+  const handleClearAllMessages = () => {
+    if (window.confirm('Are you sure you want to clear all chat history?')) {
+      setMessages([]);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  };
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -67,7 +142,7 @@ function VinushanPage() {
             return;
           case '3':
             e.preventDefault();
-            setActiveTab('guide');
+            window.open('/docs.html', '_blank');
             return;
           case '4':
             e.preventDefault();
@@ -291,6 +366,14 @@ function VinushanPage() {
     }
   };
 
+  // Helper to get the user question for an assistant message
+  const getUserQuestionForMessage = (messageIndex) => {
+    if (messageIndex > 0 && messages[messageIndex - 1]?.role === 'user') {
+      return messages[messageIndex - 1].content;
+    }
+    return '';
+  };
+
   return (
     <div className="athena-container">
       {/* Header with Title and Navigation */}
@@ -313,10 +396,11 @@ function VinushanPage() {
             Athena
           </button>
           <button 
-            className={`nav-tab ${activeTab === 'guide' ? 'active' : ''}`}
-            onClick={() => setActiveTab('guide')}
+            className="nav-tab"
+            onClick={() => window.open('/docs.html', '_blank')}
+            title="Opens in new tab"
           >
-            Guide
+            Guide ↗
           </button>
           <button 
             className={`nav-tab ${activeTab === 'settings' ? 'active' : ''}`}
@@ -332,11 +416,6 @@ function VinushanPage() {
         {/* Settings Tab Content */}
         {activeTab === 'settings' && (
           <SettingsPage />
-        )}
-
-        {/* Guide Tab Content */}
-        {activeTab === 'guide' && (
-          <GuidePage />
         )}
 
         {/* Overview Tab Content */}
@@ -372,12 +451,50 @@ function VinushanPage() {
                   </div>
                 ) : (
                   <>
+                    {/* Clear All Button */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      marginBottom: '12px',
+                      paddingRight: '8px',
+                    }}>
+                      <button
+                        onClick={handleClearAllMessages}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 12px',
+                          background: 'transparent',
+                          border: '1px solid var(--athena-border)',
+                          borderRadius: '6px',
+                          color: 'var(--athena-text-secondary)',
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.borderColor = '#ef4444';
+                          e.currentTarget.style.color = '#ef4444';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--athena-border)';
+                          e.currentTarget.style.color = 'var(--athena-text-secondary)';
+                        }}
+                        title="Clear all chat history"
+                      >
+                        🗑️ Clear All
+                      </button>
+                    </div>
                     {messages.map((msg, idx) => (
                       <AthenaChatMessage
                         key={`${msg.timestamp}-${idx}`}
                         message={msg}
                         charts={msg.charts}
                         isLast={idx === messages.length - 1 && msg.role === 'assistant'}
+                        onDelete={() => handleDeleteMessage(idx)}
+                        messageIndex={idx}
+                        userQuestion={getUserQuestionForMessage(idx)}
                       />
                     ))}
                   </>

@@ -47,6 +47,21 @@ class TTSRequest(BaseModel):
     text: str
     voice: str = "nova"  # Options: alloy, echo, fable, onyx, nova, shimmer
 
+
+class GenerateEmailRequest(BaseModel):
+    """Request model for AI-generated email."""
+    question: str
+    answer: str
+    manager_email: str = "vinushan.vimalraj@gmail.com"
+
+
+class GenerateEmailResponse(BaseModel):
+    """Response model for generated email."""
+    subject: str
+    body: str
+    to_email: str
+
+
 router = APIRouter()
 
 MODULE_NAME = "vinushan"
@@ -146,6 +161,83 @@ async def text_to_speech(request: TTSRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"TTS generation failed: {str(e)}")
+
+
+@router.post("/generate-email", response_model=GenerateEmailResponse)
+async def generate_email(request: GenerateEmailRequest):
+    """
+    Generate a professional email using ChatGPT based on the question and ATHENA's answer.
+    The AI will compose a well-structured email to send to the manager.
+    """
+    try:
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        
+        prompt = f"""You are an AI assistant helping to compose a professional business email.
+
+The user asked ATHENA (a sales forecasting AI system for a coffee shop) the following question:
+"{request.question}"
+
+ATHENA provided this analysis/answer:
+"{request.answer[:2000]}"
+
+Please compose a professional email to send to the manager. The email should:
+1. Have a clear, concise subject line
+2. Be professionally written but friendly
+3. Summarize the key insights from ATHENA's analysis
+4. Highlight any action items or recommendations
+5. Be easy to read and understand
+
+IMPORTANT FORMATTING RULES:
+- Start the email with "Dear Manager," (NOT "[Manager's Name]" or any placeholder)
+- DO NOT use any markdown formatting (no **, no -, no bullet points with symbols)
+- Use plain text only - write numbers and data inline as normal sentences
+- End the email with "Best regards,\\nATHENA Agent System" (NOT "[Your Name]" or any placeholder)
+- Use simple paragraph format, not lists with special characters
+
+Respond in this exact JSON format (no markdown, just raw JSON):
+{{
+    "subject": "Your subject line here",
+    "body": "Your email body here (use \\n for line breaks, plain text only, no markdown)"
+}}"""
+
+        response = client.chat.completions.create(
+            model=os.getenv("MODEL", "gpt-4o-mini"),
+            messages=[
+                {"role": "system", "content": "You are a professional email composer. Always respond with valid JSON only, no markdown formatting."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1000,
+        )
+        
+        # Parse the response
+        import json
+        content = response.choices[0].message.content.strip()
+        
+        # Clean up if wrapped in markdown code blocks
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"):
+                content = content[4:]
+        content = content.strip()
+        
+        email_data = json.loads(content)
+        
+        return GenerateEmailResponse(
+            subject=email_data.get("subject", "ATHENA Analysis Report"),
+            body=email_data.get("body", request.answer[:500]),
+            to_email=request.manager_email
+        )
+        
+    except json.JSONDecodeError as e:
+        # Fallback if JSON parsing fails
+        return GenerateEmailResponse(
+            subject=f"ATHENA Report: {request.question[:50]}",
+            body=f"Dear Manager,\n\nPlease find below the analysis from ATHENA:\n\n{request.answer[:1000]}\n\nBest regards,\nATHENA System",
+            to_email=request.manager_email
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Email generation failed: {str(e)}")
 
 
 # ============================================
