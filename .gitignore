@@ -49,3 +49,10 @@ coverage/
 # Misc
 *.log
 .cache
+
+
+*.safetensors
+*.bin
+*.pt
+node_modules/
+__pycache__/
