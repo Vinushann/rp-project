@@ -1,210 +1,294 @@
 import { useState, useEffect } from 'react';
-import { getEmailSettings, updateEmailSettings } from '../../../lib/api';
 import './SettingsPage.css';
+
+const SETTINGS_STORAGE_KEY = 'athena-settings';
+
+// Default settings
+const defaultSettings = {
+  // User Profile & Notifications
+  managerEmail: '',
+  managerName: '',
+  notificationPreference: 'none', // 'none', 'daily', 'weekly'
+  
+  // Chat Preferences
+  autoTextToSpeech: false,
+  showAgentThoughts: true,
+  
+  // Appearance
+  theme: 'dark', // 'light', 'dark', 'system'
+};
+
+// Load settings from localStorage
+const loadSettings = () => {
+  try {
+    const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (stored) {
+      return { ...defaultSettings, ...JSON.parse(stored) };
+    }
+  } catch (e) {
+    console.error('Failed to load settings:', e);
+  }
+  return defaultSettings;
+};
+
+// Save settings to localStorage
+const saveSettings = (settings) => {
+  try {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    // Dispatch custom event so other components can react
+    window.dispatchEvent(new CustomEvent('athena-settings-changed', { detail: settings }));
+  } catch (e) {
+    console.error('Failed to save settings:', e);
+  }
+};
 
 /**
  * Settings Page Component
- * Allows users to configure email recipients for reports
+ * Professional settings interface for ATHENA
  */
-function SettingsPage() {
-  const [settings, setSettings] = useState({
-    manager_email: '',
-    owner_email: '',
-    finance_email: '',
-    slack_webhook_url: '',
-  });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState(null);
+function SettingsPage({ 
+  showAgentThoughts, 
+  onToggleAgentThoughts,
+  onClearChatHistory,
+  chatHistoryCount = 0
+}) {
+  const [settings, setSettings] = useState(() => loadSettings());
+  const [saveStatus, setSaveStatus] = useState(null);
+  const [clearConfirm, setClearConfirm] = useState(false);
 
-  // Load settings on mount
+  // Apply theme on mount and when it changes
   useEffect(() => {
-    loadSettings();
-  }, []);
+    applyTheme(settings.theme);
+  }, [settings.theme]);
 
-  const loadSettings = async () => {
-    setLoading(true);
-    try {
-      const data = await getEmailSettings();
-      setSettings({
-        manager_email: data.manager_email || '',
-        owner_email: data.owner_email || '',
-        finance_email: data.finance_email || '',
-        slack_webhook_url: data.slack_webhook_url || '',
-      });
-    } catch (error) {
-      console.error('Failed to load settings:', error);
-      setMessage({ type: 'error', text: 'Failed to load settings' });
-    } finally {
-      setLoading(false);
+  // Sync showAgentThoughts from parent if provided
+  useEffect(() => {
+    if (showAgentThoughts !== undefined && settings.showAgentThoughts !== showAgentThoughts) {
+      setSettings(prev => ({ ...prev, showAgentThoughts }));
+    }
+  }, [showAgentThoughts]);
+
+  const applyTheme = (theme) => {
+    const root = document.documentElement;
+    
+    if (theme === 'system') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+    } else {
+      root.setAttribute('data-theme', theme);
     }
   };
 
-  const handleChange = (field) => (e) => {
-    setSettings(prev => ({
-      ...prev,
-      [field]: e.target.value,
-    }));
+  const handleChange = (key, value) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    saveSettings(newSettings);
+    
+    // Handle special cases
+    if (key === 'showAgentThoughts' && onToggleAgentThoughts) {
+      onToggleAgentThoughts(value);
+    }
+    
+    // Show save indicator
+    setSaveStatus('saved');
+    setTimeout(() => setSaveStatus(null), 2000);
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    setMessage(null);
-    
-    try {
-      await updateEmailSettings(settings);
-      setMessage({ type: 'success', text: 'Settings saved successfully!' });
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-      setMessage({ type: 'error', text: 'Failed to save settings' });
-    } finally {
-      setSaving(false);
+  const handleClearHistory = () => {
+    if (clearConfirm) {
+      if (onClearChatHistory) {
+        onClearChatHistory();
+      }
+      setClearConfirm(false);
+      setSaveStatus('cleared');
+      setTimeout(() => setSaveStatus(null), 2000);
+    } else {
+      setClearConfirm(true);
+      setTimeout(() => setClearConfirm(false), 3000);
+    }
+  };
+
+  const handleResetSettings = () => {
+    if (window.confirm('Reset all settings to defaults? This cannot be undone.')) {
+      setSettings(defaultSettings);
+      saveSettings(defaultSettings);
+      applyTheme(defaultSettings.theme);
+      setSaveStatus('reset');
+      setTimeout(() => setSaveStatus(null), 2000);
     }
   };
 
   const validateEmail = (email) => {
-    if (!email) return true; // Empty is valid
+    if (!email) return true;
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
   };
 
-  const isValid = () => {
-    return (
-      validateEmail(settings.manager_email) &&
-      validateEmail(settings.owner_email) &&
-      validateEmail(settings.finance_email)
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="settings-page">
-        <div className="settings-loading">
-          <div className="loading-spinner"></div>
-          <p>Loading settings...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="settings-page">
-      <div className="settings-header">
-        <h2>📧 Email Settings</h2>
-        <p>Configure email addresses for automated report delivery</p>
-      </div>
-
-      {message && (
-        <div className={`settings-message ${message.type}`}>
-          {message.type === 'success' ? '✓' : '⚠'} {message.text}
+      {/* Save Indicator */}
+      {saveStatus && (
+        <div className={`settings-save-indicator ${saveStatus}`}>
+          {saveStatus === 'saved' && '✓ Saved'}
+          {saveStatus === 'cleared' && '✓ History Cleared'}
+          {saveStatus === 'reset' && '✓ Reset Complete'}
         </div>
       )}
 
-      <div className="settings-form">
-        <div className="settings-section">
-          <h3>Report Recipients</h3>
-          <p className="section-description">
-            Set the email addresses for each role. Reports will be sent to these addresses when triggered.
-          </p>
+      <div className="settings-content">
+        {/* Two Column Grid Layout */}
+        <div className="settings-grid">
+          {/* Left Column - User Profile */}
+          <section className="settings-section">
+            <div className="section-header">
+              <span className="section-icon">👤</span>
+              <h2>User Profile</h2>
+            </div>
+            <div className="settings-group">
+              <div className="form-field">
+                <label>Manager Email</label>
+                <input
+                  type="email"
+                  value={settings.managerEmail}
+                  onChange={(e) => handleChange('managerEmail', e.target.value)}
+                  placeholder="manager@coffeeshop.com"
+                  className={settings.managerEmail && !validateEmail(settings.managerEmail) ? 'invalid' : ''}
+                />
+              </div>
+              <div className="form-field">
+                <label>Manager Name</label>
+                <input
+                  type="text"
+                  value={settings.managerName}
+                  onChange={(e) => handleChange('managerName', e.target.value)}
+                  placeholder="John Doe"
+                />
+              </div>
+              <div className="form-field">
+                <label>Notifications</label>
+                <select
+                  value={settings.notificationPreference}
+                  onChange={(e) => handleChange('notificationPreference', e.target.value)}
+                >
+                  <option value="none">No notifications</option>
+                  <option value="daily">Daily digest</option>
+                  <option value="weekly">Weekly summary</option>
+                </select>
+              </div>
+            </div>
+          </section>
 
-          <div className="form-group">
-            <label htmlFor="manager-email">
-              <span className="label-icon">👤</span>
-              Manager Email
-            </label>
-            <input
-              id="manager-email"
-              type="email"
-              value={settings.manager_email}
-              onChange={handleChange('manager_email')}
-              placeholder="manager@example.com"
-              className={!validateEmail(settings.manager_email) ? 'invalid' : ''}
-            />
-            <span className="help-text">
-              Receives daily snapshots with forecast vs actual comparison
-            </span>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="owner-email">
-              <span className="label-icon">👔</span>
-              Owner Email
-            </label>
-            <input
-              id="owner-email"
-              type="email"
-              value={settings.owner_email}
-              onChange={handleChange('owner_email')}
-              placeholder="owner@example.com"
-              className={!validateEmail(settings.owner_email) ? 'invalid' : ''}
-            />
-            <span className="help-text">
-              Receives monthly trend summaries and model accuracy reports
-            </span>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="finance-email">
-              <span className="label-icon">💰</span>
-              Finance Email
-            </label>
-            <input
-              id="finance-email"
-              type="email"
-              value={settings.finance_email}
-              onChange={handleChange('finance_email')}
-              placeholder="finance@example.com"
-              className={!validateEmail(settings.finance_email) ? 'invalid' : ''}
-            />
-            <span className="help-text">
-              Receives revenue-only reports (gross, discount, net)
-            </span>
-          </div>
+          {/* Right Column - Chat & Behavior */}
+          <section className="settings-section">
+            <div className="section-header">
+              <span className="section-icon">💬</span>
+              <h2>Chat Preferences</h2>
+            </div>
+            <div className="settings-group">
+              <div className="toggle-field">
+                <div className="toggle-info">
+                  <span className="toggle-name">Auto Text-to-Speech</span>
+                  <span className="toggle-desc">Read responses aloud</span>
+                </div>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={settings.autoTextToSpeech}
+                    onChange={(e) => handleChange('autoTextToSpeech', e.target.checked)}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+              <div className="toggle-field">
+                <div className="toggle-info">
+                  <span className="toggle-name">Show Agent Thoughts</span>
+                  <span className="toggle-desc">Display AI reasoning panel</span>
+                </div>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={settings.showAgentThoughts}
+                    onChange={(e) => handleChange('showAgentThoughts', e.target.checked)}
+                  />
+                  <span className="toggle-slider"></span>
+                </label>
+              </div>
+              <div className="action-field">
+                <div className="toggle-info">
+                  <span className="toggle-name">Chat History</span>
+                  <span className="toggle-desc">{chatHistoryCount} messages</span>
+                </div>
+                <button
+                  className={`btn-danger ${clearConfirm ? 'confirm' : ''}`}
+                  onClick={handleClearHistory}
+                  disabled={chatHistoryCount === 0}
+                >
+                  {clearConfirm ? 'Confirm' : 'Clear'}
+                </button>
+              </div>
+            </div>
+          </section>
         </div>
 
-        <div className="settings-section">
-          <h3>Slack Integration</h3>
-          <p className="section-description">
-            Optional: Configure a Slack webhook URL to post daily digests to a channel.
-          </p>
-
-          <div className="form-group">
-            <label htmlFor="slack-webhook">
-              <span className="label-icon">💬</span>
-              Slack Webhook URL
-            </label>
-            <input
-              id="slack-webhook"
-              type="url"
-              value={settings.slack_webhook_url}
-              onChange={handleChange('slack_webhook_url')}
-              placeholder="https://hooks.slack.com/services/..."
-            />
-            <span className="help-text">
-              Get this from your Slack workspace's Incoming Webhooks app
-            </span>
+        {/* Theme Section - Full Width */}
+        <section className="settings-section theme-section">
+          <div className="section-header">
+            <span className="section-icon">🎨</span>
+            <h2>Appearance</h2>
           </div>
-        </div>
+          <div className="theme-grid">
+            <button
+              className={`theme-card ${settings.theme === 'light' ? 'active' : ''}`}
+              onClick={() => handleChange('theme', 'light')}
+            >
+              <div className="theme-preview light">
+                <div className="preview-bar"></div>
+                <div className="preview-content">
+                  <div className="preview-line"></div>
+                  <div className="preview-line short"></div>
+                </div>
+              </div>
+              <span>Light</span>
+            </button>
+            <button
+              className={`theme-card ${settings.theme === 'dark' ? 'active' : ''}`}
+              onClick={() => handleChange('theme', 'dark')}
+            >
+              <div className="theme-preview dark">
+                <div className="preview-bar"></div>
+                <div className="preview-content">
+                  <div className="preview-line"></div>
+                  <div className="preview-line short"></div>
+                </div>
+              </div>
+              <span>Dark</span>
+            </button>
+            <button
+              className={`theme-card ${settings.theme === 'system' ? 'active' : ''}`}
+              onClick={() => handleChange('theme', 'system')}
+            >
+              <div className="theme-preview system">
+                <div className="preview-half light"></div>
+                <div className="preview-half dark"></div>
+              </div>
+              <span>System</span>
+            </button>
+          </div>
+        </section>
 
+        {/* Footer Actions */}
         <div className="settings-actions">
-          <button
-            className="save-button"
-            onClick={handleSave}
-            disabled={saving || !isValid()}
-          >
-            {saving ? (
-              <>
-                <span className="button-spinner"></span>
-                Saving...
-              </>
-            ) : (
-              <>💾 Save Settings</>
-            )}
+          <button className="btn-secondary" onClick={handleResetSettings}>
+            ↺ Reset to Defaults
           </button>
+          <span className="settings-version">ATHENA v1.0.0 • SLIIT Research Project © 2026</span>
         </div>
       </div>
     </div>
   );
 }
+
+// Export helper function to get settings from anywhere
+export const getAthenaSettings = () => loadSettings();
 
 export default SettingsPage;

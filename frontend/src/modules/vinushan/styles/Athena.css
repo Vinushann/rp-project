@@ -1,19 +1,45 @@
 /* ============================================
    ATHENA - Context-Aware Forecasting System
-   Clean White UI Styling
+   Theme-aware UI Styling
    ============================================ */
 
-/* Root Variables - Light Theme with Blue Accent */
-:root {
+/* Root Variables - Dark Theme (Default) */
+:root,
+[data-theme="dark"] {
+  --athena-primary: #6366f1;
+  --athena-primary-dark: #4f46e5;
+  --athena-primary-light: #818cf8;
+  --athena-primary-hover: #4f46e5;
+  --athena-secondary: #a1a1aa;
+  --athena-bg: #09090b;
+  --athena-surface: #18181b;
+  --athena-card: #1f1f23;
+  --athena-text: #fafafa;
+  --athena-text-primary: #fafafa;
+  --athena-text-secondary: #a1a1aa;
+  --athena-text-tertiary: #71717a;
+  --athena-text-muted: #71717a;
+  --athena-border: rgba(255, 255, 255, 0.08);
+  --athena-success: #22c55e;
+  --athena-accent: #6366f1;
+  --athena-accent-light: rgba(99, 102, 241, 0.15);
+  --athena-accent-hover: #4f46e5;
+}
+
+/* Light Theme */
+[data-theme="light"] {
   --athena-primary: #2563eb;
   --athena-primary-dark: #1d4ed8;
   --athena-primary-light: #3b82f6;
+  --athena-primary-hover: #1d4ed8;
   --athena-secondary: #666666;
   --athena-bg: #ffffff;
   --athena-surface: #f8fafc;
   --athena-card: #ffffff;
   --athena-text: #0f172a;
-  --athena-text-secondary: #64748b;
+  --athena-text-primary: #0f172a;
+  --athena-text-secondary: #475569;
+  --athena-text-tertiary: #94a3b8;
   --athena-text-muted: #94a3b8;
   --athena-border: #e2e8f0;
   --athena-success: #22c55e;

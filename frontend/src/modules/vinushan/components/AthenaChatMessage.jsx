@@ -174,6 +174,21 @@ function AthenaChatMessage({ message, charts = [], isLast = false, onDelete = nu
     
     setIsLoadingEmail(true);
     
+    // Get manager email and name from settings
+    let managerEmail = 'manager@example.com';
+    let managerName = 'Manager';
+    try {
+      const settings = JSON.parse(localStorage.getItem('athena-settings') || '{}');
+      if (settings.managerEmail) {
+        managerEmail = settings.managerEmail;
+      }
+      if (settings.managerName) {
+        managerName = settings.managerName;
+      }
+    } catch (e) {
+      console.error('Failed to load settings:', e);
+    }
+    
     try {
       // Call backend to generate email using ChatGPT
       const response = await fetch('/api/v1/vinushan/generate-email', {
@@ -184,7 +199,8 @@ function AthenaChatMessage({ message, charts = [], isLast = false, onDelete = nu
         body: JSON.stringify({
           question: userQuestion || 'ATHENA Analysis Request',
           answer: message.content,
-          manager_email: 'vinushan.vimalraj@gmail.com',
+          manager_email: managerEmail,
+          manager_name: managerName,
         }),
       });
 
@@ -207,9 +223,9 @@ function AthenaChatMessage({ message, charts = [], isLast = false, onDelete = nu
       console.error('Error generating email:', error);
       // Fallback: open Gmail with basic content
       const gmailUrl = new URL('https://mail.google.com/mail/?view=cm&fs=1');
-      gmailUrl.searchParams.set('to', 'vinushan.vimalraj@gmail.com');
+      gmailUrl.searchParams.set('to', managerEmail);
       gmailUrl.searchParams.set('su', `ATHENA Report: ${userQuestion?.substring(0, 50) || 'Analysis'}`);
-      gmailUrl.searchParams.set('body', `Dear Manager,\n\nPlease find the ATHENA analysis below:\n\n${message.content.substring(0, 1000)}\n\nBest regards,\nATHENA System`);
+      gmailUrl.searchParams.set('body', `Dear ${managerName},\n\nPlease find the ATHENA analysis below:\n\n${message.content.substring(0, 1000)}\n\nBest regards,\nATHENA System`);
       window.open(gmailUrl.toString(), '_blank');
     } finally {
       setIsLoadingEmail(false);
@@ -659,7 +675,7 @@ function AthenaChatMessage({ message, charts = [], isLast = false, onDelete = nu
                       if (!isLoadingEmail) e.currentTarget.style.background = 'rgba(34, 197, 94, 0.1)';
                     }}
                   >
-                    {isLoadingEmail ? '⏳ Preparing...' : '📧 Send to Manager'}
+                    {isLoadingEmail ? '⏳ Preparing...' : '📧 Send'}
                   </button>
                 )}
               </>

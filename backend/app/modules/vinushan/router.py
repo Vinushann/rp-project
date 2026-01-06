@@ -53,6 +53,7 @@ class GenerateEmailRequest(BaseModel):
     question: str
     answer: str
     manager_email: str = "vinushan.vimalraj@gmail.com"
+    manager_name: str = "Manager"
 
 
 class GenerateEmailResponse(BaseModel):
@@ -188,7 +189,7 @@ Please compose a professional email to send to the manager. The email should:
 5. Be easy to read and understand
 
 IMPORTANT FORMATTING RULES:
-- Start the email with "Dear Manager," (NOT "[Manager's Name]" or any placeholder)
+- Start the email with "Dear {request.manager_name}," (NOT "[Manager's Name]" or any placeholder)
 - DO NOT use any markdown formatting (no **, no -, no bullet points with symbols)
 - Use plain text only - write numbers and data inline as normal sentences
 - End the email with "Best regards,\\nATHENA Agent System" (NOT "[Your Name]" or any placeholder)
@@ -233,7 +234,7 @@ Respond in this exact JSON format (no markdown, just raw JSON):
         # Fallback if JSON parsing fails
         return GenerateEmailResponse(
             subject=f"ATHENA Report: {request.question[:50]}",
-            body=f"Dear Manager,\n\nPlease find below the analysis from ATHENA:\n\n{request.answer[:1000]}\n\nBest regards,\nATHENA System",
+            body=f"Dear {request.manager_name},\n\nPlease find below the analysis from ATHENA:\n\n{request.answer[:1000]}\n\nBest regards,\nATHENA System",
             to_email=request.manager_email
         )
     except Exception as e:

@@ -113,9 +113,9 @@ function VinushanPage() {
     });
   };
 
-  // Clear all chat history
-  const handleClearAllMessages = () => {
-    if (window.confirm('Are you sure you want to clear all chat history?')) {
+  // Clear all chat history (used by both chat and settings)
+  const handleClearAllMessages = (skipConfirm = false) => {
+    if (skipConfirm || window.confirm('Are you sure you want to clear all chat history?')) {
       setMessages([]);
       localStorage.removeItem(STORAGE_KEY);
     }
@@ -415,7 +415,12 @@ function VinushanPage() {
       <main className="athena-main">
         {/* Settings Tab Content */}
         {activeTab === 'settings' && (
-          <SettingsPage />
+          <SettingsPage 
+            showAgentThoughts={showReasoning}
+            onToggleAgentThoughts={setShowReasoning}
+            onClearChatHistory={() => handleClearAllMessages(true)}
+            chatHistoryCount={messages.length}
+          />
         )}
 
         {/* Overview Tab Content */}
