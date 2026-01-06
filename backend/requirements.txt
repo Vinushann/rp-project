@@ -1,4 +1,28 @@
 # Core dependencies
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.10.0
+
+# Development dependencies
+python-dotenv>=1.0.0
+httpx>=0.26.0  # For testing
+
+
+
+#Vishva's Dependencies
+python-dotenv
+browser-use
+langchain-anthropic
+playwright
+scikit-learn
+pandas
+numpy
+joblib
+nltk
+scipy
+PyMuPDF
+reportlab
+python-multipart
 fastapi==0.109.0
 # Align with chromadb/mcp which require uvicorn >=0.31.1
 uvicorn[standard]==0.32.1

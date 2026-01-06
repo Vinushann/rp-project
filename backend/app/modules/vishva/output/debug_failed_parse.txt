@@ -1,0 +1,170 @@
+Parse attempt failed at 2026-01-02 22:26:59.992536
+Error: Expecting property name enclosed in double quotes: line 3 column 5 (char 10)
+
+============================================================
+ORIGINAL CONTENT (first 2000 chars):
+============================================================
+[
+  {
+    \"name\": \"Greek Salad\",
+    \"price\": \"RS 1,850\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Hawaiian Chicken Salad\",
+    \"price\": \"RS 1,950\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Caesar Salad - Prawns/Chicken/Lobster\",
+    \"price\": \"RS 2,100\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Beef Bone Marrow Soup\",
+    \"price\": \"RS 1,850\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Chicken Noodle Soup\",
+    \"price\": \"RS 1,750\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Vegetable Egg Drop Soup\",
+    \"price\": \"RS 1,550\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Seafood Bouillabaisse\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Fish Ceviche\",
+    \"price\": \"RS 1,600\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Pepper Mutton Broth\",
+    \"price\": \"RS 2,650\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Crispy Whole Tilapia Fish & Chips\",
+    \"price\": \"Per 100g RS 490\",
+    \"category\": \"Tilapiya Fish\"
+  },
+  {
+    \"name\": \"Lemon Garlic Marinated Baked Whole Tilapia Fish\",
+    \"price\": \"Per 100g RS 540\",
+    \"category\": \"Tilapiya Fish\"
+  },
+  {
+    \"name\": \"Green Herb Marinated Kochchi Baked Whole Tilapia Fish\",
+    \"price\": \"Per 100g RS 540\",
+    \"category\": \"Tilapiya Fish\"
+  },
+  {
+    \"name\": \"Tilapiya Fish Curry\",
+    \"price\": \"Regular RS 2,950 Large RS 3,350\",
+    \"category\": \"Tilapiya Fish\"
+  },
+  {
+    \"name\": \"Grilled Greek Chicken\",
+    \"price\": \"Regular RS 2,700 Large RS 3,100\",
+    \"category\": \"On The Grill - Chicken\"
+  },
+  {
+    \"name\": \"Grilled Chicken - Garlic Sausages\",
+    \"price\": \"Regular RS 2,450 Large RS 2,850\",
+    "category": "On The Grill - Chicken"
+  },
+  {
+    \"name\": \"Grilled Beef Fillet\",
+    \"price\": \"Large RS 4,950\",
+    \"
+
+============================================================
+CLEANED CONTENT (first 2000 chars):
+============================================================
+[
+  {
+    \"name\": \"Greek Salad\",
+    \"price\": \"RS 1,850\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Hawaiian Chicken Salad\",
+    \"price\": \"RS 1,950\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Caesar Salad - Prawns/Chicken/Lobster\",
+    \"price\": \"RS 2,100\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Beef Bone Marrow Soup\",
+    \"price\": \"RS 1,850\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Chicken Noodle Soup\",
+    \"price\": \"RS 1,750\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Vegetable Egg Drop Soup\",
+    \"price\": \"RS 1,550\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Seafood Bouillabaisse\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Fish Ceviche\",
+    \"price\": \"RS 1,600\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Pepper Mutton Broth\",
+    \"price\": \"RS 2,650\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Crispy Whole Tilapia Fish & Chips\",
+    \"price\": \"Per 100g RS 490\",
+    \"category\": \"Tilapiya Fish\"
+  },
+  {
+    \"name\": \"Lemon Garlic Marinated Baked Whole Tilapia Fish\",
+    \"price\": \"Per 100g RS 540\",
+    \"category\": \"Tilapiya Fish\"
+  },
+  {
+    \"name\": \"Green Herb Marinated Kochchi Baked Whole Tilapia Fish\",
+    \"price\": \"Per 100g RS 540\",
+    \"category\": \"Tilapiya Fish\"
+  },
+  {
+    \"name\": \"Tilapiya Fish Curry\",
+    \"price\": \"Regular RS 2,950 Large RS 3,350\",
+    \"category\": \"Tilapiya Fish\"
+  },
+  {
+    \"name\": \"Grilled Greek Chicken\",
+    \"price\": \"Regular RS 2,700 Large RS 3,100\",
+    \"category\": \"On The Grill - Chicken\"
+  },
+  {
+    \"name\": \"Grilled Chicken - Garlic Sausages\",
+    \"price\": \"Regular RS 2,450 Large RS 2,850\",
+    "category": "On The Grill - Chicken"
+  },
+  {
+    \"name\": \"Grilled Beef Fillet\",
+    \"price\": \"Large RS 4,950\",
+    \"

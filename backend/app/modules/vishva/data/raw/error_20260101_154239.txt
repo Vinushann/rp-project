@@ -1,0 +1,159 @@
+Error at 2026-01-01 15:42:39.422271
+Type: NotImplementedError
+Details: 
+
+Full Traceback:
+Traceback (most recent call last):
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\bubus\service.py", line 1226, in execute_handler
+    await monitor_task
+  File "C:\Python313\Lib\asyncio\futures.py", line 286, in __await__
+    yield self  # This tells Task to wait for completion.
+    ^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\tasks.py", line 375, in __wakeup
+    future.result()
+    ~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\asyncio\futures.py", line 194, in result
+    raise self._make_cancelled_error()
+  File "C:\Python313\Lib\asyncio\tasks.py", line 306, in __step_run_and_handle_result
+    result = coro.throw(exc)
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\bubus\service.py", line 1111, in deadlock_monitor
+    await asyncio.sleep(15.0)
+  File "C:\Python313\Lib\asyncio\tasks.py", line 718, in sleep
+    return await future
+           ^^^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\futures.py", line 286, in __await__
+    yield self  # This tells Task to wait for completion.
+    ^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\tasks.py", line 375, in __wakeup
+    future.result()
+    ~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\asyncio\futures.py", line 194, in result
+    raise self._make_cancelled_error()
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 81, in extract_menu_data_async
+    result = await agent.run()
+             ^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\observability.py", line 73, in async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\utils.py", line 384, in wrapper
+    result = await func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\agent\service.py", line 2301, in run
+    raise e
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\agent\service.py", line 2204, in run
+    await self.browser_session.start()
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\observability.py", line 73, in async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\browser\session.py", line 555, in start
+    await start_event.event_result(raise_if_any=True, raise_if_none=False)
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\bubus\models.py", line 574, in event_result
+    valid_results = await self.event_results_filtered(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        timeout=timeout, include=include, raise_if_any=raise_if_any, raise_if_none=raise_if_none
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\bubus\models.py", line 516, in event_results_filtered
+    raise original_error
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\bubus\models.py", line 490, in event_results_filtered
+    await event_result
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\bubus\models.py", line 889, in wait_for_handler_to_complete_and_return_result
+    raise self.error if isinstance(self.error, BaseException) else Exception(self.error)  # pyright: ignore[reportUnnecessaryIsInstance]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\bubus\service.py", line 1128, in execute_handler
+    result_value: Any = await asyncio.wait_for(handler_task, timeout=event_result.timeout)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\futures.py", line 286, in __await__
+    yield self  # This tells Task to wait for completion.
+    ^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\tasks.py", line 375, in __wakeup
+    future.result()
+    ~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\asyncio\futures.py", line 199, in result
+    raise self._exception.with_traceback(self._exception_tb)
+  File "C:\Python313\Lib\asyncio\tasks.py", line 306, in __step_run_and_handle_result
+    result = coro.throw(exc)
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\browser\watchdog_base.py", line 108, in unique_handler
+    result = await actual_handler(event)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\observability.py", line 73, in async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\browser\session.py", line 640, in on_BrowserStartEvent
+    BrowserLaunchResult, await launch_event.event_result(raise_if_none=True, raise_if_any=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\bubus\models.py", line 574, in event_result
+    valid_results = await self.event_results_filtered(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        timeout=timeout, include=include, raise_if_any=raise_if_any, raise_if_none=raise_if_none
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\bubus\models.py", line 516, in event_results_filtered
+    raise original_error
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\bubus\models.py", line 490, in event_results_filtered
+    await event_result
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\bubus\models.py", line 889, in wait_for_handler_to_complete_and_return_result
+    raise self.error if isinstance(self.error, BaseException) else Exception(self.error)  # pyright: ignore[reportUnnecessaryIsInstance]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\bubus\service.py", line 1070, in _execute_handlers
+    await self.execute_handler(event, handler, timeout=timeout)
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\bubus\service.py", line 1128, in execute_handler
+    result_value: Any = await asyncio.wait_for(handler_task, timeout=event_result.timeout)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\futures.py", line 286, in __await__
+    yield self  # This tells Task to wait for completion.
+    ^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\tasks.py", line 375, in __wakeup
+    future.result()
+    ~~~~~~~~~~~~~^^
+  File "C:\Python313\Lib\asyncio\futures.py", line 199, in result
+    raise self._exception.with_traceback(self._exception_tb)
+  File "C:\Python313\Lib\asyncio\tasks.py", line 304, in __step_run_and_handle_result
+    result = coro.send(None)
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\browser\watchdog_base.py", line 108, in unique_handler
+    result = await actual_handler(event)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\observability.py", line 73, in async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\browser\watchdogs\local_browser_watchdog.py", line 54, in on_BrowserLaunchEvent
+    process, cdp_url = await self._launch_browser()
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\observability.py", line 73, in async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\browser\watchdogs\local_browser_watchdog.py", line 144, in _launch_browser
+    subprocess = await asyncio.create_subprocess_exec(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Python313\Lib\asyncio\subprocess.py", line 224, in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        stderr=stderr, **kwds)
+        ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\base_events.py", line 1788, in subprocess_exec
+    transport = await self._make_subprocess_transport(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        protocol, popen_args, False, stdin, stdout, stderr,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        bufsize, **kwargs)
+        ^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\base_events.py", line 533, in _make_subprocess_transport
+    raise NotImplementedError
+NotImplementedError

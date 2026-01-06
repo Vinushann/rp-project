@@ -1,0 +1,15 @@
+Error at 2026-01-01 15:41:01.668081
+Type: RuntimeError
+Details: asyncio.run() cannot be called from a running event loop
+
+Full Traceback:
+Traceback (most recent call last):
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 73, in extract_menu_data
+    result = agent.run_sync()
+  File "C:\SLIIT\Y4S1\Research\rp-project\backend\venv\Lib\site-packages\browser_use\agent\service.py", line 3119, in run_sync
+    return asyncio.run(self.run(max_steps=max_steps, on_step_start=on_step_start, on_step_end=on_step_end))
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python313\Lib\asyncio\runners.py", line 191, in run
+    raise RuntimeError(
+        "asyncio.run() cannot be called from a running event loop")
+RuntimeError: asyncio.run() cannot be called from a running event loop
