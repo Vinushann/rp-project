@@ -582,6 +582,115 @@
       color: var(--text-secondary);
     }
 
+    /* Activation Table */
+    .activation-table {
+      width: 100%;
+      margin: 24px 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--card);
+    }
+
+    .activation-header {
+      display: flex;
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.04);
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .activation-col-question {
+      flex: 1.5;
+    }
+
+    .activation-col-agent {
+      flex: 1;
+      text-align: right;
+    }
+
+    .activation-row {
+      display: flex;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    .activation-row:last-child {
+      border-bottom: none;
+    }
+
+    .activation-row:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .activation-keywords {
+      flex: 1.5;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .activation-keywords code {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--primary-light);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-right: 4px;
+    }
+
+    .activation-agent {
+      flex: 1;
+      text-align: right;
+    }
+
+    .agent-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .agent-badge.historian {
+      background: rgba(139, 92, 246, 0.15);
+      color: #a78bfa;
+    }
+
+    .agent-badge.forecaster {
+      background: rgba(236, 72, 153, 0.15);
+      color: #f472b6;
+    }
+
+    .agent-badge.holiday {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+    }
+
+    .agent-badge.weather {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+    }
+
+    .agent-badge.visual {
+      background: rgba(251, 146, 60, 0.15);
+      color: #fb923c;
+    }
+
+    .agent-badge.strategy {
+      background: rgba(20, 184, 166, 0.15);
+      color: #2dd4bf;
+    }
+
     /* Agents */
     .agents {
       display: flex;
@@ -1282,6 +1391,68 @@
                 </ul>
               </div>
             </div>
+          </div>
+
+          <h2>When Does Each Agent Activate?</h2>
+          <p>ATHENA intelligently routes your question to the right agents based on keywords. Here's how it works:</p>
+
+          <div class="activation-table">
+            <div class="activation-header">
+              <div class="activation-col-question">Your Question Contains...</div>
+              <div class="activation-col-agent">Agents Activated</div>
+            </div>
+            <div class="activation-row">
+              <div class="activation-keywords">
+                <code>"top sellers"</code>, <code>"best items"</code>, <code>"history"</code>
+              </div>
+              <div class="activation-agent">
+                <span class="agent-badge historian">📚 Historian</span>
+              </div>
+            </div>
+            <div class="activation-row">
+              <div class="activation-keywords">
+                <code>"predict"</code>, <code>"forecast"</code>, <code>"next month"</code>
+              </div>
+              <div class="activation-agent">
+                <span class="agent-badge forecaster">🔮 Forecaster</span>
+              </div>
+            </div>
+            <div class="activation-row">
+              <div class="activation-keywords">
+                <code>"holiday"</code>, <code>"Vesak"</code>, <code>"Christmas"</code>
+              </div>
+              <div class="activation-agent">
+                <span class="agent-badge holiday">🎄 Holiday Expert</span>
+              </div>
+            </div>
+            <div class="activation-row">
+              <div class="activation-keywords">
+                <code>"rain"</code>, <code>"weather"</code>, <code>"temperature"</code>
+              </div>
+              <div class="activation-agent">
+                <span class="agent-badge weather">🌦️ Weather Analyst</span>
+              </div>
+            </div>
+            <div class="activation-row">
+              <div class="activation-keywords">
+                <code>"chart"</code>, <code>"graph"</code>, <code>"visualize"</code>, <code>"show"</code>
+              </div>
+              <div class="activation-agent">
+                <span class="agent-badge visual">🎨 Visual Specialist</span>
+              </div>
+            </div>
+            <div class="activation-row">
+              <div class="activation-keywords">
+                <code>"plan"</code>, <code>"what should I do"</code>
+              </div>
+              <div class="activation-agent">
+                <span class="agent-badge strategy">📋 Strategy Planner</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card tip">
+            <strong>💡 Pro Tip:</strong> You can combine keywords to activate multiple agents. For example, "What should I prepare for rainy weather next week?" would activate Weather Analyst, Forecaster, and Strategy Planner together.
           </div>
         </section>
 
