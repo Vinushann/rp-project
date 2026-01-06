@@ -1,0 +1,6 @@
+{
+  "seasonal_period": 7,
+  "ma_window": 7,
+  "blend_weight": 0.5,
+  "model_type": "baseline_seasonal_ma"
+}
