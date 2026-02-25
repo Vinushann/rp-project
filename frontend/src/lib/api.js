@@ -341,6 +341,8 @@ export async function exportPredictions(predictions, format) {
     // Return blob for CSV and PDF
     return response.blob();
   }
+}
+
 // ATHENA EMAIL SETTINGS API
 // ============================================
 
