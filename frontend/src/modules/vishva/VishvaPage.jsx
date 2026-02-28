@@ -380,10 +380,22 @@ function VishvaPage() {
       
       eventSource.onerror = (err) => {
         console.error('SSE Error:', err);
-        setError('Connection to server lost');
-        setExtracting(false);
-        eventSourceRef.current = null;
-        eventSource.close();
+        // Only treat as fatal if the readyState is CLOSED (2)
+        // EventSource may fire transient errors during reconnection (readyState === 0)
+        if (eventSource.readyState === EventSource.CLOSED) {
+          setError('Connection to server lost');
+          setExtracting(false);
+          eventSourceRef.current = null;
+          eventSource.close();
+        } else {
+          // Transient error — let EventSource try to reconnect automatically
+          console.log('SSE transient error, readyState:', eventSource.readyState, '— waiting for reconnect...');
+          setAgentThoughts(prev => [...prev, {
+            type: 'status',
+            message: 'Reconnecting to server...',
+            timestamp: new Date().toLocaleTimeString()
+          }]);
+        }
       };
       
     } catch (err) {
