@@ -183,11 +183,3 @@ git push origin feature/vinushan-chat-improvement
 
 # Create Pull Request on GitHub
 ```
-
-## 📄 License
-
-[Add your license here]
-
----
-
-Happy coding! 🎉
