@@ -1,63 +1,65 @@
-# Comprehensive Action Plan for Improving Sales
+# Comprehensive Action Plan for Next Month
 
 ## Demand Outlook
-- **Total Expected Quantity for January 2026**: 270.92
+- **Total Expected Quantity for April 2026**: 150.08
 - **Busiest Predicted Days**: 
-  - January 5, 2026
-  - January 12, 2026
-  - January 19, 2026
-  - January 20, 2026
-  - January 26, 2026
+  - April 27, 2026
+  - April 28, 2026
+  - April 6, 2026
+  - April 20, 2026
+  - April 21, 2026
 - **Confidence Intervals**: 
-  - January 1, 2026: yhat = 7.53 (0 - 20.89)
-  - January 2, 2026: yhat = 9.46 (0 - 23.7)
-  - January 3, 2026: yhat = 8.21 (0 - 21.76)
-  - January 4, 2026: yhat = 7.89 (0 - 22.24)
-  - January 5, 2026: yhat = 10.59 (0 - 24.62)
+  - For the busiest day (April 27): 
+    - Predicted demand (yhat): 8.06 
+    - Lower bound (yhat_lower): 0 
+    - Upper bound (yhat_upper): 20.92
 
 ## Promotions
-- **Focus on Top-Selling Items**: 
-  - Implement targeted promotions for high-demand items like "Crispy Pasta 12" and "Sweet Chicken 19" to boost sales.
-- **Discount Strategy**: 
-  - Increase discounts on items with higher average tickets and lower sales volume, such as "Spicy Drink 22" and "Sweet Chicken", to stimulate demand.
-- **Bundle Offers**: 
-  - Create bundle offers that include both top-selling and falling items to encourage customers to try new products.
+- Focus on promoting high-demand items:
+  - **Crispy Pasta 12**: Average ticket $1457.87, avg discount 9.6%
+  - **Spicy Burger**: Average ticket $1708.47, avg discount 15%
+  - **Veggie Roll**: Average ticket $1527.82, avg discount 11.9%
+  - **Deluxe Pizza**: Average ticket $1797.43, avg discount 13.4%
+- Implement targeted discounts on items in the discount focus list to boost sales:
+  - **Herb Chicken 12**: Avg ticket $1301.56, avg discount 25.8%
+  - **Veggie Sandwich**: Avg ticket $1057.09, avg discount 25.3%
+  - **Veggie Pasta 19**: Avg ticket $2094.31, avg discount 25.1%
+  - **Deluxe Roll**: Avg ticket $914.31, avg discount 23.9%
+  - **Spicy Burger 9**: Avg ticket $1658.31, avg discount 23.8%
 
 ## Staffing
-- **Increase Staffing on Busiest Days**: 
-  - Schedule additional staff on January 19 and 26 to manage increased customer volume.
-- **Cross-Training Employees**: 
-  - Ensure staff are cross-trained to handle multiple roles, enhancing flexibility during peak times.
-- **Incentives for Staff**: 
-  - Consider offering incentives for staff working on busy days to maintain morale and service quality.
+- **Increase staffing levels** on the busiest predicted days (April 27 and 28) to manage higher customer volume.
+- Monitor daily sales trends to adjust staffing dynamically based on actual demand.
+- Ensure adequate training for staff on promotional items to enhance customer experience.
 
 ## Inventory
-- **Stock Management**: 
-  - Ensure adequate inventory levels of top-selling items, particularly "Crispy Pasta 12" and "Sweet Chicken 19".
-- **Monitor Falling Items**: 
-  - Assess the reasons for the decline in sales of items like "Spicy Burger 22" and "Sweet Dessert 12" and consider discontinuing or rebranding them if necessary.
-- **Weather-Related Adjustments**: 
-  - Monitor weather forecasts and adjust inventory levels accordingly, especially for items that may see increased demand during rainy days.
+- **Ensure sufficient inventory** for high-demand items:
+  - **Spicy Burger**: Monthly qty 195
+  - **Deluxe Pizza**: Monthly qty 188
+- Monitor inventory levels closely, especially for items with high average daily quantities.
+- Prepare for potential stockouts on falling items and consider discontinuing or re-evaluating their presence in the menu.
 
 ## Risks
-- **Market Competition**: 
-  - Stay informed about competitors’ promotions and adjust strategies accordingly to maintain market share.
-- **Supply Chain Disruptions**: 
-  - Develop contingency plans for potential supply chain disruptions that may affect inventory levels.
-- **Customer Preferences**: 
-  - Regularly gather customer feedback to adapt offerings and ensure alignment with changing preferences.
+- **Potential Risks**:
+  - High uncertainty in demand predictions (MAE: 7.94, MAPE: 73.04, RMSE: 15.58).
+  - Risk of stockouts on popular items if demand exceeds predictions.
+  - Staff shortages on busy days could lead to poor customer service and lost sales.
+- **Mitigation Strategies**:
+  - Implement a flexible staffing model that allows for quick adjustments based on real-time sales data.
+  - Establish a contingency plan for inventory replenishment to avoid stockouts.
 
 ## Summary Table of Key Metrics
 
-| Metric                     | Value                  |
-|----------------------------|------------------------|
-| Total Expected Quantity     | 270.92                 |
-| Busiest Days               | January 5, 12, 19, 20, 26 |
-| Avg Daily Qty (Top Item)   | 2.74 (Crispy Pasta 12) |
-| Avg Ticket (Top Item)      | 1526.1 (Crispy Pasta 12) |
-| Avg Discount (Top Item)    | 0.097 (Crispy Pasta 12) |
-| Staff Increase Needed       | Yes (on busy days)     |
-| Inventory Focus            | Top-selling items       |
-| Risk Factors               | Competition, Supply Chain, Customer Preferences |
+| Metric                     | Value          |
+|----------------------------|----------------|
+| Total Expected Quantity     | 150.08         |
+| Busiest Days               | April 27, 28   |
+| Avg Daily Quantity (Spicy Burger) | 2.5      |
+| Avg Daily Quantity (Deluxe Pizza) | 2.44     |
+| Avg Ticket (Crispy Pasta)  | $1457.87       |
+| Avg Discount (Spicy Burger) | 15%            |
+| MAE                        | 7.94           |
+| MAPE                       | 73.04%         |
+| RMSE                       | 15.58          |
 
-This comprehensive action plan synthesizes insights into actionable recommendations aimed at improving sales and ensuring operational efficiency.
+This action plan synthesizes all findings into actionable recommendations, ensuring that the team is well-prepared for the upcoming month.
