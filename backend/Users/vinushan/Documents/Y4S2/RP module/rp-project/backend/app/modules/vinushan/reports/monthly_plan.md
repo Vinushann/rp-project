@@ -1,65 +1,48 @@
-# Comprehensive Action Plan for Next Month
+### Demand Outlook
+- **Total Expected Quantity for April 2026**: 150.08 units
+- **Average Daily Quantity**: 5.0 units
+- **Busiest Predicted Days**:
+  - April 27, 2026: 8.06 units
+  - April 28, 2026: 7.94 units
+  - April 6, 2026: 5.31 units
+  - April 20, 2026: 5.04 units
+  - April 21, 2026: 4.19 units
+- **Weather Impact**: Moderate rain and temperature fluctuations are expected, with minimal negative impacts on food and pastries. Maintain standard offerings across categories.
 
-## Demand Outlook
-- **Total Expected Quantity for April 2026**: 150.08
-- **Busiest Predicted Days**: 
-  - April 27, 2026
-  - April 28, 2026
-  - April 6, 2026
-  - April 20, 2026
-  - April 21, 2026
-- **Confidence Intervals**: 
-  - For the busiest day (April 27): 
-    - Predicted demand (yhat): 8.06 
-    - Lower bound (yhat_lower): 0 
-    - Upper bound (yhat_upper): 20.92
+### Promotions
+- **Pre-New Year (April 10-12)**: Launch a special menu featuring festive items and promotions to attract customers preparing for the Sinhala and Tamil New Year [1].
+- **New Year Days (April 13-14)**: Offer special discounts or combo deals to capitalize on the expected 30-50% increase in traffic from travelers [1].
+- **Post-New Year (April 15-17)**: Promote leftover festive items at a discount to clear inventory.
 
-## Promotions
-- Focus on promoting high-demand items:
-  - **Crispy Pasta 12**: Average ticket $1457.87, avg discount 9.6%
-  - **Spicy Burger**: Average ticket $1708.47, avg discount 15%
-  - **Veggie Roll**: Average ticket $1527.82, avg discount 11.9%
-  - **Deluxe Pizza**: Average ticket $1797.43, avg discount 13.4%
-- Implement targeted discounts on items in the discount focus list to boost sales:
-  - **Herb Chicken 12**: Avg ticket $1301.56, avg discount 25.8%
-  - **Veggie Sandwich**: Avg ticket $1057.09, avg discount 25.3%
-  - **Veggie Pasta 19**: Avg ticket $2094.31, avg discount 25.1%
-  - **Deluxe Roll**: Avg ticket $914.31, avg discount 23.9%
-  - **Spicy Burger 9**: Avg ticket $1658.31, avg discount 23.8%
+### Staffing
+- **Week 1 (April 1-7)**: Maintain standard staffing levels, focusing on weekends when demand is higher.
+- **Week 2 (April 8-14)**: Increase staffing by 20-30% to handle the anticipated surge in customers during the New Year celebrations.
+- **Week 3 (April 15-21)**: Reduce staffing levels slightly as demand is expected to drop post-holiday.
+- **Week 4 (April 22-30)**: Increase staffing again in anticipation of higher demand on April 27-28.
 
-## Staffing
-- **Increase staffing levels** on the busiest predicted days (April 27 and 28) to manage higher customer volume.
-- Monitor daily sales trends to adjust staffing dynamically based on actual demand.
-- Ensure adequate training for staff on promotional items to enhance customer experience.
+### Inventory
+- **Week 1 (April 1-7)**: Ensure sufficient inventory of coffee and pastries, focusing on popular items.
+- **Week 2 (April 8-14)**: Stock up on festive items and ingredients for special menu offerings. Prepare for a potential spike in catering orders.
+- **Week 3 (April 15-21)**: Adjust inventory to reflect the expected decrease in demand. Monitor sales closely.
+- **Week 4 (April 22-30)**: Increase inventory in preparation for the busy days at the end of the month, particularly for coffee and pastries.
 
-## Inventory
-- **Ensure sufficient inventory** for high-demand items:
-  - **Spicy Burger**: Monthly qty 195
-  - **Deluxe Pizza**: Monthly qty 188
-- Monitor inventory levels closely, especially for items with high average daily quantities.
-- Prepare for potential stockouts on falling items and consider discontinuing or re-evaluating their presence in the menu.
+### Risks
+- **Weather Variability**: Rain could impact foot traffic; however, the overall effect is expected to be minimal. Maintain flexibility in staffing and inventory.
+- **Supply Chain Issues**: Ensure that suppliers are aware of increased demand during the New Year period to avoid stockouts.
+- **Customer Behavior Changes**: Monitor real-time sales data to adjust operations as necessary, especially during the holiday period.
 
-## Risks
-- **Potential Risks**:
-  - High uncertainty in demand predictions (MAE: 7.94, MAPE: 73.04, RMSE: 15.58).
-  - Risk of stockouts on popular items if demand exceeds predictions.
-  - Staff shortages on busy days could lead to poor customer service and lost sales.
-- **Mitigation Strategies**:
-  - Implement a flexible staffing model that allows for quick adjustments based on real-time sales data.
-  - Establish a contingency plan for inventory replenishment to avoid stockouts.
+### Summary Table of Key Metrics
 
-## Summary Table of Key Metrics
+| Date Range         | Expected Daily Sales | Staffing Level | Inventory Focus         |
+|--------------------|----------------------|----------------|--------------------------|
+| April 1-7          | 5.0 units            | Standard       | Coffee, Pastries         |
+| April 8-14         | Increased            | +20-30%        | Festive Items            |
+| April 15-21        | Slightly Decreased    | -10-20%        | Standard Offerings       |
+| April 22-30        | Increased            | +20-30%        | Coffee, Pastries         |
 
-| Metric                     | Value          |
-|----------------------------|----------------|
-| Total Expected Quantity     | 150.08         |
-| Busiest Days               | April 27, 28   |
-| Avg Daily Quantity (Spicy Burger) | 2.5      |
-| Avg Daily Quantity (Deluxe Pizza) | 2.44     |
-| Avg Ticket (Crispy Pasta)  | $1457.87       |
-| Avg Discount (Spicy Burger) | 15%            |
-| MAE                        | 7.94           |
-| MAPE                       | 73.04%         |
-| RMSE                       | 15.58          |
+### Sources
+- Holiday Impact Guide
+- Prophet Model Predictions
+- Weather Impact Analysis
 
-This action plan synthesizes all findings into actionable recommendations, ensuring that the team is well-prepared for the upcoming month.
+This comprehensive action plan should guide your coffee shop operations effectively through April 2026, maximizing sales and customer satisfaction during the Sinhala and Tamil New Year celebrations and beyond.

@@ -16,6 +16,7 @@ from app.modules.vinushan.contextawareforecastingsys.api.chat_service import (
 from app.modules.vinushan.contextawareforecastingsys.api.realtime_streaming import (
     stream_chat_realtime,
 )
+from app.modules.vinushan.contextawareforecastingsys.rag.rag_service import RAGService
 from app.modules.vinushan.contextawareforecastingsys.api.models import (
     ChatRequest,
     ChatResponse,
@@ -72,6 +73,16 @@ MODULE_NAME = "vinushan"
 async def ping():
     """Health check endpoint for Vinushan module."""
     return PingResponse(module=MODULE_NAME, status="ok")
+
+
+@router.get("/rag/health")
+async def rag_health():
+    """Health check for the RAG knowledge base system."""
+    try:
+        rag = RAGService(auto_ingest=False)
+        return rag.health_check()
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e)}
 
 
 @router.post("/chat", response_model=ChatResponse)

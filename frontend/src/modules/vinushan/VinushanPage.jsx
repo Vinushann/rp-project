@@ -253,6 +253,10 @@ function VinushanPage() {
           setEvents(prev => [...prev, data]);
         },
         
+        onRagRetrieval: (data) => {
+          setEvents(prev => [...prev, data]);
+        },
+        
         onAgentStart: (data) => {
           setEvents(prev => [...prev, data]);
         },
@@ -304,6 +308,8 @@ function VinushanPage() {
             content: responseData.response || data.content || 'Analysis complete.',
             timestamp: new Date().toISOString(),
             charts: responseData.charts,
+            ragCitations: responseData.rag_citations || null,
+            ragSources: responseData.rag_sources || null,
           };
 
           setMessages(prev => [...prev, assistantMessage]);
@@ -457,35 +463,10 @@ function VinushanPage() {
                 ) : (
                   <>
                     {/* Clear All Button */}
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'flex-end',
-                      marginBottom: '12px',
-                      paddingRight: '8px',
-                    }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px', paddingRight: '8px' }}>
                       <button
+                        className="clear-all-btn"
                         onClick={handleClearAllMessages}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '6px 12px',
-                          background: 'transparent',
-                          border: '1px solid var(--athena-border)',
-                          borderRadius: '6px',
-                          color: 'var(--athena-text-secondary)',
-                          fontSize: '0.8rem',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                        }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.borderColor = '#ef4444';
-                          e.currentTarget.style.color = '#ef4444';
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.borderColor = 'var(--athena-border)';
-                          e.currentTarget.style.color = 'var(--athena-text-secondary)';
-                        }}
                         title="Clear all chat history"
                       >
                         🗑️ Clear All
@@ -507,49 +488,18 @@ function VinushanPage() {
 
                 {/* Loading indicator with Stop button */}
                 {isLoading && (
-                  <div className="athena-loading" style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '16px 20px',
-                    marginRight: '80px',
-                    borderLeft: '3px solid var(--athena-primary)',
-                  }}>
+                  <div className="athena-loading">
                     <div className="loading-dots">
                       <span></span>
                       <span></span>
                       <span></span>
                     </div>
-                    <p className="loading-text" style={{ margin: 0, color: 'var(--athena-text-secondary)', fontSize: '0.9rem', flex: 1 }}>
+                    <p className="loading-text">
                       {events.length > 0 
                         ? events[events.length - 1]?.content || 'Analyzing your question...'
                         : 'Analyzing your question...'}
                     </p>
-                    <button
-                      onClick={handleStopRequest}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '8px 16px',
-                        background: 'rgba(239, 68, 68, 0.15)',
-                        border: '1px solid rgba(239, 68, 68, 0.3)',
-                        borderRadius: '8px',
-                        color: '#ef4444',
-                        fontSize: '0.85rem',
-                        fontWeight: 500,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)';
-                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
-                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-                      }}
-                    >
+                    <button className="stop-btn" onClick={handleStopRequest}>
                       ⏹ Stop
                     </button>
                   </div>
@@ -584,7 +534,7 @@ function VinushanPage() {
                     onClick={() => handleSendMessage(inputValue)}
                     disabled={isLoading || !inputValue.trim()}
                   >
-                    {isLoading ? '...' : 'Send'}
+                    {isLoading ? '...' : 'Send ↗'}
                   </button>
                 </div>
               </div>

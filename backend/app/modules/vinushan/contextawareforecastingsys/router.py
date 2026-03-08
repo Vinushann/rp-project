@@ -77,13 +77,23 @@ Instructions:
 6. The "strategy" agent should ONLY be included if the question asks for recommendations, plans, or "what should I do"
 7. The "visualization" agent should be selected when the manager asks for charts, graphs, visual representations, or uses words like "show me", "visualize", "chart", "graph", "plot", "compare visually"
 8. If visualization is requested, ONLY select the visualization agent (it handles everything needed for charts)
+9. Set "needs_rag" to true when the question asks about domain knowledge that goes BEYOND raw data analysis — for example:
+   - Product recommendations, pairings, or menu advice
+   - Promotional strategies, discount guidance, or marketing ideas
+   - Operational best practices (staffing rules, inventory management)
+   - Holiday preparation tips or cultural context
+   - Weather-based business strategies
+   - How the ATHENA system works, methodology, or model details
+   - General business advice for the coffee shop
+   Set "needs_rag" to false for pure data queries (e.g., "what were top sellers last month?" or "forecast demand for June")
 
 Respond with a JSON object:
 {{
     "reasoning": "Brief explanation of why you selected these agents (or why none are needed for conversational messages)",
     "agents_needed": ["list", "of", "agent", "keys"],  // Empty list [] for conversational messages
     "is_comprehensive": true/false (whether this needs a final strategy summary),
-    "is_conversational": true/false (whether this is just a greeting or general conversation)
+    "is_conversational": true/false (whether this is just a greeting or general conversation),
+    "needs_rag": true/false (whether domain knowledge retrieval would improve the answer)
 }}
 
 Only return valid JSON, no other text."""
@@ -132,6 +142,7 @@ def route_question(question: str) -> dict:
                 "is_comprehensive": False,
                 "is_conversational": True,
                 "needs_visualization": False,
+                "needs_rag": False,
             }
         
         # Validate agents for business questions
@@ -144,12 +155,16 @@ def route_question(question: str) -> dict:
         # Check if visualization is requested
         needs_visualization = "visualization" in valid_agents
         
+        # Check if RAG knowledge retrieval is needed
+        needs_rag = result.get("needs_rag", False)
+        
         return {
             "agents_needed": valid_agents,
             "reasoning": result.get("reasoning", ""),
             "is_comprehensive": result.get("is_comprehensive", False),
             "is_conversational": False,
             "needs_visualization": needs_visualization,
+            "needs_rag": needs_rag,
         }
         
     except Exception as e:
@@ -183,12 +198,22 @@ def _keyword_fallback(question: str) -> dict:
     # Check if visualization is requested
     needs_visualization = "visualization" in agents_needed
     
+    # Check if RAG would help based on keywords
+    rag_keywords = [
+        "recommend", "suggest", "advice", "best practice", "strategy",
+        "promote", "promotion", "how does", "how do", "explain",
+        "staffing", "inventory", "what product", "pair", "bundle",
+        "methodology", "system", "how athena", "approach",
+    ]
+    needs_rag = any(kw in question_lower for kw in rag_keywords)
+    
     return {
         "agents_needed": agents_needed,
         "reasoning": "Matched based on keywords in question",
         "is_comprehensive": is_comprehensive,
         "is_conversational": False,
         "needs_visualization": needs_visualization,
+        "needs_rag": needs_rag,
     }
 
 

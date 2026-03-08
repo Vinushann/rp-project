@@ -141,6 +141,9 @@ export async function streamVinushanChat(message, conversationHistory = [], call
             case 'query_analysis':
               callbacks.onQueryAnalysis?.(data);
               break;
+            case 'rag_retrieval':
+              callbacks.onRagRetrieval?.(data);
+              break;
             case 'agent_start':
               callbacks.onAgentStart?.(data);
               break;
