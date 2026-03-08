@@ -53,3 +53,4 @@ coverage/
 
 .env.example
 .env
+/backend/app/modules/vishva/data

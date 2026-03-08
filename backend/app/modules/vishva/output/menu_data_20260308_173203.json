@@ -1,0 +1,117 @@
+[
+  {
+    "name": "Thai Red Curry Chicken Bowl",
+    "price": "Rs. 1,350",
+    "category": "THAI RICE"
+  },
+  {
+    "name": "Thai Green Curry Chicken Bowl",
+    "price": "Rs. 1,350",
+    "category": "THAI RICE"
+  },
+  {
+    "name": "Thai Red Curry Prawn Bowl",
+    "price": "Rs. 1,450",
+    "category": "THAI RICE"
+  },
+  {
+    "name": "Thai Green Curry Prawn Bowl",
+    "price": "Rs. 1,450",
+    "category": "THAI RICE"
+  },
+  {
+    "name": "Chicken Mongolian Bowl",
+    "price": "Rs. 1,200",
+    "category": "MONGOLIAN"
+  },
+  {
+    "name": "Beef Mongolian Bowl",
+    "price": "Rs. 1,350",
+    "category": "MONGOLIAN"
+  },
+  {
+    "name": "Mixed Mongolian Bowl",
+    "price": "Rs. 1,450",
+    "category": "MONGOLIAN"
+  },
+  {
+    "name": "Seafood Mongolian Bowl",
+    "price": "Rs. 1,450",
+    "category": "MONGOLIAN"
+  },
+  {
+    "name": "Crispy Chicken Bites",
+    "price": "Rs. 850",
+    "category": "SOLO BITES"
+  },
+  {
+    "name": "Hot Butter Cuttlefish",
+    "price": "Rs. 1,100",
+    "category": "SOLO BITES"
+  },
+  {
+    "name": "Egg Fried Rice",
+    "price": "Rs. 850",
+    "category": "FRIED RICE"
+  },
+  {
+    "name": "Chicken Fried Rice",
+    "price": "Rs. 1,100",
+    "category": "FRIED RICE"
+  },
+  {
+    "name": "Chili Chicken Bowl",
+    "price": "Rs. 1,100",
+    "category": "CHINESE"
+  },
+  {
+    "name": "Hot Butter Cuttlefish Bowl",
+    "price": "Rs. 1,400",
+    "category": "CHINESE"
+  },
+  {
+    "name": "Grilled Chicken Salad Bowl",
+    "price": "Rs. 1,450",
+    "category": "SALAD BOWLS"
+  },
+  {
+    "name": "Grilled Cottage Cheese Salad Bowl",
+    "price": "Rs. 1,200",
+    "category": "SALAD BOWLS"
+  },
+  {
+    "name": "Lite Grilled Chicken Salad Bowl",
+    "price": "Rs. 1,100",
+    "category": "SALAD BOWLS"
+  },
+  {
+    "name": "Lite Grilled Chicken Breast Bowl",
+    "price": "Rs. 1,000",
+    "category": "HEALTHY BOWLS"
+  },
+  {
+    "name": "Sliced Beef Bowl",
+    "price": "Rs. 1,450",
+    "category": "HEALTHY BOWLS"
+  },
+  {
+    "name": "Grilled Quarter Chicken Leg Bowl",
+    "price": "Rs. 1,350",
+    "category": "HEALTHY BOWLS"
+  },
+  {
+    "name": "Beef Ragu Pasta Bowl",
+    "price": "Rs. 1,700",
+    "category": "PASTA BOWLS"
+  },
+  {
+    "name": "Chicken Alfredo Pasta Bowl",
+    "price": "Rs. 1,500",
+    "category": "PASTA BOWLS"
+  },
+  {
+    "name": "Prawn Alfredo Pasta Bowl",
+    "price": "Rs. 1,700",
+    "category": "PASTA BOWLS"
+  }
+]
