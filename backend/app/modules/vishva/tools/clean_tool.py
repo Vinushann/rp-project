@@ -40,8 +40,12 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
     # fields have \" and others have unescaped "
     if r'\"' in content:
         print("ℹ️  Detected escaped quotes, normalizing...")
-        # First, unescape all escaped quotes to regular quotes
+        # Handle double-escaped quotes first: \\\" → PLACEHOLDER (these are literal quotes in values like inch marks)
+        content = content.replace('\\\\\\"', '<<INCH_QUOTE>>')
+        # Now unescape structural quotes: \" → "
         content = content.replace(r'\"', '"')
+        # Restore literal quotes as empty string (remove inch symbols that break JSON)
+        content = content.replace('<<INCH_QUOTE>>', '')
     
     # Handle escaped newlines and other sequences
     if r'\n' in content:
@@ -50,6 +54,27 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
         content = content.replace(r'\/', '/')
         content = content.replace(r'\t', '\t')
     
+    # Step 1.5: Fix unescaped quotes inside JSON string values
+    # e.g. "name": "MacBook Pro 16" M4 Max" → "name": "MacBook Pro 16 M4 Max"
+    # This happens when product names contain inch symbols (") or similar
+    def fix_unescaped_quotes_in_values(text):
+        """Remove stray quotes inside JSON string values that break parsing."""
+        lines = text.split('\n')
+        fixed_lines = []
+        for line in lines:
+            # Match lines like:  "key": "value with unescaped " quotes"
+            m = re.match(r'^(\s*"[^"]+"\s*:\s*")(.*)(",?\s*}?,?\s*)$', line)
+            if m:
+                prefix, value, suffix = m.group(1), m.group(2), m.group(3)
+                # Remove any unescaped quotes within the value itself
+                value = value.replace('"', '')
+                fixed_lines.append(prefix + value + suffix)
+            else:
+                fixed_lines.append(line)
+        return '\n'.join(fixed_lines)
+    
+    content = fix_unescaped_quotes_in_values(content)
+
     # Step 2: Try to parse as JSON directly
     data = None
     parse_method = None

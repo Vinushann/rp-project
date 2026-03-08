@@ -1759,3 +1759,16 @@ async def update_confidence_settings(settings: ConfidenceSettings):
         return {"success": True, "message": "Settings saved"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================
+# AGENTIC AI SUB-ROUTER
+# ============================================
+# Mount the agent endpoints under /agent prefix
+# e.g. /api/v1/vishva/agent/chat, /api/v1/vishva/agent/chat-stream
+try:
+    from app.modules.vishva.agent import agent_router
+    router.include_router(agent_router, prefix="/agent", tags=["vishva-agent"])
+except ImportError:
+    # Agent dependencies not installed — skip silently, existing endpoints still work
+    pass

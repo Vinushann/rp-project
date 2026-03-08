@@ -1,5 +1,170 @@
 [
   {
+    "name": "iPhone 16 Pro Max",
+    "price": "$1,199",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "iPhone 16",
+    "price": "$799",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Galaxy S25 Ultra",
+    "price": "$1,299",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Galaxy S25",
+    "price": "$799",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Galaxy A56",
+    "price": "$449",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Pixel 10 Pro",
+    "price": "$999",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Pixel 10a",
+    "price": "$499",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "OnePlus 13",
+    "price": "$899",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Xiaomi 15 Pro",
+    "price": "$749",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "iPhone 16 Pro",
+    "price": "$1,099",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Galaxy Z Fold 6",
+    "price": "$1,799",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Galaxy Z Flip 6",
+    "price": "$1,099",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Pixel 9",
+    "price": "$699",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "OnePlus 13R",
+    "price": "$599",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Xiaomi 14T",
+    "price": "$549",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Nothing Phone (3)",
+    "price": "$599",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Motorola Edge 50 Pro",
+    "price": "$499",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "MacBook Pro 16 M4 Max",
+    "price": "$2,499",
+    "category": "Laptops"
+  },
+  {
+    "name": "MacBook Air 15 M4",
+    "price": "$1,299",
+    "category": "Laptops"
+  },
+  {
+    "name": "Dell XPS 16",
+    "price": "$1,799",
+    "category": "Laptops"
+  },
+  {
+    "name": "Dell Inspiron 15",
+    "price": "$699",
+    "category": "Laptops"
+  },
+  {
+    "name": "HP Spectre x360 16",
+    "price": "$1,599",
+    "category": "Laptops"
+  },
+  {
+    "name": "HP Pavilion 14",
+    "price": "$549",
+    "category": "Laptops"
+  },
+  {
+    "name": "ThinkPad X1 Carbon Gen 13",
+    "price": "$1,649",
+    "category": "Laptops"
+  },
+  {
+    "name": "IdeaPad Slim 5",
+    "price": "$649",
+    "category": "Laptops"
+  },
+  {
+    "name": "ROG Zephyrus G16",
+    "price": "$1,999",
+    "category": "Laptops"
+  },
+  {
+    "name": "MacBook Pro 14 M4 Pro",
+    "price": "$1,999",
+    "category": "Laptops"
+  },
+  {
+    "name": "Dell Latitude 14",
+    "price": "$1,199",
+    "category": "Laptops"
+  },
+  {
+    "name": "HP Envy 16",
+    "price": "$1,299",
+    "category": "Laptops"
+  },
+  {
+    "name": "Lenovo Yoga 9i",
+    "price": "$1,449",
+    "category": "Laptops"
+  },
+  {
+    "name": "ASUS ZenBook 14 OLED",
+    "price": "$899",
+    "category": "Laptops"
+  },
+  {
+    "name": "Acer Swift Go 14",
+    "price": "$749",
+    "category": "Laptops"
+  },
+  {
+    "name": "MSI Creator Z16",
+    "price": "$2,199",
+    "category": "Laptops"
+  },
+  {
     "name": "iPad Pro 13 M4",
     "price": "$1,299",
     "category": "Tablets"
@@ -173,170 +338,5 @@
     "name": "Belkin 3-in-1 Wireless Charger",
     "price": "$149",
     "category": "Accessories"
-  },
-  {
-    "name": "iPhone 16 Pro Max",
-    "price": "$1,199",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "iPhone 16",
-    "price": "$799",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "Galaxy S25 Ultra",
-    "price": "$1,299",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "Galaxy S25",
-    "price": "$799",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "Galaxy A56",
-    "price": "$449",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "Pixel 10 Pro",
-    "price": "$999",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "Pixel 10a",
-    "price": "$499",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "OnePlus 13",
-    "price": "$899",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "Xiaomi 15 Pro",
-    "price": "$749",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "iPhone 16 Pro",
-    "price": "$1,099",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "Galaxy Z Fold 6",
-    "price": "$1,799",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "Galaxy Z Flip 6",
-    "price": "$1,099",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "Pixel 9",
-    "price": "$699",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "OnePlus 13R",
-    "price": "$599",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "Xiaomi 14T",
-    "price": "$549",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "Nothing Phone (3)",
-    "price": "$599",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "Motorola Edge 50 Pro",
-    "price": "$499",
-    "category": "Mobile Phones"
-  },
-  {
-    "name": "MacBook Pro 16 M4 Max",
-    "price": "$2,499",
-    "category": "Laptops"
-  },
-  {
-    "name": "MacBook Air 15 M4",
-    "price": "$1,299",
-    "category": "Laptops"
-  },
-  {
-    "name": "Dell XPS 16",
-    "price": "$1,799",
-    "category": "Laptops"
-  },
-  {
-    "name": "Dell Inspiron 15",
-    "price": "$699",
-    "category": "Laptops"
-  },
-  {
-    "name": "HP Spectre x360 16",
-    "price": "$1,599",
-    "category": "Laptops"
-  },
-  {
-    "name": "HP Pavilion 14",
-    "price": "$549",
-    "category": "Laptops"
-  },
-  {
-    "name": "ThinkPad X1 Carbon Gen 13",
-    "price": "$1,649",
-    "category": "Laptops"
-  },
-  {
-    "name": "IdeaPad Slim 5",
-    "price": "$649",
-    "category": "Laptops"
-  },
-  {
-    "name": "ROG Zephyrus G16",
-    "price": "$1,999",
-    "category": "Laptops"
-  },
-  {
-    "name": "MacBook Pro 14 M4 Pro",
-    "price": "$1,999",
-    "category": "Laptops"
-  },
-  {
-    "name": "Dell Latitude 14",
-    "price": "$1,199",
-    "category": "Laptops"
-  },
-  {
-    "name": "HP Envy 16",
-    "price": "$1,299",
-    "category": "Laptops"
-  },
-  {
-    "name": "Lenovo Yoga 9i",
-    "price": "$1,449",
-    "category": "Laptops"
-  },
-  {
-    "name": "ASUS ZenBook 14 OLED",
-    "price": "$899",
-    "category": "Laptops"
-  },
-  {
-    "name": "Acer Swift Go 14",
-    "price": "$749",
-    "category": "Laptops"
-  },
-  {
-    "name": "MSI Creator Z16",
-    "price": "$2,199",
-    "category": "Laptops"
   }
 ]

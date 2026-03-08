@@ -40,6 +40,8 @@ import {
   // Confidence Settings
   getConfidenceSettings,
   updateConfidenceSettings,
+  // Agent
+  streamAgentChat,
 } from '../../lib/api';
 
 const MODULE_NAME = 'vishva';
@@ -111,6 +113,9 @@ function VishvaPage() {
     category_thresholds: {}
   });
   
+  // State for extraction mode: 'browser-use' (original) or 'local-agent' (agentic AI)
+  const [extractionMode, setExtractionMode] = useState('browser-use');
+
   // State for errors
   const [error, setError] = useState(null);
 
@@ -402,6 +407,81 @@ function VishvaPage() {
       setError(err.message);
       setExtracting(false);
     }
+  };
+
+  // Agent-based extraction using local Qwen model
+  const handleAgentExtract = async () => {
+    if (!extractUrl.trim()) {
+      setError('Please enter a URL');
+      return;
+    }
+
+    setExtracting(true);
+    setError(null);
+    setExtractResult(null);
+    setAgentThoughts([]);
+
+    const message = `Extract menu from ${extractUrl} and clean the data`;
+
+    const es = streamAgentChat(message, {
+      onThought: (text) => {
+        setAgentThoughts(prev => {
+          // Accumulate consecutive thought tokens into one entry
+          if (prev.length > 0 && prev[prev.length - 1].type === 'thought') {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              ...updated[updated.length - 1],
+              message: updated[updated.length - 1].message + text,
+            };
+            return updated;
+          }
+          return [...prev, {
+            type: 'thought',
+            message: text,
+            timestamp: new Date().toLocaleTimeString()
+          }];
+        });
+      },
+      onToolStart: (tool, input) => {
+        setAgentThoughts(prev => [...prev, {
+          type: 'tool',
+          message: `🔧 Calling: ${tool}`,
+          detail: input,
+          timestamp: new Date().toLocaleTimeString()
+        }]);
+      },
+      onToolResult: (tool, result) => {
+        // Try to parse and summarize the result
+        let summary = `✅ ${tool} completed`;
+        try {
+          const parsed = JSON.parse(result);
+          if (parsed.item_count) summary = `✅ ${tool}: ${parsed.item_count} items`;
+          else if (parsed.success === false) summary = `❌ ${tool}: ${parsed.message}`;
+          else if (parsed.accuracy) summary = `✅ ${tool}: accuracy ${(parsed.accuracy * 100).toFixed(1)}%`;
+          else if (parsed.model_exists === false) summary = `⚠️ ${tool}: No model found`;
+          else if (parsed.total_items) summary = `✅ ${tool}: ${parsed.total_items} items in data`;
+        } catch { /* keep default summary */ }
+        setAgentThoughts(prev => [...prev, {
+          type: 'status',
+          message: summary,
+          timestamp: new Date().toLocaleTimeString()
+        }]);
+      },
+      onDone: () => {
+        setExtracting(false);
+        eventSourceRef.current = null;
+        setExtractResult({ success: true, message: 'Agent finished processing' });
+        loadMenuData();
+        loadModelStatus();
+      },
+      onError: (err) => {
+        setError(err);
+        setExtracting(false);
+        eventSourceRef.current = null;
+      },
+    });
+
+    eventSourceRef.current = es;
   };
 
   // Stop the extraction agent
@@ -743,6 +823,38 @@ function VishvaPage() {
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">🌐 Extract Menu from URL</h3>
             <div className="space-y-4">
+              {/* Extraction Mode Toggle */}
+              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm text-gray-600 font-medium">Mode:</span>
+                <div className="flex bg-gray-200 rounded-lg p-0.5">
+                  <button
+                    onClick={() => setExtractionMode('browser-use')}
+                    disabled={extracting}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                      extractionMode === 'browser-use'
+                        ? 'bg-white text-green-700 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    🌐 Browser Use
+                  </button>
+                  <button
+                    onClick={() => setExtractionMode('local-agent')}
+                    disabled={extracting}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                      extractionMode === 'local-agent'
+                        ? 'bg-white text-purple-700 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    🤖 Local Agent
+                  </button>
+                </div>
+                <span className="text-xs text-gray-400 ml-auto">
+                  {extractionMode === 'browser-use' ? 'External API' : 'Qwen (Ollama)'}
+                </span>
+              </div>
+
               <input
                 type="url"
                 value={extractUrl}
@@ -753,11 +865,11 @@ function VishvaPage() {
               />
               <div className="flex gap-2">
                 <button
-                  onClick={handleExtract}
+                  onClick={extractionMode === 'local-agent' ? handleAgentExtract : handleExtract}
                   disabled={extracting}
-                  className="flex-1 btn-primary disabled:opacity-50"
+                  className={`flex-1 btn-primary disabled:opacity-50 ${extractionMode === 'local-agent' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
                 >
-                  {extracting ? '⏳ Extracting...' : '🔍 Extract Menu'}
+                  {extracting ? '⏳ Extracting...' : (extractionMode === 'local-agent' ? '🤖 Extract with Agent' : '🔍 Extract Menu')}
                 </button>
                 {extracting && (
                   <button
@@ -799,21 +911,23 @@ function VishvaPage() {
                 )}
               </div>
               
-              <div className="bg-gray-900 rounded-lg p-4 max-h-64 overflow-y-auto font-mono text-sm">
+              <div className="bg-gray-900 rounded-lg p-4 max-h-96 overflow-y-auto font-mono text-sm">
                 {agentThoughts.length === 0 ? (
                   <div className="flex items-center text-green-400">
                     <span className="animate-pulse mr-2">●</span>
                     <span>Connecting to agent...</span>
                   </div>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     {agentThoughts.map((thought, i) => (
                       <div key={i} className={`
-                        ${thought.type === 'thought' ? 'text-green-400' : 'text-blue-400'}
+                        ${thought.type === 'thought' ? 'text-green-400' : ''}
+                        ${thought.type === 'tool' ? 'text-yellow-400' : ''}
+                        ${thought.type === 'status' ? 'text-blue-400' : ''}
                       `}>
                         <span className="text-gray-500 text-xs">[{thought.timestamp}]</span>
                         {' '}
-                        <span className={thought.type === 'status' ? 'font-semibold' : ''}>
+                        <span className={`${thought.type === 'status' || thought.type === 'tool' ? 'font-semibold' : ''} whitespace-pre-wrap`}>
                           {thought.message}
                         </span>
                       </div>
