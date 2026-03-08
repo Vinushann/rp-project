@@ -1,0 +1,10 @@
+Error at 2026-03-08 12:37:29.991563
+Type: AttributeError
+Details: 'Agent' object has no attribute 'run_sync'
+
+Full Traceback:
+Traceback (most recent call last):
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 73, in extract_menu_data
+    result = agent.run_sync()
+             ^^^^^^^^^^^^^^
+AttributeError: 'Agent' object has no attribute 'run_sync'

@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
-from browser_use import Agent, ChatBrowserUse
+from browser_use import Agent
+from browser_use.llm.browser_use.chat import ChatBrowserUse
 import json
 from datetime import datetime
 import os
@@ -64,7 +65,7 @@ def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
         Include ALL items in the JSON array.
         Your entire response should be valid JSON that starts with [ and ends with ].
         """,
-        llm=ChatBrowserUse(),
+        llm=ChatBrowserUse(api_key=os.getenv("BROWSER_USE_API_KEY")),
     )
     
     try:
