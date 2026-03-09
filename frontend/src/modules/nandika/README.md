@@ -1,38 +1,62 @@
-# Nandika Module - Frontend
+# Frontend Application
 
-## Owner
-**Nandika**
+This is the React + Vite frontend for the RP Project.
 
-## Description
-[Add your module description here]
+## Quick Start
 
-## Files in this folder
-- `NandikaPage.jsx` - Main page component (EDIT THIS)
-- Add more files as needed (e.g., `components/`, `hooks/`, `utils/`)
+```bash
+# Install dependencies
+npm install
 
-## Route
-Your module page is available at `/nandika`
-
-## How to customize
-1. Open `NandikaPage.jsx`
-2. Modify the page header, description, and layout
-3. Add your custom components in the designated area
-4. Create subfolders for complex components
-
-## API Integration
-The page automatically connects to:
-- `GET /api/v1/nandika/ping` - via PingButton component
-- `POST /api/v1/nandika/chat` - via ChatBox component
-
-## Adding new API calls
-```jsx
-import { apiRequest } from '../../lib/api';
-
-// In your component:
-const response = await fetch('/api/v1/nandika/your-endpoint');
+# Start development server
+npm run dev
 ```
 
-## Notes
-- Keep all your frontend code in this folder
-- Use shared components from `src/components/` when possible
-- Don't modify files outside this folder unless necessary
+The app will be available at http://localhost:5173
+
+## Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+- `npm run lint` - Run ESLint
+
+## Structure
+
+```
+frontend/
+├── src/
+│   ├── components/      # Shared UI components
+│   │   ├── Layout.jsx   # Main layout with sidebar
+│   │   ├── ChatBox.jsx  # Reusable chat interface
+│   │   └── PingButton.jsx
+│   ├── lib/
+│   │   └── api.js       # API client helper
+│   ├── pages/
+│   │   └── HomePage.jsx # Dashboard home page
+│   ├── modules/         # Each team member's pages
+│   │   ├── vinushan/
+│   │   ├── vishva/
+│   │   ├── nandika/
+│   │   └── ayathma/
+│   ├── App.jsx          # Route definitions
+│   ├── main.jsx         # Entry point
+│   └── index.css        # Global styles + Tailwind
+├── package.json
+├── vite.config.js       # Vite config with API proxy
+├── tailwind.config.js   # Tailwind configuration
+└── README.md
+```
+
+## Environment Variables
+
+Copy `.env.example` to `.env.local` and customize as needed.
+
+- `VITE_API_BASE_URL` - Backend API URL (optional, uses proxy by default)
+
+## Tech Stack
+
+- React 18
+- Vite
+- Tailwind CSS
+- React Router v6

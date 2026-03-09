@@ -1,63 +1,64 @@
-# Comprehensive Action Plan for Improving Sales
+# April 2026 Coffee Shop Action Plan
 
 ## Demand Outlook
-- **Total Expected Quantity for January 2026**: 270.92
-- **Busiest Predicted Days**: 
-  - January 5, 2026
-  - January 12, 2026
-  - January 19, 2026
-  - January 20, 2026
-  - January 26, 2026
-- **Confidence Intervals**: 
-  - January 1, 2026: yhat = 7.53 (0 - 20.89)
-  - January 2, 2026: yhat = 9.46 (0 - 23.7)
-  - January 3, 2026: yhat = 8.21 (0 - 21.76)
-  - January 4, 2026: yhat = 7.89 (0 - 22.24)
-  - January 5, 2026: yhat = 10.59 (0 - 24.62)
+- **Total Expected Quantity for the Period**: 150.08 units
+- **Busiest Predicted Days**:
+  1. April 6, 2026 (Pre-New Year)
+  2. April 20, 2026 (Post-New Year)
+  3. April 21, 2026 (Post-New Year)
+  4. April 27, 2026
+  5. April 28, 2026
+- **Confidence Intervals**: Daily quantities range from 0 to 21.84 units, indicating high uncertainty.
+- **Weather Impact**: 
+  - Rain may decrease sales slightly by -2.1% for pastries and -1.54% for other categories.
+  - Temperature variations will have minimal impact, with no major changes required.
 
 ## Promotions
-- **Focus on Top-Selling Items**: 
-  - Implement targeted promotions for high-demand items like "Crispy Pasta 12" and "Sweet Chicken 19" to boost sales.
-- **Discount Strategy**: 
-  - Increase discounts on items with higher average tickets and lower sales volume, such as "Spicy Drink 22" and "Sweet Chicken", to stimulate demand.
-- **Bundle Offers**: 
-  - Create bundle offers that include both top-selling and falling items to encourage customers to try new products.
+- **Pre-New Year (April 10-12)**: 
+  - Launch a special menu featuring traditional Sri Lankan items.
+  - Promote catering packages for families celebrating the New Year.
+- **New Year Days (April 13-14)**: 
+  - Offer discounts or special deals for travelers and tourists.
+  - Extend hours to accommodate increased foot traffic (30-50% higher) from travelers [1].
+- **Post-New Year (April 15-17)**: 
+  - Maintain some festive menu items to capture leftover demand.
 
 ## Staffing
-- **Increase Staffing on Busiest Days**: 
-  - Schedule additional staff on January 19 and 26 to manage increased customer volume.
-- **Cross-Training Employees**: 
-  - Ensure staff are cross-trained to handle multiple roles, enhancing flexibility during peak times.
-- **Incentives for Staff**: 
-  - Consider offering incentives for staff working on busy days to maintain morale and service quality.
+- **Week 1 (April 1-7)**: 
+  - Ensure adequate staffing for peak hours, especially on April 6.
+- **Week 2 (April 8-14)**: 
+  - Increase staff during the New Year preparation days (April 10-12) and ensure coverage on April 13-14.
+- **Week 3 (April 15-21)**: 
+  - Increase staffing on April 20-21 to manage expected higher demand.
+- **Week 4 (April 22-30)**: 
+  - Monitor staffing needs based on sales trends and adjust as necessary.
 
 ## Inventory
-- **Stock Management**: 
-  - Ensure adequate inventory levels of top-selling items, particularly "Crispy Pasta 12" and "Sweet Chicken 19".
-- **Monitor Falling Items**: 
-  - Assess the reasons for the decline in sales of items like "Spicy Burger 22" and "Sweet Dessert 12" and consider discontinuing or rebranding them if necessary.
-- **Weather-Related Adjustments**: 
-  - Monitor weather forecasts and adjust inventory levels accordingly, especially for items that may see increased demand during rainy days.
+- **Week 1 (April 1-7)**: 
+  - Prepare for moderate demand; stock up on best-selling items.
+- **Week 2 (April 8-14)**: 
+  - Increase inventory of festive items and monitor sales closely.
+- **Week 3 (April 15-21)**: 
+  - Stock up on popular items in anticipation of increased demand on April 20-21.
+- **Week 4 (April 22-30)**: 
+  - Continue to monitor sales and adjust inventory based on trends.
 
 ## Risks
-- **Market Competition**: 
-  - Stay informed about competitors’ promotions and adjust strategies accordingly to maintain market share.
-- **Supply Chain Disruptions**: 
-  - Develop contingency plans for potential supply chain disruptions that may affect inventory levels.
-- **Customer Preferences**: 
-  - Regularly gather customer feedback to adapt offerings and ensure alignment with changing preferences.
+- **High Uncertainty in Demand**: The forecasted quantities have a high level of uncertainty (MAE: 7.94, MAPE: 73.04%) which may lead to overstocking or understocking.
+- **Weather Variability**: Rain and temperature changes could impact sales unexpectedly.
+- **Cultural Events**: Changes in public holiday schedules or local events could affect customer turnout.
 
-## Summary Table of Key Metrics
+### Summary Table of Key Metrics
 
-| Metric                     | Value                  |
-|----------------------------|------------------------|
-| Total Expected Quantity     | 270.92                 |
-| Busiest Days               | January 5, 12, 19, 20, 26 |
-| Avg Daily Qty (Top Item)   | 2.74 (Crispy Pasta 12) |
-| Avg Ticket (Top Item)      | 1526.1 (Crispy Pasta 12) |
-| Avg Discount (Top Item)    | 0.097 (Crispy Pasta 12) |
-| Staff Increase Needed       | Yes (on busy days)     |
-| Inventory Focus            | Top-selling items       |
-| Risk Factors               | Competition, Supply Chain, Customer Preferences |
+| Week         | Expected Demand | Staffing Actions                 | Inventory Actions                     | Promotions                          |
+|--------------|----------------|----------------------------------|---------------------------------------|-------------------------------------|
+| April 1-7    | Moderate       | Adequate staffing for peak hours | Stock up on best sellers              | N/A                                 |
+| April 8-14   | Fluctuating    | Increase staff for New Year prep | Increase inventory of festive items   | Special menu and catering packages  |
+| April 15-21  | Higher         | Increase staff on April 20-21    | Stock up on popular items             | Maintain festive menu items         |
+| April 22-30  | Gradual return | Monitor and adjust as needed      | Adjust inventory based on trends      | N/A                                 |
 
-This comprehensive action plan synthesizes insights into actionable recommendations aimed at improving sales and ensuring operational efficiency.
+### Sources
+- Holiday Impact Guide
+- Weather Impact Guide
+
+This comprehensive action plan will help your coffee shop navigate the busy month of April 2026 effectively, maximizing sales while managing risks associated with demand uncertainty and external factors.

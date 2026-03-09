@@ -113,6 +113,7 @@ export async function streamVinushanChat(message, conversationHistory = [], call
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let currentEvent = null;
   
   while (true) {
     const { done, value } = await reader.read();
@@ -124,8 +125,6 @@ export async function streamVinushanChat(message, conversationHistory = [], call
     // Process complete SSE messages
     const lines = buffer.split('\n');
     buffer = lines.pop() || ''; // Keep incomplete line in buffer
-    
-    let currentEvent = null;
     
     for (const line of lines) {
       if (line.startsWith('event: ')) {
@@ -140,6 +139,9 @@ export async function streamVinushanChat(message, conversationHistory = [], call
               break;
             case 'query_analysis':
               callbacks.onQueryAnalysis?.(data);
+              break;
+            case 'rag_retrieval':
+              callbacks.onRagRetrieval?.(data);
               break;
             case 'agent_start':
               callbacks.onAgentStart?.(data);
@@ -170,6 +172,9 @@ export async function streamVinushanChat(message, conversationHistory = [], call
               break;
             case 'agent_end':
               callbacks.onAgentEnd?.(data);
+              break;
+            case 'xai_explanation':
+              callbacks.onXaiExplanation?.(data);
               break;
             case 'run_end':
               callbacks.onRunEnd?.(data);
@@ -343,6 +348,7 @@ export async function exportPredictions(predictions, format) {
   }
 }
 
+// ============================================
 // ATHENA EMAIL SETTINGS API
 // ============================================
 

@@ -51,6 +51,16 @@ coverage/
 .cache
 
 
+*.safetensors
+*.bin
+*.pt
+
+# ML model files — auto-downloaded from Hugging Face Hub
+backend/app/modules/nandika/my_sentiment_model_Roberta_1/
+backend/app/modules/nandika/my_sentiment_model/
+
+node_modules/
+__pycache__/
 .env.example
 .env
 /backend/app/modules/vishva/data

@@ -1,0 +1,202 @@
+[
+  {
+    "id": 1,
+    "category": "domain_knowledge",
+    "question": "What are the best practices for staffing a coffee shop during peak hours?",
+    "expected_capability": "RAG retrieval from domain knowledge base",
+    "why_rag_needed": "No tool provides general coffee shop operational knowledge",
+    "difficulty": "medium"
+  },
+  {
+    "id": 2,
+    "category": "domain_knowledge",
+    "question": "How should I optimize my menu pricing to maximize revenue during slow days?",
+    "expected_capability": "RAG retrieval from pricing strategy knowledge",
+    "why_rag_needed": "Tools show data but don't provide pricing strategy principles",
+    "difficulty": "medium"
+  },
+  {
+    "id": 3,
+    "category": "domain_knowledge",
+    "question": "What inventory management strategies work best for perishable coffee shop items?",
+    "expected_capability": "RAG retrieval from operations knowledge",
+    "why_rag_needed": "No tool covers inventory management best practices",
+    "difficulty": "medium"
+  },
+  {
+    "id": 4,
+    "category": "domain_knowledge",
+    "question": "What are effective promotional strategies for increasing foot traffic during monsoon season?",
+    "expected_capability": "RAG retrieval from marketing knowledge",
+    "why_rag_needed": "Weather tool shows impact data but not promotional strategies",
+    "difficulty": "complex"
+  },
+  {
+    "id": 5,
+    "category": "product_knowledge",
+    "question": "What product categories do we sell and which category generates the highest revenue?",
+    "expected_capability": "RAG retrieval from product catalog knowledge",
+    "why_rag_needed": "No tool exposes product category taxonomy or relationships",
+    "difficulty": "simple"
+  },
+  {
+    "id": 6,
+    "category": "product_knowledge",
+    "question": "Which of our products are typically bought together as complementary items?",
+    "expected_capability": "RAG retrieval from product association knowledge",
+    "why_rag_needed": "No market basket analysis or product pairing tool exists",
+    "difficulty": "medium"
+  },
+  {
+    "id": 7,
+    "category": "product_knowledge",
+    "question": "How should I adjust hot versus cold drink offerings based on seasonal temperature changes in Negombo?",
+    "expected_capability": "RAG combines product knowledge with location context",
+    "why_rag_needed": "Weather tool shows correlations but no product strategy knowledge",
+    "difficulty": "complex"
+  },
+  {
+    "id": 8,
+    "category": "system_knowledge",
+    "question": "How does ATHENA's forecasting system work and what factors does it consider?",
+    "expected_capability": "RAG retrieval from system documentation",
+    "why_rag_needed": "System docs exist but aren't accessible to agents",
+    "difficulty": "medium"
+  },
+  {
+    "id": 9,
+    "category": "system_knowledge",
+    "question": "What AI agents are available in this system and what can each one do?",
+    "expected_capability": "RAG retrieval from architecture documentation",
+    "why_rag_needed": "Agent capabilities documented but not retrievable by the system itself",
+    "difficulty": "simple"
+  },
+  {
+    "id": 10,
+    "category": "system_knowledge",
+    "question": "What types of charts and visualizations can the system generate for me?",
+    "expected_capability": "RAG retrieval from tool documentation",
+    "why_rag_needed": "Visualization tool docs exist but system can't self-describe capabilities",
+    "difficulty": "simple"
+  },
+  {
+    "id": 11,
+    "category": "methodology",
+    "question": "Why does the Prophet model predict certain days as busier than others? What components drive this?",
+    "expected_capability": "RAG retrieval from methodology documentation",
+    "why_rag_needed": "Prophet methodology documented in YAML/docs but not exposed to agents",
+    "difficulty": "medium"
+  },
+  {
+    "id": 12,
+    "category": "methodology",
+    "question": "How are holiday impacts on sales calculated and what data sources are used?",
+    "expected_capability": "RAG retrieval from methodology knowledge",
+    "why_rag_needed": "Holiday tool returns numbers but doesn't explain methodology",
+    "difficulty": "medium"
+  },
+  {
+    "id": 13,
+    "category": "methodology",
+    "question": "What is the accuracy of the forecasting model and how was it validated?",
+    "expected_capability": "RAG retrieval from model evaluation documentation",
+    "why_rag_needed": "Model metrics exist in docs/training but aren't exposed via tools",
+    "difficulty": "simple"
+  },
+  {
+    "id": 14,
+    "category": "cross_domain",
+    "question": "Given that Vesak is approaching and it's the start of monsoon season, what specific products should I stock more of and what promotions would work?",
+    "expected_capability": "RAG combines holiday knowledge + weather knowledge + product strategy",
+    "why_rag_needed": "Requires synthesizing domain expertise with contextual data",
+    "difficulty": "complex"
+  },
+  {
+    "id": 15,
+    "category": "cross_domain",
+    "question": "How do Sri Lankan cultural events like Sinhala and Tamil New Year specifically impact customer buying behavior at our coffee shop?",
+    "expected_capability": "RAG retrieval from cultural context + business impact knowledge",
+    "why_rag_needed": "Holiday tool shows generic impact numbers but no cultural context",
+    "difficulty": "complex"
+  },
+  {
+    "id": 16,
+    "category": "cross_domain",
+    "question": "What lessons from our past December holiday sales should inform our strategy for this upcoming December?",
+    "expected_capability": "RAG retrieval from historical learnings + strategy knowledge",
+    "why_rag_needed": "Tools show raw data but don't store strategic learnings or insights",
+    "difficulty": "complex"
+  },
+  {
+    "id": 17,
+    "category": "explanatory",
+    "question": "Why did sales drop last rainy season and what could we have done differently?",
+    "expected_capability": "RAG combines causal analysis with actionable strategies",
+    "why_rag_needed": "Weather tool shows correlation but not causal reasoning or strategy",
+    "difficulty": "complex"
+  },
+  {
+    "id": 18,
+    "category": "explanatory",
+    "question": "Explain the relationship between discount rates and customer purchase behavior in our historical data",
+    "expected_capability": "RAG retrieval from business analysis knowledge",
+    "why_rag_needed": "Discount data exists but no analytical framework for interpretation",
+    "difficulty": "complex"
+  },
+  {
+    "id": 19,
+    "category": "operational",
+    "question": "What is the optimal order type split between delivery, takeaway, and dine-in for maximizing revenue?",
+    "expected_capability": "RAG retrieval from operations knowledge + order type analysis",
+    "why_rag_needed": "Order type data exists in CSV but no tool analyzes it",
+    "difficulty": "medium"
+  },
+  {
+    "id": 20,
+    "category": "operational",
+    "question": "What time of day generates the most orders and how should staffing be adjusted accordingly?",
+    "expected_capability": "RAG retrieval from time-of-day analysis + staffing knowledge",
+    "why_rag_needed": "Order time data exists but no tool provides time-of-day analysis",
+    "difficulty": "medium"
+  },
+  {
+    "id": 21,
+    "category": "comparative",
+    "question": "How does our weekend performance differ from weekdays and what strategies should we use for each?",
+    "expected_capability": "RAG retrieval from performance analysis + day-specific strategies",
+    "why_rag_needed": "Weekend flag exists in data but no strategic framework is available",
+    "difficulty": "medium"
+  },
+  {
+    "id": 22,
+    "category": "comparative",
+    "question": "Compare our sales performance during Poya days versus regular days and explain what drives the difference",
+    "expected_capability": "RAG retrieval from holiday analysis + causal explanation",
+    "why_rag_needed": "Holiday tool shows impact but doesn't provide deep causal analysis",
+    "difficulty": "complex"
+  },
+  {
+    "id": 23,
+    "category": "predictive_reasoning",
+    "question": "If we introduce a new hot beverage during the cool season, what should we expect in terms of demand based on our historical patterns?",
+    "expected_capability": "RAG reasoning from product launch knowledge + seasonal patterns",
+    "why_rag_needed": "No tool handles hypothetical new product scenarios with domain reasoning",
+    "difficulty": "complex"
+  },
+  {
+    "id": 24,
+    "category": "predictive_reasoning",
+    "question": "What would happen to our overall revenue if we removed the bottom 5 performing items from the menu?",
+    "expected_capability": "RAG reasoning from menu optimization knowledge",
+    "why_rag_needed": "Tools can identify bottom items but can't reason about removal impact",
+    "difficulty": "complex"
+  },
+  {
+    "id": 25,
+    "category": "contextual_advice",
+    "question": "As a new coffee shop owner in Negombo, what are the top 5 things I should know about running my business based on the data patterns you've seen?",
+    "expected_capability": "RAG synthesis of all domain knowledge + data patterns",
+    "why_rag_needed": "Requires synthesizing data insights with business advisory knowledge",
+    "difficulty": "complex"
+  }
+]
