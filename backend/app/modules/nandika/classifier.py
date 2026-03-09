@@ -41,11 +41,25 @@
 
 
 import torch
+import os
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from deep_translator import GoogleTranslator
 
+HF_REPO_ID = "NandikA123/xlm-roberta-sinhala-sentiment"
+
 class SentimentAnalyzer:
     def __init__(self, model_path="./my_sentiment_model_Roberta_1"):
+        # If local model folder doesn't exist, download from Hugging Face Hub
+        if not os.path.exists(model_path) or not os.listdir(model_path):
+            print(f"⬇️  Local model not found at '{model_path}'")
+            print(f"⬇️  Downloading from Hugging Face: {HF_REPO_ID} ...")
+            from huggingface_hub import snapshot_download
+            snapshot_download(
+                repo_id=HF_REPO_ID,
+                local_dir=model_path,
+            )
+            print(f"✅ Model downloaded to: {model_path}")
+
         print(f"Loading Model from {model_path}...")
         try:
             # CHANGED: Use Auto classes for XLM-RoBERTa support

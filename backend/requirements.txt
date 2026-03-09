@@ -3,6 +3,12 @@ fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
 pydantic>=2.10.0
 
+# AI Response Generation via OpenRouter API
+httpx>=0.26.0
+
+# Model hosting & auto-download
+huggingface_hub>=0.20.0
+
 # Development dependencies
 python-dotenv>=1.0.0
 httpx>=0.26.0
