@@ -4,10 +4,10 @@
  * 
  * OWNER: Vishva
  * 
- * Menu Extraction & Category Classification System
- * - Extract menus from restaurant websites
- * - Train ML model for category classification
- * - Predict categories for new menu items
+ * Web Data Extraction & Classification Workspace
+ * - Extract structured entries from source websites
+ * - Train an ML model for label classification
+ * - Predict labels for new records
  */
 
 import { useState, useEffect, useRef } from 'react';
@@ -40,13 +40,15 @@ import {
   // Confidence Settings
   getConfidenceSettings,
   updateConfidenceSettings,
+  // Agent
+  streamAgentChat,
 } from '../../lib/api';
 
 const MODULE_NAME = 'vishva';
 
 function VishvaPage() {
   // State for extraction
-  const [extractUrl, setExtractUrl] = useState('https://tilapiyacolombo.lk/menu/');
+  const [extractUrl, setExtractUrl] = useState('');
   const [extracting, setExtracting] = useState(false);
   const [extractResult, setExtractResult] = useState(null);
   const [agentThoughts, setAgentThoughts] = useState([]);
@@ -111,6 +113,9 @@ function VishvaPage() {
     category_thresholds: {}
   });
   
+  // State for extraction mode: 'browser-use' (original) or 'local-agent' (agentic AI)
+  const [extractionMode, setExtractionMode] = useState('browser-use');
+
   // State for errors
   const [error, setError] = useState(null);
 
@@ -212,7 +217,7 @@ function VishvaPage() {
   // Training Data Handlers
   const handleAddTrainingItem = async () => {
     if (!newItem.name.trim() || !newItem.category.trim()) {
-      setError('Name and category are required');
+      setError('Record name and label are required');
       return;
     }
     try {
@@ -250,7 +255,7 @@ function VishvaPage() {
 
   const handleMergeCategories = async () => {
     if (mergeSource.length === 0 || !mergeTarget.trim()) {
-      setError('Select categories to merge and enter target name');
+      setError('Select labels to merge and enter a target label');
       return;
     }
     try {
@@ -380,16 +385,103 @@ function VishvaPage() {
       
       eventSource.onerror = (err) => {
         console.error('SSE Error:', err);
-        setError('Connection to server lost');
-        setExtracting(false);
-        eventSourceRef.current = null;
-        eventSource.close();
+        // Only treat as fatal if the readyState is CLOSED (2)
+        // EventSource may fire transient errors during reconnection (readyState === 0)
+        if (eventSource.readyState === EventSource.CLOSED) {
+          setError('Connection to server lost');
+          setExtracting(false);
+          eventSourceRef.current = null;
+          eventSource.close();
+        } else {
+          // Transient error — let EventSource try to reconnect automatically
+          console.log('SSE transient error, readyState:', eventSource.readyState, '— waiting for reconnect...');
+          setAgentThoughts(prev => [...prev, {
+            type: 'status',
+            message: 'Reconnecting to server...',
+            timestamp: new Date().toLocaleTimeString()
+          }]);
+        }
       };
       
     } catch (err) {
       setError(err.message);
       setExtracting(false);
     }
+  };
+
+  // Agent-based extraction using local Qwen model
+  const handleAgentExtract = async () => {
+    if (!extractUrl.trim()) {
+      setError('Please enter a URL');
+      return;
+    }
+
+    setExtracting(true);
+    setError(null);
+    setExtractResult(null);
+    setAgentThoughts([]);
+
+    const message = `Extract menu from ${extractUrl} and clean the data`;
+
+    const es = streamAgentChat(message, {
+      onThought: (text) => {
+        setAgentThoughts(prev => {
+          // Accumulate consecutive thought tokens into one entry
+          if (prev.length > 0 && prev[prev.length - 1].type === 'thought') {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              ...updated[updated.length - 1],
+              message: updated[updated.length - 1].message + text,
+            };
+            return updated;
+          }
+          return [...prev, {
+            type: 'thought',
+            message: text,
+            timestamp: new Date().toLocaleTimeString()
+          }];
+        });
+      },
+      onToolStart: (tool, input) => {
+        setAgentThoughts(prev => [...prev, {
+          type: 'tool',
+          message: `🔧 Calling: ${tool}`,
+          detail: input,
+          timestamp: new Date().toLocaleTimeString()
+        }]);
+      },
+      onToolResult: (tool, result) => {
+        // Try to parse and summarize the result
+        let summary = `✅ ${tool} completed`;
+        try {
+          const parsed = JSON.parse(result);
+          if (parsed.item_count) summary = `✅ ${tool}: ${parsed.item_count} items`;
+          else if (parsed.success === false) summary = `❌ ${tool}: ${parsed.message}`;
+          else if (parsed.accuracy) summary = `✅ ${tool}: accuracy ${(parsed.accuracy * 100).toFixed(1)}%`;
+          else if (parsed.model_exists === false) summary = `⚠️ ${tool}: No model found`;
+          else if (parsed.total_items) summary = `✅ ${tool}: ${parsed.total_items} items in data`;
+        } catch { /* keep default summary */ }
+        setAgentThoughts(prev => [...prev, {
+          type: 'status',
+          message: summary,
+          timestamp: new Date().toLocaleTimeString()
+        }]);
+      },
+      onDone: () => {
+        setExtracting(false);
+        eventSourceRef.current = null;
+        setExtractResult({ success: true, message: 'Agent finished processing' });
+        loadMenuData();
+        loadModelStatus();
+      },
+      onError: (err) => {
+        setError(err);
+        setExtracting(false);
+        eventSourceRef.current = null;
+      },
+    });
+
+    eventSourceRef.current = es;
   };
 
   // Stop the extraction agent
@@ -504,7 +596,7 @@ function VishvaPage() {
 
   const handlePredict = async () => {
     if (!predictionInput.trim()) {
-      setError('Please enter menu items to predict');
+      setError('Please enter records to classify');
       return;
     }
     
@@ -619,19 +711,72 @@ function VishvaPage() {
     }
   };
 
+  const totalLabels = trainingData.category_list?.length || modelStatus?.categories?.length || 0;
+  const reviewQueueCount = predictions.filter(
+    (prediction) => !prediction.corrected && prediction.confidence < confidenceSettings.flag_for_review_below
+  ).length;
+  const overviewCards = [
+    {
+      label: 'Captured Records',
+      value: menuData.length,
+      detail: 'Structured items ready for curation',
+      panelClass: 'bg-white/10 border-white/15',
+    },
+    {
+      label: 'Known Labels',
+      value: totalLabels,
+      detail: 'Classification targets available',
+      panelClass: 'bg-emerald-400/15 border-emerald-300/30',
+    },
+    {
+      label: 'Model Status',
+      value: modelStatus?.model_exists ? 'Ready' : 'Draft',
+      detail: modelStatus?.model_exists ? modelStatus.model_name : 'Train a classifier to start predictions',
+      panelClass: 'bg-sky-400/15 border-sky-300/30',
+    },
+    {
+      label: 'Review Queue',
+      value: reviewQueueCount,
+      detail: 'Low-confidence results awaiting review',
+      panelClass: 'bg-amber-400/15 border-amber-300/30',
+    },
+  ];
+
   return (
-    <div className="p-8">
+    <div className="space-y-8 p-6 lg:p-8">
       {/* Page Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center text-white font-bold">
-            V
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-900 px-6 py-8 text-white shadow-xl shadow-slate-200/60 lg:px-8">
+        <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-200">
+              Vishva workspace
+            </span>
+            <div className="mt-4 flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/12 text-2xl font-bold text-white ring-1 ring-white/20 backdrop-blur">
+                V
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Web Extraction & Classification Studio</h1>
+                <p className="mt-2 max-w-2xl text-sm text-slate-200 sm:text-base">
+                  Capture structured records from live pages or uploaded files, curate labels, train a classifier, and feed review corrections back into the pipeline.
+                </p>
+              </div>
+            </div>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Menu Extraction & Classification</h1>
+
+          <div className="grid grid-cols-2 gap-3 xl:w-[520px]">
+            {overviewCards.map((card) => (
+              <div
+                key={card.label}
+                className={`rounded-2xl border p-4 backdrop-blur ${card.panelClass}`}
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">{card.label}</p>
+                <p className="mt-3 text-2xl font-semibold text-white">{card.value}</p>
+                <p className="mt-2 text-sm text-slate-300">{card.detail}</p>
+              </div>
+            ))}
+          </div>
         </div>
-        <p className="text-gray-600">
-          Extract menu data from restaurant websites and classify items using ML
-        </p>
       </div>
 
       {/* Error Display */}
@@ -649,21 +794,21 @@ function VishvaPage() {
       )}
 
       {/* Tab Navigation */}
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="flex space-x-4">
+      <div className="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
+        <nav className="flex flex-wrap gap-2">
           {[
-            { id: 'extract', label: '🔍 Extract & Train', icon: '🔍' },
-            { id: 'training-data', label: '📊 Training Data', icon: '📊' },
-            { id: 'performance', label: '📈 Model Performance', icon: '📈' },
-            { id: 'settings', label: '⚙️ Settings', icon: '⚙️' },
+            { id: 'extract', label: 'Pipeline Workspace' },
+            { id: 'training-data', label: 'Dataset Curation' },
+            { id: 'performance', label: 'Quality Metrics' },
+            { id: 'settings', label: 'Rules & Feedback' },
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-3 font-medium text-sm border-b-2 transition-colors ${
+              className={`rounded-xl px-4 py-3 font-medium text-sm transition-all ${
                 activeTab === tab.id
-                  ? 'border-green-500 text-green-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'bg-green-500 text-white shadow-sm'
+                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700'
               }`}
             >
               {tab.label}
@@ -684,7 +829,7 @@ function VishvaPage() {
             
             {/* Model Status Card */}
             <div className="card">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">🤖 Model Status</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Model Status</h3>
               {modelStatus ? (
                 <div className="space-y-2">
                   <div className="flex justify-between">
@@ -709,7 +854,7 @@ function VishvaPage() {
                       </div>
                       {modelStatus.categories && (
                         <div className="mt-3">
-                          <span className="text-gray-500 text-sm">Categories:</span>
+                          <span className="text-gray-500 text-sm">Labels:</span>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {modelStatus.categories.map((cat, i) => (
                               <span key={i} className="px-2 py-1 bg-gray-100 rounded text-xs">
@@ -729,30 +874,65 @@ function VishvaPage() {
 
           {/* Extract Menu Card */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">🌐 Extract Menu from URL</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Extract Source Records</h3>
+            <p className="mb-4 text-sm text-gray-600">
+              Pull raw entries from a public web page, normalize them, and add them to the working dataset.
+            </p>
             <div className="space-y-4">
+              {/* Extraction Mode Toggle */}
+              <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                <span className="text-sm text-gray-600 font-medium">Mode:</span>
+                <div className="flex bg-gray-200 rounded-lg p-0.5">
+                  <button
+                    onClick={() => setExtractionMode('browser-use')}
+                    disabled={extracting}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                      extractionMode === 'browser-use'
+                        ? 'bg-white text-green-700 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Browser Flow
+                  </button>
+                  <button
+                    onClick={() => setExtractionMode('local-agent')}
+                    disabled={extracting}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                      extractionMode === 'local-agent'
+                        ? 'bg-white text-purple-700 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Local Agent
+                  </button>
+                </div>
+                <span className="text-xs text-gray-400 ml-auto">
+                  {extractionMode === 'browser-use' ? 'Remote browser automation' : 'Qwen via Ollama'}
+                </span>
+              </div>
+
               <input
                 type="url"
                 value={extractUrl}
                 onChange={(e) => setExtractUrl(e.target.value)}
-                placeholder="https://restaurant.com/menu"
+                placeholder="https://example.com/catalog"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 disabled={extracting}
               />
               <div className="flex gap-2">
                 <button
-                  onClick={handleExtract}
+                  onClick={extractionMode === 'local-agent' ? handleAgentExtract : handleExtract}
                   disabled={extracting}
-                  className="flex-1 btn-primary disabled:opacity-50"
+                  className={`flex-1 btn-primary disabled:opacity-50 ${extractionMode === 'local-agent' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
                 >
-                  {extracting ? '⏳ Extracting...' : '🔍 Extract Menu'}
+                  {extracting ? 'Extracting...' : (extractionMode === 'local-agent' ? 'Run Agent Extraction' : 'Start Extraction')}
                 </button>
                 {extracting && (
                   <button
                     onClick={handleStopExtract}
                     className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors"
                   >
-                    🛑 Stop
+                    Stop
                   </button>
                 )}
               </div>
@@ -764,7 +944,7 @@ function VishvaPage() {
                   </p>
                   {extractResult.success && (
                     <p className="text-green-700 text-sm mt-1">
-                      Extracted {extractResult.item_count} items
+                      Added {extractResult.item_count} records to the dataset
                     </p>
                   )}
                 </div>
@@ -776,7 +956,7 @@ function VishvaPage() {
           {(extracting || agentThoughts.length > 0) && (
             <div className="card">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">🧠 Agent Thoughts</h3>
+                <h3 className="text-lg font-semibold text-gray-800">Execution Log</h3>
                 {!extracting && agentThoughts.length > 0 && (
                   <button 
                     onClick={() => setAgentThoughts([])}
@@ -787,21 +967,23 @@ function VishvaPage() {
                 )}
               </div>
               
-              <div className="bg-gray-900 rounded-lg p-4 max-h-64 overflow-y-auto font-mono text-sm">
+              <div className="bg-gray-900 rounded-lg p-4 max-h-96 overflow-y-auto font-mono text-sm">
                 {agentThoughts.length === 0 ? (
                   <div className="flex items-center text-green-400">
                     <span className="animate-pulse mr-2">●</span>
                     <span>Connecting to agent...</span>
                   </div>
                 ) : (
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     {agentThoughts.map((thought, i) => (
                       <div key={i} className={`
-                        ${thought.type === 'thought' ? 'text-green-400' : 'text-blue-400'}
+                        ${thought.type === 'thought' ? 'text-green-400' : ''}
+                        ${thought.type === 'tool' ? 'text-yellow-400' : ''}
+                        ${thought.type === 'status' ? 'text-blue-400' : ''}
                       `}>
                         <span className="text-gray-500 text-xs">[{thought.timestamp}]</span>
                         {' '}
-                        <span className={thought.type === 'status' ? 'font-semibold' : ''}>
+                        <span className={`${thought.type === 'status' || thought.type === 'tool' ? 'font-semibold' : ''} whitespace-pre-wrap`}>
                           {thought.message}
                         </span>
                       </div>
@@ -821,19 +1003,19 @@ function VishvaPage() {
 
           {/* Train Model Card */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">🎯 Train Category Classifier</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Train Label Classifier</h3>
             <p className="text-gray-600 text-sm mb-4">
-              Train the ML model using the extracted menu data. The system will test multiple models and select the best one.
+              Train the classifier on the current dataset. The pipeline benchmarks multiple model combinations and keeps the best performer.
             </p>
             <button
               onClick={handleTrain}
               disabled={training || menuData.length === 0}
               className="w-full btn-secondary disabled:opacity-50"
             >
-              {training ? '⏳ Training in progress...' : '🚀 Train Model'}
+              {training ? 'Training in progress...' : 'Train Model'}
             </button>
             {menuData.length === 0 && (
-              <p className="text-yellow-600 text-sm mt-2">Extract menu data first before training</p>
+              <p className="text-yellow-600 text-sm mt-2">Extract source records first before training</p>
             )}
             
             {/* Training Progress UI */}
@@ -911,7 +1093,7 @@ function VishvaPage() {
                         <p className="font-semibold">{(trainResult.f1_score * 100).toFixed(1)}%</p>
                       </div>
                       <div className="bg-white rounded-lg p-2 border border-green-200">
-                        <p className="text-xs text-gray-500">Categories</p>
+                        <p className="text-xs text-gray-500">Labels</p>
                         <p className="font-semibold">{trainResult.categories?.length || 0}</p>
                       </div>
                     </div>
@@ -932,13 +1114,13 @@ function VishvaPage() {
           
           {/* Predict Categories Card */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">🔮 Predict Categories</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Classify New Records</h3>
             
             {/* File Upload Section - Primary */}
             <div className="mb-6 p-4 bg-green-50 border-2 border-dashed border-green-300 rounded-lg">
-              <p className="text-green-800 font-medium mb-2">📁 Upload Product File (Recommended)</p>
+              <p className="text-green-800 font-medium mb-2">Upload Batch File</p>
               <p className="text-green-700 text-sm mb-3">
-                Upload a CSV or PDF file with product names to classify them automatically.
+                Upload a CSV or PDF file containing entry names or line items to classify them in bulk.
               </p>
               <input
                 type="file"
@@ -952,7 +1134,7 @@ function VishvaPage() {
                   onClick={() => fileInputRef.current?.click()}
                   className="px-4 py-2 bg-white border border-green-400 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
                 >
-                  📂 Choose File
+                  Choose File
                 </button>
                 {uploadedFile && (
                   <span className="text-green-800 text-sm font-medium">
@@ -966,7 +1148,7 @@ function VishvaPage() {
                   disabled={uploading || !modelStatus?.model_exists}
                   className="w-full mt-3 btn-primary disabled:opacity-50"
                 >
-                  {uploading ? '⏳ Processing File...' : '🚀 Classify Products from File'}
+                  {uploading ? 'Processing file...' : 'Classify Records from File'}
                 </button>
               )}
             </div>
@@ -974,12 +1156,12 @@ function VishvaPage() {
             {/* Manual Input Section - Secondary */}
             <div className="border-t pt-4">
               <p className="text-gray-600 text-sm mb-2">
-                Or enter product names manually (one per line). Format: <code className="bg-gray-100 px-1 rounded">Name - Price</code>
+                Or enter records manually, one per line. Format: <code className="bg-gray-100 px-1 rounded">Name - Price/Value</code>
               </p>
               <textarea
                 value={predictionInput}
                 onChange={(e) => setPredictionInput(e.target.value)}
-                placeholder="Cheese Burger - Rs. 1500&#10;Chicken Wings - Rs. 800&#10;Pepperoni Pizza - Rs. 2000"
+                placeholder="Premium Support Plan - USD 499&#10;Annual Maintenance Renewal - USD 1200&#10;Starter Toolkit - USD 89"
                 className="w-full h-24 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none text-sm"
               />
               <button
@@ -987,19 +1169,19 @@ function VishvaPage() {
                 disabled={predicting || !modelStatus?.model_exists}
                 className="w-full mt-2 btn-secondary disabled:opacity-50"
               >
-                {predicting ? '⏳ Predicting...' : '🔮 Predict from Text'}
+                {predicting ? 'Classifying...' : 'Classify from Text'}
               </button>
             </div>
             
             {!modelStatus?.model_exists && (
-              <p className="text-yellow-600 text-sm mt-2">⚠️ Train the model first before predicting</p>
+              <p className="text-yellow-600 text-sm mt-2">Train the model first before running classifications</p>
             )}
             
             {/* Prediction Results */}
             {predictions.length > 0 && (
               <div className="mt-6 border-t pt-4">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="font-medium text-gray-700">📊 Results ({predictions.length} items)</h4>
+                  <h4 className="font-medium text-gray-700">Classification Results ({predictions.length})</h4>
                   
                   {/* Export Buttons */}
                   <div className="flex gap-2">
@@ -1042,7 +1224,7 @@ function VishvaPage() {
                         <p className="font-medium text-gray-800">{pred.name}</p>
                         {pred.price && <p className="text-gray-500 text-sm">{pred.price}</p>}
                         {pred.confidence < confidenceSettings.flag_for_review_below && !pred.corrected && (
-                          <span className="text-xs text-yellow-600">⚠️ Low confidence - click to correct</span>
+                          <span className="text-xs text-yellow-600">Needs review - click to correct</span>
                         )}
                         {pred.corrected && (
                           <span className="text-xs text-green-600">✓ Corrected</span>
@@ -1068,21 +1250,21 @@ function VishvaPage() {
                 {editingPrediction && (
                   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                      <h3 className="text-lg font-semibold mb-4">Correct Prediction</h3>
+                      <h3 className="text-lg font-semibold mb-4">Review Classification</h3>
                       <div className="space-y-4">
                         <div>
-                          <p className="text-sm text-gray-600">Item:</p>
+                          <p className="text-sm text-gray-600">Record:</p>
                           <p className="font-medium">{editingPrediction.name}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600">Predicted Category:</p>
+                          <p className="text-sm text-gray-600">Predicted Label:</p>
                           <span className="px-2 py-1 bg-red-100 text-red-700 rounded">
                             {editingPrediction.predicted_category}
                           </span>
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Correct Category:
+                            Correct Label:
                           </label>
                           <input
                             type="text"
@@ -1108,7 +1290,7 @@ function VishvaPage() {
                           }}
                           className="flex-1 btn-primary"
                         >
-                          ✓ Submit Correction
+                          Save Correction
                         </button>
                         <button
                           onClick={() => setEditingPrediction(null)}
@@ -1131,7 +1313,7 @@ function VishvaPage() {
                   }}
                   className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700"
                 >
-                  🗑️ Clear Results
+                  Clear Results
                 </button>
               </div>
             )}
@@ -1140,7 +1322,7 @@ function VishvaPage() {
             {predictions.length > 0 && (
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <p className="text-yellow-800 text-sm">
-                  💡 <strong>Tip:</strong> Click on any prediction to correct it and improve the model!
+                  <strong>Tip:</strong> Click any result to correct its label and feed higher-quality examples back into training.
                 </p>
               </div>
             )}
@@ -1149,7 +1331,7 @@ function VishvaPage() {
           {/* Menu Data Card */}
           <div className="card">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">📋 Menu Data</h3>
+              <h3 className="text-lg font-semibold text-gray-800">Current Dataset</h3>
               <button 
                 onClick={loadMenuData}
                 disabled={loadingMenu}
@@ -1161,11 +1343,11 @@ function VishvaPage() {
             
             {menuData.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
-                No menu data yet. Extract from a URL to get started.
+                No records captured yet. Start with a source URL or batch file.
               </p>
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                <p className="text-gray-600 text-sm mb-2">{menuData.length} items</p>
+                <p className="text-gray-600 text-sm mb-2">{menuData.length} records</p>
                 {menuData.slice(0, 20).map((item, i) => (
                   <div key={i} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
                     <div className="flex justify-between">
@@ -1184,7 +1366,7 @@ function VishvaPage() {
                 ))}
                 {menuData.length > 20 && (
                   <p className="text-gray-500 text-center text-sm py-2">
-                    ... and {menuData.length - 20} more items
+                    ... and {menuData.length - 20} more records
                   </p>
                 )}
               </div>
@@ -1200,9 +1382,9 @@ function VishvaPage() {
           {/* Header with actions */}
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-xl font-semibold text-gray-800">Training Data Management</h2>
+              <h2 className="text-xl font-semibold text-gray-800">Dataset Curation</h2>
               <p className="text-gray-500 text-sm">
-                {trainingData.total_items || 0} items across {trainingData.category_list?.length || 0} categories
+                {trainingData.total_items || 0} records across {trainingData.category_list?.length || 0} labels
               </p>
             </div>
             <div className="flex gap-2">
@@ -1210,13 +1392,13 @@ function VishvaPage() {
                 onClick={() => setShowAddItem(true)}
                 className="btn-primary"
               >
-                ➕ Add Item
+                Add Record
               </button>
               <button
                 onClick={() => setShowMergeModal(true)}
                 className="btn-secondary"
               >
-                🔀 Merge Categories
+                Merge Labels
               </button>
               <button
                 onClick={loadTrainingData}
@@ -1228,7 +1410,7 @@ function VishvaPage() {
             </div>
           </div>
 
-          {/* Category Filter */}
+          {/* Label Filter */}
           <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setSelectedCategory('all')}
@@ -1262,9 +1444,9 @@ function VishvaPage() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-2 px-3 text-gray-600 font-medium">ID</th>
-                    <th className="text-left py-2 px-3 text-gray-600 font-medium">Name</th>
-                    <th className="text-left py-2 px-3 text-gray-600 font-medium">Price</th>
-                    <th className="text-left py-2 px-3 text-gray-600 font-medium">Category</th>
+                    <th className="text-left py-2 px-3 text-gray-600 font-medium">Record Name</th>
+                    <th className="text-left py-2 px-3 text-gray-600 font-medium">Value / Price</th>
+                    <th className="text-left py-2 px-3 text-gray-600 font-medium">Label</th>
                     <th className="text-right py-2 px-3 text-gray-600 font-medium">Actions</th>
                   </tr>
                 </thead>
@@ -1310,7 +1492,7 @@ function VishvaPage() {
                               ))}
                             </select>
                           ) : (
-                            <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
                               {item.category}
                             </span>
                           )}
@@ -1359,36 +1541,36 @@ function VishvaPage() {
           {showAddItem && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <h3 className="text-lg font-semibold mb-4">Add Training Item</h3>
+                <h3 className="text-lg font-semibold mb-4">Add Record</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Record Name *</label>
                     <input
                       type="text"
                       value={newItem.name}
                       onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
                       className="w-full px-3 py-2 border rounded-lg"
-                      placeholder="e.g., Grilled Chicken"
+                      placeholder="e.g., Premium Support Plan"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Value / Price</label>
                     <input
                       type="text"
                       value={newItem.price}
                       onChange={(e) => setNewItem({ ...newItem, price: e.target.value })}
                       className="w-full px-3 py-2 border rounded-lg"
-                      placeholder="e.g., Rs. 1500"
+                      placeholder="e.g., USD 499"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Label *</label>
                     <input
                       type="text"
                       value={newItem.category}
                       onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
                       className="w-full px-3 py-2 border rounded-lg"
-                      placeholder="e.g., Main Course"
+                      placeholder="e.g., Subscription"
                       list="categories-list"
                     />
                     <datalist id="categories-list">
@@ -1400,7 +1582,7 @@ function VishvaPage() {
                 </div>
                 <div className="flex gap-2 mt-6">
                   <button onClick={handleAddTrainingItem} className="flex-1 btn-primary">
-                    Add Item
+                    Add Record
                   </button>
                   <button onClick={() => setShowAddItem(false)} className="flex-1 btn-secondary">
                     Cancel
@@ -1414,10 +1596,10 @@ function VishvaPage() {
           {showMergeModal && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <h3 className="text-lg font-semibold mb-4">Merge Categories</h3>
+                <h3 className="text-lg font-semibold mb-4">Merge Labels</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Select categories to merge:</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Select labels to merge:</label>
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {trainingData.category_list?.map(cat => (
                         <label key={cat} className="flex items-center gap-2">
@@ -1433,7 +1615,7 @@ function VishvaPage() {
                             }}
                             className="rounded"
                           />
-                          <span>{cat} ({trainingData.categories?.[cat] || 0} items)</span>
+                          <span>{cat} ({trainingData.categories?.[cat] || 0} records)</span>
                         </label>
                       ))}
                     </div>
@@ -1445,13 +1627,13 @@ function VishvaPage() {
                       value={mergeTarget}
                       onChange={(e) => setMergeTarget(e.target.value)}
                       className="w-full px-3 py-2 border rounded-lg"
-                      placeholder="Enter target category name"
+                      placeholder="Enter target label name"
                     />
                   </div>
                 </div>
                 <div className="flex gap-2 mt-6">
                   <button onClick={handleMergeCategories} className="flex-1 btn-primary">
-                    Merge {mergeSource.length} Categories
+                    Merge {mergeSource.length} Labels
                   </button>
                   <button onClick={() => { setShowMergeModal(false); setMergeSource([]); setMergeTarget(''); }} className="flex-1 btn-secondary">
                     Cancel
@@ -1467,7 +1649,7 @@ function VishvaPage() {
       {activeTab === 'performance' && (
         <div className="space-y-6">
           <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold text-gray-800">Model Performance Dashboard</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Model Quality Dashboard</h2>
             <button
               onClick={loadPerformanceData}
               disabled={loadingPerformance}
@@ -1479,7 +1661,7 @@ function VishvaPage() {
 
           {!modelPerformance ? (
             <div className="card text-center py-12">
-              <p className="text-gray-500">No model trained yet. Train a model first to see performance metrics.</p>
+              <p className="text-gray-500">No trained model yet. Train a model first to inspect quality metrics.</p>
             </div>
           ) : (
             <>
@@ -1502,14 +1684,14 @@ function VishvaPage() {
                   </p>
                 </div>
                 <div className="card bg-gradient-to-br from-orange-50 to-orange-100">
-                  <p className="text-orange-600 text-sm font-medium">Categories</p>
+                  <p className="text-orange-600 text-sm font-medium">Labels</p>
                   <p className="text-2xl font-bold text-orange-800">{modelPerformance.categories?.length || 0}</p>
                 </div>
               </div>
 
               {/* Category Distribution */}
               <div className="card">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">📊 Category Distribution</h3>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Label Distribution</h3>
                 <div className="space-y-2">
                   {Object.entries(modelPerformance.category_distribution || {}).sort((a, b) => b[1] - a[1]).map(([cat, count]) => {
                     const maxCount = Math.max(...Object.values(modelPerformance.category_distribution || {}));
@@ -1573,12 +1755,12 @@ function VishvaPage() {
               {/* Per-Category Metrics */}
               {confusionMatrix?.per_category_metrics && (
                 <div className="card">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">📈 Per-Category Metrics</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Per-Label Metrics</h3>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b">
-                          <th className="text-left py-2 px-3">Category</th>
+                          <th className="text-left py-2 px-3">Label</th>
                           <th className="text-right py-2 px-3">Precision</th>
                           <th className="text-right py-2 px-3">Recall</th>
                           <th className="text-right py-2 px-3">F1 Score</th>
@@ -1643,9 +1825,9 @@ function VishvaPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Abbreviation Mapper */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">📝 Abbreviation Mapper</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Text Normalization Rules</h3>
             <p className="text-gray-600 text-sm mb-4">
-              Map POS abbreviations to full text for better prediction accuracy.
+              Normalize shorthand terms into full text before training and prediction.
             </p>
             
             {/* Add new abbreviation */}
@@ -1654,14 +1836,14 @@ function VishvaPage() {
                 type="text"
                 value={newAbbrev.abbreviation}
                 onChange={(e) => setNewAbbrev({ ...newAbbrev, abbreviation: e.target.value })}
-                placeholder="Abbrev (e.g., chkn)"
+                placeholder="Short form (e.g., svc)"
                 className="flex-1 px-3 py-2 border rounded-lg text-sm"
               />
               <input
                 type="text"
                 value={newAbbrev.full_text}
                 onChange={(e) => setNewAbbrev({ ...newAbbrev, full_text: e.target.value })}
-                placeholder="Full text (e.g., chicken)"
+                placeholder="Expanded text (e.g., service)"
                 className="flex-1 px-3 py-2 border rounded-lg text-sm"
               />
               <button
@@ -1694,9 +1876,9 @@ function VishvaPage() {
 
           {/* Confidence Settings */}
           <div className="card">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">🎯 Confidence Thresholds</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Confidence Thresholds</h3>
             <p className="text-gray-600 text-sm mb-4">
-              Set confidence thresholds for automatic categorization and review flags.
+              Set score thresholds for automatic acceptance and manual review.
             </p>
             
             <div className="space-y-4">
@@ -1740,7 +1922,7 @@ function VishvaPage() {
                 onClick={handleUpdateConfidenceSettings}
                 className="w-full btn-primary"
               >
-                💾 Save Settings
+                Save Settings
               </button>
             </div>
           </div>
@@ -1749,7 +1931,7 @@ function VishvaPage() {
           <div className="card lg:col-span-2">
             <div className="flex justify-between items-center mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-800">💬 Feedback & Corrections</h3>
+                <h3 className="text-lg font-semibold text-gray-800">Feedback & Corrections</h3>
                 <p className="text-gray-500 text-sm">{feedbackData.total || 0} corrections recorded</p>
               </div>
               {feedbackData.corrections?.length > 0 && (
@@ -1767,21 +1949,21 @@ function VishvaPage() {
                   }}
                   className="btn-primary"
                 >
-                  ✅ Apply All & Retrain
+                  Apply All & Retrain
                 </button>
               )}
             </div>
             
             {feedbackData.corrections?.length === 0 ? (
               <p className="text-gray-500 text-center py-8">
-                No corrections yet. Correct predictions in the Extract & Train tab to improve the model.
+                No corrections yet. Review classifications in the pipeline tab to improve the model.
               </p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-2 px-3">Item Name</th>
+                      <th className="text-left py-2 px-3">Record Name</th>
                       <th className="text-left py-2 px-3">Predicted</th>
                       <th className="text-left py-2 px-3">Corrected To</th>
                       <th className="text-left py-2 px-3">Timestamp</th>

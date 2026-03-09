@@ -1,0 +1,342 @@
+[
+  {
+    "name": "iPhone 16 Pro Max",
+    "price": "$1,199",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "iPhone 16",
+    "price": "$799",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Galaxy S25 Ultra",
+    "price": "$1,299",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Galaxy S25",
+    "price": "$799",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Galaxy A56",
+    "price": "$449",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Pixel 10 Pro",
+    "price": "$999",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Pixel 10a",
+    "price": "$499",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "OnePlus 13",
+    "price": "$899",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Xiaomi 15 Pro",
+    "price": "$749",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "iPhone 16 Pro",
+    "price": "$1,099",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Galaxy Z Fold 6",
+    "price": "$1,799",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Galaxy Z Flip 6",
+    "price": "$1,099",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Pixel 9",
+    "price": "$699",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "OnePlus 13R",
+    "price": "$599",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Xiaomi 14T",
+    "price": "$549",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Nothing Phone (3)",
+    "price": "$599",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "Motorola Edge 50 Pro",
+    "price": "$499",
+    "category": "Mobile Phones"
+  },
+  {
+    "name": "MacBook Pro 16\" M4 Max",
+    "price": "$2,499",
+    "category": "Laptops"
+  },
+  {
+    "name": "MacBook Air 15\" M4",
+    "price": "$1,299",
+    "category": "Laptops"
+  },
+  {
+    "name": "Dell XPS 16",
+    "price": "$1,799",
+    "category": "Laptops"
+  },
+  {
+    "name": "Dell Inspiron 15",
+    "price": "$699",
+    "category": "Laptops"
+  },
+  {
+    "name": "HP Spectre x360 16\"",
+    "price": "$1,599",
+    "category": "Laptops"
+  },
+  {
+    "name": "HP Pavilion 14\"",
+    "price": "$549",
+    "category": "Laptops"
+  },
+  {
+    "name": "ThinkPad X1 Carbon Gen 13",
+    "price": "$1,649",
+    "category": "Laptops"
+  },
+  {
+    "name": "IdeaPad Slim 5",
+    "price": "$649",
+    "category": "Laptops"
+  },
+  {
+    "name": "ROG Zephyrus G16",
+    "price": "$1,999",
+    "category": "Laptops"
+  },
+  {
+    "name": "MacBook Pro 14\" M4 Pro",
+    "price": "$1,999",
+    "category": "Laptops"
+  },
+  {
+    "name": "Dell Latitude 14",
+    "price": "$1,199",
+    "category": "Laptops"
+  },
+  {
+    "name": "HP Envy 16\"",
+    "price": "$1,299",
+    "category": "Laptops"
+  },
+  {
+    "name": "Lenovo Yoga 9i",
+    "price": "$1,449",
+    "category": "Laptops"
+  },
+  {
+    "name": "ASUS ZenBook 14 OLED",
+    "price": "$899",
+    "category": "Laptops"
+  },
+  {
+    "name": "Acer Swift Go 14",
+    "price": "$749",
+    "category": "Laptops"
+  },
+  {
+    "name": "MSI Creator Z16",
+    "price": "$2,199",
+    "category": "Laptops"
+  },
+  {
+    "name": "iPad Pro 13\" M4",
+    "price": "$1,299",
+    "category": "Tablets"
+  },
+  {
+    "name": "iPad Air 11\" M3",
+    "price": "$799",
+    "category": "Tablets"
+  },
+  {
+    "name": "iPad 11th Gen",
+    "price": "$449",
+    "category": "Tablets"
+  },
+  {
+    "name": "iPad Mini 7",
+    "price": "$499",
+    "category": "Tablets"
+  },
+  {
+    "name": "Galaxy Tab S10 Ultra",
+    "price": "$1,199",
+    "category": "Tablets"
+  },
+  {
+    "name": "Galaxy Tab S10",
+    "price": "$849",
+    "category": "Tablets"
+  },
+  {
+    "name": "Galaxy Tab A9+",
+    "price": "$269",
+    "category": "Tablets"
+  },
+  {
+    "name": "Surface Pro 11",
+    "price": "$1,399",
+    "category": "Tablets"
+  },
+  {
+    "name": "Lenovo Tab P12 Pro",
+    "price": "$499",
+    "category": "Tablets"
+  },
+  {
+    "name": "iPad Pro 11\" M4",
+    "price": "$1,099",
+    "category": "Tablets"
+  },
+  {
+    "name": "Galaxy Tab S10 FE",
+    "price": "$449",
+    "category": "Tablets"
+  },
+  {
+    "name": "Surface Go 4",
+    "price": "$599",
+    "category": "Tablets"
+  },
+  {
+    "name": "Lenovo Tab P11 Pro",
+    "price": "$349",
+    "category": "Tablets"
+  },
+  {
+    "name": "Amazon Fire HD 10",
+    "price": "$149",
+    "category": "Tablets"
+  },
+  {
+    "name": "OnePlus Pad 2",
+    "price": "$549",
+    "category": "Tablets"
+  },
+  {
+    "name": "AirPods Pro 3",
+    "price": "$249",
+    "category": "Accessories"
+  },
+  {
+    "name": "AirPods Max 2",
+    "price": "$549",
+    "category": "Accessories"
+  },
+  {
+    "name": "Sony WH-1000XM6",
+    "price": "$399",
+    "category": "Accessories"
+  },
+  {
+    "name": "Sony WF-1000XM6 Earbuds",
+    "price": "$279",
+    "category": "Accessories"
+  },
+  {
+    "name": "Galaxy Buds3 Pro",
+    "price": "$249",
+    "category": "Accessories"
+  },
+  {
+    "name": "QuietComfort Ultra",
+    "price": "$429",
+    "category": "Accessories"
+  },
+  {
+    "name": "JBL Charge 6 Speaker",
+    "price": "$169",
+    "category": "Accessories"
+  },
+  {
+    "name": "Anker 737 Power Bank 24K",
+    "price": "$109",
+    "category": "Accessories"
+  },
+  {
+    "name": "Anker Nano II 65W Charger",
+    "price": "$35",
+    "category": "Accessories"
+  },
+  {
+    "name": "MagSafe Charger",
+    "price": "$39",
+    "category": "Accessories"
+  },
+  {
+    "name": "45W Travel Adapter",
+    "price": "$49",
+    "category": "Accessories"
+  },
+  {
+    "name": "Apple Watch Ultra 3",
+    "price": "$799",
+    "category": "Accessories"
+  },
+  {
+    "name": "QuietComfort Earbuds",
+    "price": "$299",
+    "category": "Accessories"
+  },
+  {
+    "name": "JBL Flip 7 Speaker",
+    "price": "$129",
+    "category": "Accessories"
+  },
+  {
+    "name": "Galaxy Watch Ultra",
+    "price": "$649",
+    "category": "Accessories"
+  },
+  {
+    "name": "Anker MagGo Wireless Charger",
+    "price": "$29",
+    "category": "Accessories"
+  },
+  {
+    "name": "MX Master 3S Mouse",
+    "price": "$99",
+    "category": "Accessories"
+  },
+  {
+    "name": "AirTag 4-Pack",
+    "price": "$99",
+    "category": "Accessories"
+  },
+  {
+    "name": "BlackShark V2 Pro Headset",
+    "price": "$199",
+    "category": "Accessories"
+  },
+  {
+    "name": "Belkin 3-in-1 Wireless Charger",
+    "price": "$149",
+    "category": "Accessories"
+  }
+]

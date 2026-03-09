@@ -63,3 +63,4 @@ node_modules/
 __pycache__/
 .env.example
 .env
+/backend/app/modules/vishva/data

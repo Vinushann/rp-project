@@ -8,6 +8,13 @@ export default defineConfig({
     port: 5173,
     // Proxy API requests to backend during development
     proxy: {
+      // SSE endpoint needs longer timeout for streaming extraction
+      '/api/v1/vishva/extract-stream': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        timeout: 600000,       // 10 minutes for long-running extraction
+        proxyTimeout: 600000,  // 10 minutes proxy timeout
+      },
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,

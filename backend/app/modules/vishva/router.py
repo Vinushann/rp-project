@@ -207,11 +207,19 @@ async def extract_menu(request: ExtractRequest):
         output_dir = os.path.join(MODULE_DIR, "data/raw")
         
         # Write a temporary extraction script
+        backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(MODULE_DIR)))
         script_content = f'''
 import sys
 import os
-sys.path.insert(0, r"{os.path.dirname(os.path.dirname(os.path.dirname(MODULE_DIR)))}")
-os.chdir(r"{os.path.dirname(os.path.dirname(os.path.dirname(MODULE_DIR)))}")
+
+# Set up paths first
+backend_dir = r"{backend_dir}"
+sys.path.insert(0, backend_dir)
+os.chdir(backend_dir)
+
+# Load environment variables before any imports
+from dotenv import load_dotenv
+load_dotenv(os.path.join(backend_dir, ".env"))
 
 from app.modules.vishva.tools import extract_menu_data
 import json
@@ -224,14 +232,31 @@ print(json.dumps(result))
         with open(extract_script, 'w') as f:
             f.write(script_content)
         
-        # Run in subprocess (this works like your standalone script)
-        python_exe = sys.executable
+        # Run in subprocess with clean environment (avoid anaconda conflicts)
+        # Use the venv's python explicitly, not sys.executable (which might be anaconda)
+        venv_python = os.path.join(backend_dir, "..", "venv", "Scripts", "python.exe")
+        venv_python = os.path.normpath(venv_python)
+        if not os.path.exists(venv_python):
+            # Fallback to sys.executable
+            venv_python = sys.executable
+        
+        env = os.environ.copy()
+        # Remove conda paths that might interfere
+        if 'PYTHONPATH' in env:
+            del env['PYTHONPATH']
+        # Also remove conda from PATH to avoid conflicts
+        if 'PATH' in env:
+            paths = env['PATH'].split(os.pathsep)
+            paths = [p for p in paths if 'conda' not in p.lower() and 'anaconda' not in p.lower()]
+            env['PATH'] = os.pathsep.join(paths)
+        
         result = subprocess.run(
-            [python_exe, extract_script],
+            [venv_python, extract_script],
             capture_output=True,
             text=True,
-            cwd=os.path.dirname(os.path.dirname(os.path.dirname(MODULE_DIR))),
-            timeout=300  # 5 minute timeout
+            cwd=backend_dir,
+            timeout=300,  # 5 minute timeout
+            env=env
         )
         
         # Clean up temp script
@@ -914,6 +939,7 @@ async def extract_menu_stream(url: str):
         output_queue = queue.Queue()
         process = None
         reader_thread = None
+        last_keepalive = time.time()
         
         try:
             from app.modules.vishva.tools import clean_json_data
@@ -976,13 +1002,19 @@ print(json.dumps(result))
             env = os.environ.copy()
             env['PYTHONUNBUFFERED'] = '1'
             
+            # On Windows, use CREATE_NO_WINDOW to prevent console window issues
+            creation_flags = 0
+            if sys.platform == 'win32':
+                creation_flags = subprocess.CREATE_NO_WINDOW
+            
             process = subprocess.Popen(
                 [python_exe, '-u', extract_script],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 bufsize=0,
                 cwd=backend_dir,
-                env=env
+                env=env,
+                creationflags=creation_flags
             )
             
             # Track the process globally so it can be stopped
@@ -1034,6 +1066,12 @@ print(json.dumps(result))
                         yield f"data: {json.dumps({'type': 'thought', 'message': line})}\n\n"
                         
                 except queue.Empty:
+                    # Send keepalive comment to prevent proxy/browser from closing the SSE connection
+                    now = time.time()
+                    if now - last_keepalive >= 5:
+                        yield ": keepalive\n\n"
+                        last_keepalive = now
+                    
                     # Timeout - check if process has ended
                     if process.poll() is not None:
                         # Drain remaining items from queue
@@ -1721,3 +1759,16 @@ async def update_confidence_settings(settings: ConfidenceSettings):
         return {"success": True, "message": "Settings saved"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================
+# AGENTIC AI SUB-ROUTER
+# ============================================
+# Mount the agent endpoints under /agent prefix
+# e.g. /api/v1/vishva/agent/chat, /api/v1/vishva/agent/chat-stream
+try:
+    from app.modules.vishva.agent import agent_router
+    router.include_router(agent_router, prefix="/agent", tags=["vishva-agent"])
+except ImportError:
+    # Agent dependencies not installed — skip silently, existing endpoints still work
+    pass
