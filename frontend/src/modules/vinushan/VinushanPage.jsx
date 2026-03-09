@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { streamVinushanChat } from '../../lib/api';
 import AthenaChatMessage from './components/AthenaChatMessage';
 import AgentThoughtsPanel from './components/AgentThoughtsPanel';
+import PipelineVisualization from './components/PipelineVisualization';
 import SettingsPage from './components/SettingsPage';
 import StatsPage from './components/StatsPage';
 import './styles/Athena.css';
@@ -142,9 +143,13 @@ function VinushanPage() {
             return;
           case '3':
             e.preventDefault();
-            window.open('/docs.html', '_blank');
+            setActiveTab('theater');
             return;
           case '4':
+            e.preventDefault();
+            window.open('/docs.html', '_blank');
+            return;
+          case '5':
             e.preventDefault();
             setActiveTab('settings');
             return;
@@ -297,6 +302,10 @@ function VinushanPage() {
           setEvents(prev => [...prev, data]);
         },
         
+        onXaiExplanation: (data) => {
+          setEvents(prev => [...prev, data]);
+        },
+        
         onRunEnd: (data) => {
           setEvents(prev => [...prev, data]);
           
@@ -402,6 +411,12 @@ function VinushanPage() {
             Athena
           </button>
           <button 
+            className={`nav-tab ${activeTab === 'theater' ? 'active' : ''}`}
+            onClick={() => setActiveTab('theater')}
+          >
+            Decision Flow
+          </button>
+          <button 
             className="nav-tab"
             onClick={() => window.open('/docs.html', '_blank')}
             title="Opens in new tab"
@@ -432,6 +447,17 @@ function VinushanPage() {
         {/* Overview Tab Content */}
         {activeTab === 'overview' && (
           <StatsPage />
+        )}
+
+        {/* Decision Flow Tab Content */}
+        {activeTab === 'theater' && (
+          <PipelineVisualization
+            events={events}
+            isLoading={isLoading}
+            routingReasoning={routingReasoning}
+            agentsNeeded={agentsNeeded}
+            onSendMessage={handleSendMessage}
+          />
         )}
 
         {/* Athena Chat Tab Content */}

@@ -73,7 +73,6 @@ class EventType:
     TOOL_RESULT = "tool_result"
     AGENT_OUTPUT = "agent_output"
     AGENT_END = "agent_end"
-    SELF_REFLECTION = "self_reflection"
     XAI_EXPLANATION = "xai_explanation"
     RUN_END = "run_end"
     ERROR = "error"
@@ -484,123 +483,6 @@ this drives staffing and inventory planning."""
 
 
 # ============================================================================
-# Self-Reflection — LLM critiques the final response before delivery
-# ============================================================================
-
-def _perform_self_reflection(
-    original_question: str,
-    response_text: str,
-    agents_used: list,
-    rag_context: str = "",
-) -> dict:
-    """
-    Self-Reflection: An LLM reviews the crew's output and checks for:
-      1. Accuracy  — Are claims supported by data/tools?
-      2. Completeness — Did we answer what was actually asked?
-      3. Hallucination — Did we invent numbers or facts?
-      4. Actionability — Are recommendations concrete enough?
-      5. Clarity — Is the response well-structured?
-
-    Returns:
-        dict with verdict, criteria, improvements, improved_response
-    """
-    llm = ChatOpenAI(
-        model=os.getenv("MODEL", "gpt-4o-mini"),
-        temperature=0,
-        timeout=45,
-    )
-
-    system_prompt = """You are a quality assurance reviewer for a coffee shop AI assistant called ATHENA.
-A team of specialist agents just produced a response to the shop manager's question.
-Your job: review the response for quality issues and fix any problems.
-
-Evaluate these 5 criteria (score each as PASS or FAIL):
-
-1. ACCURACY — Are specific numbers, dates, and claims plausible given the context?
-   Flag any suspicious or unsupported statistics.
-2. COMPLETENESS — Does the response actually answer what the manager asked?
-   Flag if the question was only partially addressed.
-3. HALLUCINATION — Does the response invent facts, products, or events not in the data?
-   Flag made-up holidays, items, or statistics.
-4. ACTIONABILITY — Are recommendations specific enough to act on?
-   Flag vague advice like "consider adjusting" without concrete actions.
-5. CLARITY — Is the response well-structured with clear sections?
-   Flag walls of text, missing headings, or disorganized content.
-
-Respond with JSON only:
-{
-  "criteria": [
-    {"name": "Accuracy", "status": "pass|fail", "note": "brief explanation"},
-    {"name": "Completeness", "status": "pass|fail", "note": "brief explanation"},
-    {"name": "Hallucination", "status": "pass|fail", "note": "brief explanation"},
-    {"name": "Actionability", "status": "pass|fail", "note": "brief explanation"},
-    {"name": "Clarity", "status": "pass|fail", "note": "brief explanation"}
-  ],
-  "overall_verdict": "pass|needs_improvement",
-  "improvements_made": "description of what you fixed, or 'none' if all passed",
-  "improved_response": "the improved response text (only if you made changes, otherwise null)"
-}
-
-IMPORTANT: Only set improved_response if you actually changed something meaningful.
-Minor issues don't need a rewrite. Set improved_response to null if verdict is pass."""
-
-    user_prompt = f"""MANAGER'S QUESTION:
-{original_question}
-
-AGENTS USED: {', '.join(agents_used) if agents_used else 'Conversational (no agents)'}
-
-{f'DOMAIN KNOWLEDGE AVAILABLE:{chr(10)}{rag_context[:1000]}' if rag_context else 'NO DOMAIN KNOWLEDGE RETRIEVED'}
-
-RESPONSE TO REVIEW:
-{response_text[:3000]}"""
-
-    try:
-        response = llm.invoke([
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ])
-        content = response.content.strip()
-        if content.startswith("```"):
-            content = content.split("```")[1]
-            if content.startswith("json"):
-                content = content[4:]
-            content = content.strip()
-        result = json.loads(content)
-
-        criteria = result.get("criteria", [])
-        has_failures = any(c.get("status") == "fail" for c in criteria)
-        improved_response = result.get("improved_response")
-        verdict = "improved" if (has_failures and improved_response) else "pass"
-
-        return {
-            "verdict": verdict,
-            "criteria": criteria,
-            "improvements_made": result.get("improvements_made", "none"),
-            "improved_response": improved_response if verdict == "improved" else None,
-            "pass_count": sum(1 for c in criteria if c.get("status") == "pass"),
-            "fail_count": sum(1 for c in criteria if c.get("status") == "fail"),
-            "total_criteria": len(criteria),
-        }
-    except Exception as exc:
-        logger.warning(f"Self-reflection failed: {exc}")
-        return {
-            "verdict": "pass",
-            "criteria": [
-                {"name": "Accuracy", "status": "pass", "note": "Review skipped (fallback)"},
-                {"name": "Completeness", "status": "pass", "note": "Review skipped (fallback)"},
-                {"name": "Hallucination", "status": "pass", "note": "Review skipped (fallback)"},
-                {"name": "Actionability", "status": "pass", "note": "Review skipped (fallback)"},
-                {"name": "Clarity", "status": "pass", "note": "Review skipped (fallback)"},
-            ],
-            "improvements_made": "Self-reflection skipped due to error",
-            "improved_response": None,
-            "pass_count": 5,
-            "fail_count": 0,
-            "total_criteria": 5,
-        }
-
-
-# ============================================================================
 # XAI / Explainability — Decompose the AI's decision-making for transparency
 # ============================================================================
 
@@ -853,6 +735,80 @@ class InstrumentedCrewBuilder(DynamicCrewBuilder):
 
 
 # ============================================================================
+# Follow-Up Query Rewriter
+# ============================================================================
+def _rewrite_followup_query(message: str, history: List[Message]) -> dict:
+    """
+    Resolve ambiguous follow-up messages into self-contained questions
+    using recent conversation history.
+
+    Returns:
+        dict with keys:
+            - rewritten: str  (the resolved question)
+            - is_followup: bool
+            - original: str
+    """
+    # Skip rewriting if there is no prior conversation
+    if not history:
+        return {"rewritten": message, "is_followup": False, "original": message}
+
+    # Build a compact history snippet (last 3 user+assistant turns max)
+    turns = []
+    for msg in history[-6:]:
+        role_label = "User" if msg.role == "user" else "ATHENA"
+        turns.append(f"{role_label}: {msg.content[:300]}")
+    history_block = "\n".join(turns)
+
+    llm = ChatOpenAI(
+        model=os.getenv("MODEL", "gpt-4o-mini"),
+        temperature=0.0,
+        timeout=15,
+    )
+
+    prompt = f"""You are a query rewriter for a coffee-shop analytics assistant.
+
+Given the recent conversation and a new user message, decide:
+1. Is the new message a FOLLOW-UP that depends on prior context (pronouns like "they/it/that", implicit references, or continuation of a previous topic)?
+2. If yes, rewrite it into a COMPLETE, SELF-CONTAINED question that includes all necessary context from the conversation.
+3. If no (the message is already self-contained), return it unchanged.
+
+Rules:
+- Preserve the user's intent exactly — do not add extra analysis.
+- Keep the rewritten question concise.
+- If the prior conversation discussed a specific item, month, metric, or visualization type, carry that context forward.
+
+Recent conversation:
+{history_block}
+
+New user message: "{message}"
+
+Respond with ONLY valid JSON:
+{{{{
+  "is_followup": true/false,
+  "rewritten": "the rewritten question (or original if not a follow-up)"
+}}}}"""
+
+    try:
+        response = llm.invoke(prompt)
+        content = response.content.strip()
+        # Strip markdown code fences if present
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"):
+                content = content[4:]
+        content = content.strip()
+        result = json.loads(content)
+        return {
+            "rewritten": result.get("rewritten", message),
+            "is_followup": result.get("is_followup", False),
+            "original": message,
+        }
+    except Exception as e:
+        logger.warning(f"Query rewrite failed (non-fatal): {e}")
+        return {"rewritten": message, "is_followup": False, "original": message}
+
+
+# ============================================================================
 # Direct Handlers (Non-CrewAI)
 # ============================================================================
 def _handle_conversational_message(
@@ -933,7 +889,14 @@ def _handle_visualization_directly(
     try:
         chart_type = "general"
         
-        if any(word in message_lower for word in ["trend", "over time", "sales trend", "monthly sales"]):
+        # Detect time-based sales queries (e.g. "last 6 months sales", "sales over time")
+        _is_time_sales = (
+            any(word in message_lower for word in ["trend", "over time", "sales trend", "monthly sales"])
+            or (re.search(r'last\s+\d+\s+months?\b', message_lower) and "sales" in message_lower)
+            or (re.search(r'\d+\s+months?\s+sales', message_lower))
+        )
+        
+        if _is_time_sales:
             if emitter:
                 emitter.emit(
                     EventType.TOOL_START,
@@ -947,7 +910,12 @@ def _handle_visualization_directly(
                 if food in message_lower:
                     item = food
                     break
-            result = create_sales_trend_chart(item_name=item, months=6, group_by="month")
+            
+            # Extract month count from message (e.g. "last 6 months" -> 6)
+            month_match = re.search(r'(\d+)\s+months?', message_lower)
+            months = int(month_match.group(1)) if month_match else 6
+            
+            result = create_sales_trend_chart(item_name=item, months=months, group_by="month")
             chart_type = "trend"
             
         elif any(word in message_lower for word in ["top", "best selling", "popular", "most sold"]):
@@ -1214,7 +1182,33 @@ async def stream_chat_realtime(
         ))
         await asyncio.sleep(0.05)  # Small delay for streaming effect
         
-        # QUERY_ANALYSIS - Route the question
+        # ── FOLLOW-UP RESOLUTION ──
+        # Rewrite ambiguous follow-ups into self-contained questions
+        if conversation_history:
+            loop_rw = asyncio.get_event_loop()
+            rewrite_result = await loop_rw.run_in_executor(
+                None,
+                lambda: _rewrite_followup_query(message, conversation_history)
+            )
+            if rewrite_result["is_followup"]:
+                original_message = message
+                message = rewrite_result["rewritten"]
+                logger.info(f"[{run_id}] Follow-up resolved: '{original_message}' → '{message}'")
+                yield _format_sse(EventType.ROUTER_THOUGHT, _create_event(
+                    EventType.ROUTER_THOUGHT,
+                    run_id,
+                    phase="followup_resolution",
+                    content=f"Follow-up detected — resolved to: \"{message}\"",
+                    text=f"Original: \"{original_message}\"\nResolved: \"{message}\"",
+                    data={
+                        "original": original_message,
+                        "rewritten": message,
+                        "is_followup": True,
+                    }
+                ))
+                await asyncio.sleep(0.05)
+        
+        # QUERY_ANALYSIS - Route the question (uses resolved message)
         routing_result = route_question(message)
         agents_needed = routing_result.get("agents_needed", [])
         reasoning = routing_result.get("reasoning", "")
@@ -1633,67 +1627,6 @@ async def stream_chat_realtime(
                 ))
             
             response_text = str(result)
-            
-            # ── Self-Reflection: Review response quality ──
-            yield _format_sse(EventType.SELF_REFLECTION, _create_event(
-                EventType.SELF_REFLECTION,
-                run_id,
-                agent="Quality Reviewer",
-                phase="start",
-                content="Reviewing response for accuracy, completeness, and quality...",
-                data={"status": "reviewing"}
-            ))
-            await asyncio.sleep(0.05)
-
-            try:
-                loop_ref = asyncio.get_event_loop()
-                reflection_result = await loop_ref.run_in_executor(
-                    None,
-                    lambda: _perform_self_reflection(
-                        original_question=message,
-                        response_text=response_text,
-                        agents_used=agents_needed,
-                        rag_context=rag_context or "",
-                    )
-                )
-
-                if reflection_result.get("verdict") == "improved" and reflection_result.get("improved_response"):
-                    response_text = reflection_result["improved_response"]
-
-                yield _format_sse(EventType.SELF_REFLECTION, _create_event(
-                    EventType.SELF_REFLECTION,
-                    run_id,
-                    agent="Quality Reviewer",
-                    phase="complete",
-                    content=f"Quality review complete — {reflection_result.get('pass_count', 5)}/{reflection_result.get('total_criteria', 5)} checks passed",
-                    data={
-                        "status": "complete",
-                        "verdict": reflection_result.get("verdict", "pass"),
-                        "criteria": reflection_result.get("criteria", []),
-                        "improvements_made": reflection_result.get("improvements_made", "none"),
-                        "pass_count": reflection_result.get("pass_count", 5),
-                        "fail_count": reflection_result.get("fail_count", 0),
-                        "total_criteria": reflection_result.get("total_criteria", 5),
-                    }
-                ))
-                await asyncio.sleep(0.05)
-            except Exception as reflect_err:
-                logger.warning(f"[{run_id}] Self-reflection failed (non-fatal): {reflect_err}")
-                yield _format_sse(EventType.SELF_REFLECTION, _create_event(
-                    EventType.SELF_REFLECTION,
-                    run_id,
-                    agent="Quality Reviewer",
-                    phase="complete",
-                    content="Quality review complete — 5/5 checks passed (express review)",
-                    data={
-                        "status": "complete",
-                        "verdict": "pass",
-                        "criteria": [],
-                        "pass_count": 5,
-                        "fail_count": 0,
-                        "total_criteria": 5,
-                    }
-                ))
 
             # ── XAI / Explainability: Decompose how the AI made its decisions ──
             yield _format_sse(EventType.XAI_EXPLANATION, _create_event(

@@ -40,7 +40,7 @@ Important:
 | Avg latency | 35.12s (pre), 38.77s (post) | Not publicly disclosed | ATHENA only. |
 | RAG usage coverage | 19/25 (76.0%) | Not publicly disclosed | ATHENA only. |
 | Score distribution (5/5 answers) | 17 -> 19 | Not publicly disclosed | ATHENA only. |
-| Claimed reliability/explainability | Implemented with self-reflection + XAI timeline | Claims "100% reliable answers" and "full verifiability" | ThoughtSpot claims from official product pages. |
+| Claimed reliability/explainability | Implemented with XAI timeline and confidence reporting | Claims "100% reliable answers" and "full verifiability" | ThoughtSpot claims from official product pages. |
 | Customer outcome examples | Not included in your current report | "Over $70K in cost savings" (Cox2M case story), "adopted self-service BI in 3 months" (Zencargo case story) | Customer-specific, not universal platform benchmark. |
 
 ## 4) Capability Comparison (Research-Friendly)
@@ -51,7 +51,7 @@ Important:
 | Multi-agent orchestration | Yes (specialist agent flow) | Yes (agentic analytics positioning) |
 | Adaptive retrieval | Yes (adaptive RAG profiles) | Not explicitly documented as your style of adaptive RAG |
 | Citations / source grounding | Yes (RAG citations) | Claims traceability, semantic grounding |
-| Self-reflection before final output | Yes (explicit pipeline phase) | Claims self-checking and refinement |
+| Explainability before final output | Yes (explicit XAI phase) | Claims self-checking and refinement |
 | Explainability UI for users | Yes (XAI phase: factors, confidence, assumptions, counterfactuals) | Claims explainability/verifiability |
 | Real-time reasoning timeline | Yes (phase-by-phase SSE timeline) | Not publicly documented in the same granularity |
 | Forecasting + operational action plan in one flow | Yes | Yes (broadly supports analytics and insights-to-actions) |

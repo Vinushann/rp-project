@@ -1,7 +1,7 @@
 # ATHENA vs Self-RAG (Public Numeric Comparison)
 
 Date: 2026-03-08
-Purpose: Provide a defensible numeric comparison against a publicly evaluated system that is architecturally similar to ATHENA (RAG + adaptive retrieval behavior + self-reflection).
+Purpose: Provide a defensible numeric comparison against a publicly evaluated system that is architecturally similar to ATHENA (RAG + adaptive retrieval behavior + explainability).
 
 ## 1) Why Self-RAG Is a Valid Comparator
 
@@ -59,7 +59,7 @@ Important note:
 | Quality score | 4.68/5 post-RAG | Not reported on a 1-5 rubric | Not direct |
 | Improvement over own baseline | +5.4% overall | Reported as improved vs baselines, but not in your rubric | Indirect |
 | Latency | 38.77s post-RAG average | Not directly published as end-user latency in same format | Not direct |
-| Self-reflection evidence | Implemented and surfaced in UI timeline | Reflection-token framework and ablations reported | Conceptually direct |
+| Explainability evidence | Implemented and surfaced in UI timeline | Reflection-token framework and ablations reported | Conceptually direct |
 
 ## 5) Viva-Ready Interpretation
 

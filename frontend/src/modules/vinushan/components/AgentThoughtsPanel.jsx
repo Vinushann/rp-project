@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 
 /**
- * AI Reasoning Timeline — Premium visual pipeline
- * Presents agent thinking as a step-by-step story:
- *   Query Analysis → Knowledge Retrieval → Agent Execution → Complete
+ * AI Reasoning Panel — Clean professional step-by-step process view
+ * Shows: Query Analysis → Knowledge Retrieval → Agent Execution → XAI → Complete
  */
 
 /* ─── Utilities ─── */
@@ -30,21 +29,25 @@ function cleanAgentName(name) {
   return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
-/* ─── Sub-step metadata ─── */
-const SUBSTEP_META = {
-  plan:       { icon: '📋', label: 'Planning' },
-  data_query: { icon: '🗄️', label: 'Data Access' },
-  self_check: { icon: '🔍', label: 'Verification' },
-  result:     { icon: '💡', label: 'Findings' },
-  thought:    { icon: '💭', label: 'Reasoning' },
-  query:      { icon: '🔎', label: 'Query' },
-  result_snapshot: { icon: '💡', label: 'Findings' },
-  reflection: { icon: '🪞', label: 'Self-Reflection' },
-  xai:        { icon: '🔬', label: 'Explainability' },
-};
+/* ─── SVG Icons ─── */
+function CheckIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M3 6l2 2.5L9 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
 
-/* ─── Content Formatter (replaces raw <pre> dumps) ─── */
-function FormatContent({ text }) {
+function SpinnerIcon() {
+  return (
+    <svg className="ar-spinner" width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.5" strokeDasharray="12 22" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+/* ─── Content Formatter ─── */
+function Content({ text }) {
   if (!text) return null;
   const lines = text.split('\n');
   const elements = [];
@@ -53,7 +56,7 @@ function FormatContent({ text }) {
   const flush = (key) => {
     if (listBuf.length > 0) {
       elements.push(
-        <ul key={key} className="tl-list">
+        <ul key={key} className="ar-list">
           {listBuf.map((item, j) => <li key={j}>{item}</li>)}
         </ul>
       );
@@ -72,551 +75,95 @@ function FormatContent({ text }) {
 
     flush(`l-${i}`);
 
-    // Section headers (short lines ending with colon)
     if (t.endsWith(':') && t.length < 60) {
-      elements.push(<p key={i} className="tl-label">{t}</p>);
+      elements.push(<p key={i} className="ar-heading">{t}</p>);
       return;
     }
 
-    // Dataset / file references
     if (/^(DATASET|FILE|SQL|QUERY):/i.test(t)) {
       const [label, ...rest] = t.split(':');
       elements.push(
-        <div key={i} className="tl-code-ref">
-          <span className="tl-code-tag">{label}</span>
+        <div key={i} className="ar-code-block">
+          <span className="ar-code-label">{label}</span>
           <code>{rest.join(':').trim()}</code>
         </div>
       );
       return;
     }
 
-    // File paths
     if (/\.(csv|json|py|sql|txt|md)\b/.test(t) && t.length < 120) {
-      elements.push(<code key={i} className="tl-filepath">{t}</code>);
+      elements.push(<code key={i} className="ar-filepath">{t}</code>);
       return;
     }
 
-    elements.push(<p key={i} className="tl-text">{t}</p>);
+    elements.push(<p key={i} className="ar-text">{t}</p>);
   });
 
   flush('l-end');
   return <>{elements}</>;
 }
 
-/* ─── Sub-step (within agent card) ─── */
-function SubStep({ phase, text, timestamp, isLast }) {
-  const meta = SUBSTEP_META[phase] || { icon: '▸', label: phase || 'Step' };
-  return (
-    <div className={`tl-substep ${isLast ? 'last' : ''}`}>
-      <div className="tl-substep-dot" />
-      <div className="tl-substep-card">
-        <div className="tl-substep-header">
-          <span className="tl-substep-icon">{meta.icon}</span>
-          <span className="tl-substep-label">{meta.label}</span>
-          {timestamp && <span className="tl-substep-time">{fmtTime(timestamp)}</span>}
-        </div>
-        <div className="tl-substep-body">
-          <FormatContent text={text} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Timeline Step (main phase node) ─── */
-function TimelineStep({ icon, label, timestamp, duration, isActive, isCompleted, summary, accentColor, isLast, children }) {
-  const [expanded, setExpanded] = useState(true);
-
-  return (
-    <div className={`tl-step ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''} ${isLast ? 'last' : ''}`}>
-      {/* Timeline track */}
-      <div className="tl-track">
-        <div
-          className="tl-dot"
-          style={{
-            borderColor: accentColor,
-            background: (isActive || isCompleted) ? accentColor : 'transparent',
-          }}
-        >
-          {isCompleted && <span className="tl-check">✓</span>}
-          {isActive && <span className="tl-pulse" style={{ background: accentColor }} />}
-        </div>
-        {!isLast && <div className="tl-line" />}
-      </div>
-
-      {/* Step content */}
-      <div className="tl-step-content">
-        <div className="tl-step-header" onClick={() => setExpanded(!expanded)}>
-          <div className="tl-step-title">
-            <span className="tl-step-icon">{icon}</span>
-            <span className="tl-step-label">{label}</span>
-          </div>
-          <div className="tl-step-meta">
-            {duration && <span className="tl-badge duration">{duration}</span>}
-            {timestamp && <span className="tl-badge time">{fmtTime(timestamp)}</span>}
-            <span className={`tl-chevron ${expanded ? 'open' : ''}`}>‹</span>
-          </div>
-        </div>
-
-        {!expanded && summary && (
-          <p className="tl-summary">{summary}</p>
-        )}
-
-        {expanded && (
-          <div className="tl-step-body">
-            {children}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ─── Adaptive RAG Strategy Display ─── */
-const QUERY_TYPE_STYLES = {
-  factual:    { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)', icon: '🎯', label: 'Factual Lookup',     desc: 'Direct answer from domain facts' },
-  analytical: { color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)', icon: '🔬', label: 'Analytical',         desc: 'Needs data analysis + domain knowledge' },
-  strategic:  { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: '🧩', label: 'Strategic Planning', desc: 'Complex planning, broad knowledge needed' },
-  system:     { color: '#10b981', bg: 'rgba(16,185,129,0.12)', icon: '⚙️', label: 'System Knowledge',   desc: 'About how ATHENA works internally' },
+/* ─── Thought Labels ─── */
+const THOUGHT_LABELS = {
+  plan: 'Planning',
+  data_query: 'Data Access',
+  self_check: 'Verification',
+  result: 'Result',
+  thought: 'Reasoning',
+  query: 'Query',
+  result_snapshot: 'Result',
+  xai: 'Explainability',
 };
 
-const ALL_PROFILES = {
-  factual:    { top_k: 3, min_relevance: 0.35, expand: false },
-  analytical: { top_k: 5, min_relevance: 0.25, expand: false },
-  strategic:  { top_k: 7, min_relevance: 0.20, expand: true  },
-  system:     { top_k: 5, min_relevance: 0.25, expand: false },
-};
-
-function AdaptiveRAGDisplay({ ragData }) {
-  if (!ragData) return null;
-
-  const queryType = ragData.query_type || 'analytical';
-  const topics = ragData.topics || [];
-  const reasoning = ragData.classification_reasoning || '';
-  const chunksRetrieved = ragData.chunks_retrieved ?? 0;
-  const chunksAfterFilter = ragData.chunks_after_filter ?? chunksRetrieved;
-  const citations = ragData.citations || [];
-  const profile = ragData.profile || ALL_PROFILES[queryType] || ALL_PROFILES.analytical;
-  const style = QUERY_TYPE_STYLES[queryType] || QUERY_TYPE_STYLES.analytical;
-  const filterPct = chunksRetrieved > 0 ? Math.round((chunksAfterFilter / chunksRetrieved) * 100) : 0;
-  const droppedChunks = chunksRetrieved - chunksAfterFilter;
+/* ─── Step Component ─── */
+function Step({ number, title, status, time, duration, children, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className="arag">
-      {/* ── Step 1: Classification Decision ── */}
-      <div className="arag-step">
-        <div className="arag-step-header">
-          <span className="arag-step-num" style={{ background: style.bg, color: style.color }}>1</span>
-          <span className="arag-step-title">Query Classification</span>
+    <div className={`ar-step ar-step--${status}`}>
+      <div className="ar-step-rail">
+        <div className={`ar-step-indicator ar-step-indicator--${status}`}>
+          {status === 'done' && <CheckIcon />}
+          {status === 'active' && <SpinnerIcon />}
+          {status === 'pending' && <span className="ar-step-num">{String(number).padStart(2, '0')}</span>}
         </div>
-        <div className="arag-step-body">
-          <div className="arag-classify-row">
-            <div className="arag-type-badge" style={{ background: style.bg, borderColor: style.color }}>
-              <span className="arag-type-icon">{style.icon}</span>
-              <span className="arag-type-label" style={{ color: style.color }}>{style.label}</span>
-            </div>
-            {reasoning && <p className="arag-reasoning">"{reasoning}"</p>}
-          </div>
-          {topics.length > 0 && (
-            <div className="arag-topics-row">
-              <span className="arag-micro-label">Extracted topics</span>
-              <div className="arag-topics">
-                {topics.map((t, i) => (
-                  <span key={i} className="arag-topic" style={{ borderColor: `${style.color}40` }}>{t}</span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="arag-step-connector" />
+        <div className="ar-step-line" />
       </div>
 
-      {/* ── Step 2: Strategy Selection ── */}
-      <div className="arag-step">
-        <div className="arag-step-header">
-          <span className="arag-step-num" style={{ background: style.bg, color: style.color }}>2</span>
-          <span className="arag-step-title">Strategy Selection</span>
-        </div>
-        <div className="arag-step-body">
-          <div className="arag-profiles">
-            {Object.entries(ALL_PROFILES).map(([type, prof]) => {
-              const isActive = type === queryType;
-              const s = QUERY_TYPE_STYLES[type];
-              return (
-                <div
-                  key={type}
-                  className={`arag-profile-card ${isActive ? 'active' : ''}`}
-                  style={isActive ? { borderColor: s.color, background: s.bg } : {}}
-                >
-                  {isActive && <span className="arag-profile-selected">SELECTED</span>}
-                  <span className="arag-profile-icon">{s.icon}</span>
-                  <span className="arag-profile-name">{type}</span>
-                  <div className="arag-profile-stats">
-                    <span>top_k: {prof.top_k}</span>
-                    <span>threshold: {prof.min_relevance}</span>
-                    <span>expand: {prof.expand ? '✓' : '✗'}</span>
-                  </div>
-                </div>
-              );
-            })}
+      <div className="ar-step-content">
+        <button className="ar-step-header" onClick={() => setOpen(!open)}>
+          <div className="ar-step-title-row">
+            <span className="ar-step-title">{title}</span>
           </div>
-          <div className="arag-strategy-summary">
-            <div className="arag-strat-item">
-              <span className="arag-strat-key">Chunks to retrieve</span>
-              <span className="arag-strat-val" style={{ color: style.color }}>{profile.top_k}</span>
-            </div>
-            <div className="arag-strat-item">
-              <span className="arag-strat-key">Min relevance</span>
-              <span className="arag-strat-val" style={{ color: style.color }}>{(profile.min_relevance * 100).toFixed(0)}%</span>
-            </div>
-            <div className="arag-strat-item">
-              <span className="arag-strat-key">Query expansion</span>
-              <span className="arag-strat-val" style={{ color: profile.expand ? '#10b981' : 'var(--athena-text-muted)' }}>
-                {profile.expand ? '✅ Enabled' : '— Disabled'}
-              </span>
-            </div>
-          </div>
-        </div>
-        <div className="arag-step-connector" />
-      </div>
-
-      {/* ── Step 3: Retrieval & Filtering ── */}
-      <div className="arag-step">
-        <div className="arag-step-header">
-          <span className="arag-step-num" style={{ background: style.bg, color: style.color }}>3</span>
-          <span className="arag-step-title">Retrieval & Filtering</span>
-        </div>
-        <div className="arag-step-body">
-          <div className="arag-pipeline-flow">
-            <div className="arag-pipe-node">
-              <div className="arag-pipe-value">{chunksRetrieved}</div>
-              <div className="arag-pipe-label">
-                {profile.expand ? 'expanded search' : 'retrieved'}
-              </div>
-            </div>
-            <div className="arag-pipe-arrow">
-              <span className="arag-pipe-arrow-line" />
-              <span className="arag-pipe-arrow-text">
-                ≥{(profile.min_relevance * 100).toFixed(0)}% filter
-              </span>
-              <span className="arag-pipe-arrow-line" />
-            </div>
-            <div className="arag-pipe-node result" style={{ borderColor: style.color }}>
-              <div className="arag-pipe-value" style={{ color: style.color }}>{chunksAfterFilter}</div>
-              <div className="arag-pipe-label">used by agents</div>
-            </div>
-          </div>
-          {droppedChunks > 0 && (
-            <p className="arag-filter-note">
-              🗑️ {droppedChunks} chunk{droppedChunks > 1 ? 's' : ''} dropped (below {(profile.min_relevance * 100).toFixed(0)}% relevance) — {filterPct}% pass rate
-            </p>
-          )}
-          {droppedChunks === 0 && chunksRetrieved > 0 && (
-            <p className="arag-filter-note arag-filter-pass">
-              ✅ All {chunksRetrieved} chunks passed relevance filter — 100% pass rate
-            </p>
-          )}
-        </div>
-        <div className="arag-step-connector" />
-      </div>
-
-      {/* ── Step 4: Source Relevance ── */}
-      {citations.length > 0 && (
-        <div className="arag-step last">
-          <div className="arag-step-header">
-            <span className="arag-step-num" style={{ background: style.bg, color: style.color }}>4</span>
-            <span className="arag-step-title">Source Relevance Scores</span>
-          </div>
-          <div className="arag-step-body">
-            <div className="arag-citations">
-              {citations.map((cite, i) => {
-                const score = cite.score ?? cite.relevance_score ?? 0;
-                const pct = Math.round(Math.max(0, Math.min(1, score)) * 100);
-                const barColor = pct >= 70 ? '#10b981' : pct >= 40 ? '#f59e0b' : '#ef4444';
-                return (
-                  <div key={i} className="arag-cite-row">
-                    <span className="arag-cite-rank" style={{ color: style.color }}>#{i + 1}</span>
-                    <span className="arag-cite-name" title={cite.heading ? `${cite.source} > ${cite.heading}` : cite.source}>
-                      {cite.heading || cite.source}
-                    </span>
-                    <div className="arag-cite-bar-bg">
-                      <div className="arag-cite-bar-fill" style={{ width: `${pct}%`, background: barColor }} />
-                    </div>
-                    <span className="arag-cite-score" style={{ color: barColor }}>{pct}%</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ─── RAG Sources (expandable) ─── */
-function RAGSources({ sources, chunks }) {
-  const [expandedSrc, setExpandedSrc] = useState({});
-  if (!sources?.length) return null;
-
-  return (
-    <div className="tl-rag-sources">
-      {sources.map((source, idx) => {
-        const isOpen = expandedSrc[idx];
-        const relevant = chunks?.filter(c => c.source === source) || [];
-        return (
-          <div key={idx} className={`tl-source ${isOpen ? 'open' : ''}`}>
-            <div className="tl-source-row" onClick={() => setExpandedSrc(p => ({ ...p, [idx]: !p[idx] }))}>
-              <span className="tl-source-icon">📄</span>
-              <span className="tl-source-name">{source}</span>
-              <span className={`tl-source-arrow ${isOpen ? 'open' : ''}`}>▾</span>
-            </div>
-            {isOpen && relevant.length > 0 && (
-              <div className="tl-source-preview">
-                {relevant.map((chunk, ci) => (
-                  <p key={ci}>{chunk.text || chunk.content || ''}</p>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ─── Self-Reflection Quality Review ─── */
-const CRITERIA_ICONS = {
-  Accuracy: '🎯',
-  Completeness: '📋',
-  Hallucination: '🔮',
-  Actionability: '⚡',
-  Clarity: '📝',
-};
-
-function SelfReflectionDisplay({ reflectionData }) {
-  if (!reflectionData || reflectionData.status !== 'complete') return null;
-
-  const { verdict, criteria = [], improvements_made, pass_count, total_criteria } = reflectionData;
-  const isImproved = verdict === 'improved';
-
-  return (
-    <div className="sreflect">
-      {/* Verdict banner */}
-      <div className={`sreflect-verdict ${isImproved ? 'improved' : 'pass'}`}>
-        <span className="sreflect-verdict-icon">{isImproved ? '🔧' : '✅'}</span>
-        <div className="sreflect-verdict-text">
-          <span className="sreflect-verdict-title">
-            {isImproved ? 'Response Improved' : 'Quality Verified'}
-          </span>
-          <span className="sreflect-verdict-detail">
-            {pass_count}/{total_criteria} checks passed
-            {isImproved && ' — issues were auto-corrected'}
-          </span>
-        </div>
-      </div>
-
-      {/* Criteria checklist */}
-      <div className="sreflect-criteria">
-        {criteria.map((c, i) => {
-          const passed = c.status === 'pass';
-          return (
-            <div key={i} className={`sreflect-criterion ${passed ? 'pass' : 'fail'}`}>
-              <span className="sreflect-criterion-icon">
-                {CRITERIA_ICONS[c.name] || '📌'}
-              </span>
-              <span className="sreflect-criterion-name">{c.name}</span>
-              <span className={`sreflect-criterion-badge ${passed ? 'pass' : 'fail'}`}>
-                {passed ? 'PASS' : 'FAIL'}
-              </span>
-              <span className="sreflect-criterion-note">{c.note}</span>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Improvements note */}
-      {isImproved && improvements_made && improvements_made !== 'none' && (
-        <div className="sreflect-improvements">
-          <span className="sreflect-improvements-label">Improvements made</span>
-          <p className="sreflect-improvements-text">{improvements_made}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ─── XAI / Explainability Display ─── */
-function XAIExplanationDisplay({ xaiData }) {
-  if (!xaiData || xaiData.status !== 'complete') return null;
-
-  const {
-    decision_factors = [],
-    agent_contributions = [],
-    confidence_scores = [],
-    overall_confidence = 75,
-    assumptions = [],
-    limitations = [],
-    counterfactuals = [],
-  } = xaiData;
-
-  const confColor = (c) => c >= 80 ? '#10b981' : c >= 60 ? '#f59e0b' : '#ef4444';
-  const factorIcon = (name) => {
-    const n = name.toLowerCase();
-    if (n.includes('historical') || n.includes('sales'))  return '📊';
-    if (n.includes('weather') || n.includes('climate'))   return '🌦️';
-    if (n.includes('holiday') || n.includes('festival'))  return '🎉';
-    if (n.includes('season'))                             return '🍂';
-    if (n.includes('forecast') || n.includes('predict'))  return '🔮';
-    if (n.includes('context') || n.includes('business'))  return '🏪';
-    if (n.includes('customer') || n.includes('behavior')) return '👥';
-    if (n.includes('domain') || n.includes('knowledge'))  return '📚';
-    return '📌';
-  };
-
-  return (
-    <div className="xai">
-      {/* ── Section 1: Decision Factors ── */}
-      {decision_factors.length > 0 && (
-        <div className="xai-section">
-          <div className="xai-section-header">
-            <span className="xai-section-icon">⚖️</span>
-            <span className="xai-section-title">Decision Factors</span>
-            <span className="xai-section-hint">What influenced this response</span>
-          </div>
-          <div className="xai-factors">
-            {decision_factors.sort((a, b) => (b.influence || 0) - (a.influence || 0)).map((f, i) => (
-              <div key={i} className="xai-factor">
-                <div className="xai-factor-top">
-                  <span className="xai-factor-icon">{factorIcon(f.factor)}</span>
-                  <span className="xai-factor-name">{f.factor}</span>
-                  <span className="xai-factor-pct" style={{ color: confColor(f.influence) }}>{f.influence}%</span>
-                </div>
-                <div className="xai-factor-bar-bg">
-                  <div
-                    className="xai-factor-bar"
-                    style={{ width: `${f.influence}%`, background: confColor(f.influence) }}
-                  />
-                </div>
-                {f.reasoning && <p className="xai-factor-reason">{f.reasoning}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Section 2: Agent Contributions ── */}
-      {agent_contributions.length > 0 && (
-        <div className="xai-section">
-          <div className="xai-section-header">
-            <span className="xai-section-icon">🤖</span>
-            <span className="xai-section-title">Agent Contributions</span>
-          </div>
-          <div className="xai-contributions">
-            {agent_contributions.map((ac, i) => (
-              <div key={i} className="xai-contrib">
-                <div className="xai-contrib-header">
-                  <span className="xai-contrib-name">{ac.agent}</span>
-                  <span className="xai-contrib-pct">{ac.influence_pct}%</span>
-                </div>
-                <div className="xai-contrib-bar-bg">
-                  <div
-                    className="xai-contrib-bar"
-                    style={{ width: `${ac.influence_pct}%` }}
-                  />
-                </div>
-                <p className="xai-contrib-desc">{ac.contribution}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Section 3: Confidence Scores ── */}
-      {confidence_scores.length > 0 && (
-        <div className="xai-section">
-          <div className="xai-section-header">
-            <span className="xai-section-icon">📈</span>
-            <span className="xai-section-title">Confidence Breakdown</span>
-            <span className="xai-overall-badge" style={{ background: `${confColor(overall_confidence)}20`, color: confColor(overall_confidence) }}>
-              {overall_confidence}% overall
+          <div className="ar-step-meta">
+            {duration && <span className="ar-duration">{duration}</span>}
+            {time && <span className="ar-time">{time}</span>}
+            <span className={`ar-chevron ${open ? 'open' : ''}`}>
+              <svg width="12" height="12" viewBox="0 0 12 12"><path d="M4 5l2 2 2-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none"/></svg>
             </span>
           </div>
-          <div className="xai-confidences">
-            {confidence_scores.map((cs, i) => (
-              <div key={i} className="xai-confidence">
-                <div className="xai-conf-top">
-                  <span className="xai-conf-topic">{cs.topic}</span>
-                  <span className="xai-conf-score" style={{ color: confColor(cs.confidence) }}>
-                    {cs.confidence}%
-                  </span>
-                </div>
-                <div className="xai-conf-bar-bg">
-                  <div
-                    className="xai-conf-bar"
-                    style={{ width: `${cs.confidence}%`, background: confColor(cs.confidence) }}
-                  />
-                </div>
-                {cs.reasoning && <p className="xai-conf-reason">{cs.reasoning}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        </button>
 
-      {/* ── Section 4: Assumptions & Limitations ── */}
-      {(assumptions.length > 0 || limitations.length > 0) && (
-        <div className="xai-section">
-          <div className="xai-two-col">
-            {assumptions.length > 0 && (
-              <div className="xai-col">
-                <div className="xai-col-header">
-                  <span className="xai-col-icon">💡</span>
-                  <span className="xai-col-title">Assumptions</span>
-                </div>
-                <ul className="xai-list">
-                  {assumptions.map((a, i) => <li key={i}>{a}</li>)}
-                </ul>
-              </div>
-            )}
-            {limitations.length > 0 && (
-              <div className="xai-col warn">
-                <div className="xai-col-header">
-                  <span className="xai-col-icon">⚠️</span>
-                  <span className="xai-col-title">Limitations</span>
-                </div>
-                <ul className="xai-list">
-                  {limitations.map((l, i) => <li key={i}>{l}</li>)}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+        {open && children && (
+          <div className="ar-step-body">{children}</div>
+        )}
+      </div>
+    </div>
+  );
+}
 
-      {/* ── Section 5: Counterfactual Scenarios ── */}
-      {counterfactuals.length > 0 && (
-        <div className="xai-section">
-          <div className="xai-section-header">
-            <span className="xai-section-icon">🔀</span>
-            <span className="xai-section-title">What-If Scenarios</span>
-          </div>
-          <div className="xai-counterfactuals">
-            {counterfactuals.map((cf, i) => (
-              <div key={i} className="xai-cf">
-                <div className="xai-cf-scenario">
-                  <span className="xai-cf-label">If</span>
-                  <span className="xai-cf-text">{cf.scenario}</span>
-                </div>
-                <div className="xai-cf-impact">
-                  <span className="xai-cf-label">Then</span>
-                  <span className="xai-cf-text">{cf.impact}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+/* ─── Thought Entry (agent sub-step) ─── */
+function ThoughtEntry({ label, text, time }) {
+  return (
+    <div className="ar-thought">
+      <div className="ar-thought-header">
+        <span className="ar-thought-dot" />
+        <span className="ar-thought-label">{label}</span>
+        {time && <span className="ar-thought-time">{time}</span>}
+      </div>
+      <div className="ar-thought-body">
+        <Content text={text} />
+      </div>
     </div>
   );
 }
@@ -629,20 +176,17 @@ function AgentThoughtsPanel({
 }) {
   const [elapsed, setElapsed] = useState('');
   const endRef = useRef(null);
-  const panelRef = useRef(null);
 
   const runStart = events.find(e => e.type === 'run_start')?.timestamp;
   const runEnd = events.find(e => e.type === 'run_end')?.timestamp;
   const isComplete = !!runEnd;
 
-  // Auto-scroll to latest event
   useEffect(() => {
     if (isLoading && endRef.current) {
       endRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
   }, [events, isLoading]);
 
-  // Live elapsed timer
   useEffect(() => {
     let iv;
     if (isLoading && runStart) {
@@ -651,8 +195,7 @@ function AgentThoughtsPanel({
     return () => clearInterval(iv);
   }, [isLoading, runStart]);
 
-  // ── Build timeline from events ──
-  const buildTimeline = () => {
+  const timeline = useMemo(() => {
     const agents = {};
     const completedSet = new Set();
     let activeAgent = null;
@@ -678,10 +221,9 @@ function AgentThoughtsPanel({
           break;
         case 'tool_start': {
           if (!agents[a]) agents[a] = { thoughts: [], completed: false, duration: null };
-          const toolName = event.data?.tool_name || 'tool';
           agents[a].thoughts.push({
             phase: 'data_query',
-            text: `Invoking ${toolName}\n${event.content || ''}`,
+            text: `Invoking ${event.data?.tool_name || 'tool'}\n${event.content || ''}`,
             timestamp: event.timestamp,
           });
           break;
@@ -709,244 +251,320 @@ function AgentThoughtsPanel({
 
     const ragEvents = events.filter(e => e.type === 'rag_retrieval');
     const ragComplete = ragEvents.find(e => e.data?.chunks_retrieved);
-
-    const reflectionEvents = events.filter(e => e.type === 'self_reflection');
-    const reflectionComplete = reflectionEvents.find(e => e.data?.status === 'complete');
-
     const xaiEvents = events.filter(e => e.type === 'xai_explanation');
     const xaiComplete = xaiEvents.find(e => e.data?.status === 'complete');
 
-    // Step counter
-    let stepCount = 0;
-    if (routingReasoning) stepCount++;
-    if (ragEvents.length > 0) stepCount++;
-    stepCount += Object.keys(agents).length;
-    if (reflectionEvents.length > 0) stepCount++;
-    if (xaiEvents.length > 0) stepCount++;
-    if (isComplete) stepCount++;
+    return { agents, completedSet, activeAgent, ragEvents, ragComplete, xaiEvents, xaiComplete };
+  }, [events]);
 
-    let currentStep = 0;
-    if (routingReasoning) currentStep++;
-    if (ragComplete) currentStep++;
-    currentStep += completedSet.size;
-    if (reflectionComplete) currentStep++;
-    if (xaiComplete) currentStep++;
-    if (isComplete) currentStep++;
-
-    return { agents, completedSet, activeAgent, ragEvents, ragComplete, reflectionEvents, reflectionComplete, xaiEvents, xaiComplete, stepCount, currentStep };
-  };
-
-  const { agents, completedSet, activeAgent, ragEvents, ragComplete, reflectionEvents, reflectionComplete, xaiEvents, xaiComplete, stepCount, currentStep } = buildTimeline();
+  const { agents, completedSet, activeAgent, ragEvents, ragComplete, xaiEvents, xaiComplete } = timeline;
   const hasContent = events.length > 0 || routingReasoning || agentsNeeded.length > 0;
 
-  const routerSummary = agentsNeeded.length > 0
-    ? `Analyzed query → ${agentsNeeded.length} specialist${agentsNeeded.length > 1 ? 's' : ''} assigned`
-    : '';
-
-  const ragQueryType = ragComplete?.data?.query_type;
-  const ragTopics = ragComplete?.data?.topics || [];
-  const ragChunksAfterFilter = ragComplete?.data?.chunks_after_filter ?? ragComplete?.data?.chunks_retrieved;
-  const ragSummary = ragComplete
-    ? `${ragQueryType ? `[${ragQueryType}] ` : ''}Retrieved ${ragChunksAfterFilter} chunks from ${ragComplete.data.source_documents?.length || 0} sources`
-    : ragEvents.length > 0 ? 'Classifying query & searching…' : '';
+  let stepNum = 0;
 
   return (
-    <div className={`tl-panel ${isOpen ? 'open' : ''}`} ref={panelRef}>
+    <div className={`ar-panel ${isOpen ? 'open' : ''}`}>
       {isOpen && (
         <>
-          {/* ── Header ── */}
-          <div className="tl-header">
-            <div className="tl-header-left">
-              <h3 className="tl-title">AI Reasoning</h3>
-              {stepCount > 0 && (
-                <span className="tl-step-counter">
-                  Step {Math.min(currentStep + (isLoading && !isComplete ? 1 : 0), stepCount)} of {stepCount}
-                </span>
+          {/* Header */}
+          <div className="ar-header">
+            <div className="ar-header-left">
+              <h3 className="ar-title">AI Reasoning</h3>
+              {isLoading && !isComplete && (
+                <div className="ar-status">
+                  <span className="ar-status-dot" />
+                  <span className="ar-status-text">Processing{elapsed ? ` · ${elapsed}` : ''}</span>
+                </div>
+              )}
+              {isComplete && (
+                <div className="ar-status ar-status--done">
+                  <span className="ar-status-text">Completed in {fmtElapsed(runStart, runEnd)}</span>
+                </div>
               )}
             </div>
-            <div className="tl-header-actions">
-              {hasContent && <button className="tl-btn" onClick={onClear}>Clear</button>}
-              <button className="tl-btn close" onClick={onClose}>✕</button>
+            <div className="ar-header-actions">
+              {hasContent && <button className="ar-btn" onClick={onClear}>Clear</button>}
+              <button className="ar-btn ar-btn--close" onClick={onClose}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M4 4l6 6M10 4l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              </button>
             </div>
           </div>
 
-          {/* ── Content ── */}
-          <div className="tl-content">
+          {/* Progress bar */}
+          {isLoading && !isComplete && (
+            <div className="ar-progress">
+              <div className="ar-progress-bar" />
+            </div>
+          )}
+
+          {/* Content */}
+          <div className="ar-content">
             {!hasContent && !isLoading ? (
-              <div className="tl-empty">
-                <div className="tl-empty-icon">🔮</div>
-                <p className="tl-empty-title">No active reasoning</p>
-                <p className="tl-empty-hint">Ask ATHENA a question to see how it thinks</p>
+              <div className="ar-empty">
+                <div className="ar-empty-icon">
+                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                    <rect x="4" y="8" width="32" height="24" rx="3" stroke="currentColor" strokeWidth="1.5"/>
+                    <path d="M12 16h16M12 20h10M12 24h13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <p className="ar-empty-title">No active reasoning</p>
+                <p className="ar-empty-hint">Ask ATHENA a question to see the step-by-step process</p>
               </div>
             ) : (
-              <div className="tl-timeline">
-                {/* Progress banner */}
-                {isLoading && (
-                  <div className="tl-progress">
-                    <div className="tl-progress-info">
-                      <span className="tl-progress-label">Processing</span>
-                      {elapsed && <span className="tl-progress-time">{elapsed}</span>}
-                    </div>
-                    <div className="tl-progress-bar">
-                      <div className="tl-progress-fill" />
-                    </div>
-                  </div>
-                )}
+              <div className="ar-timeline">
 
-                {/* Phase 1: Query Analysis */}
-                {routingReasoning && (
-                  <TimelineStep
-                    icon="🧠"
-                    label="Query Analysis"
-                    timestamp={events.find(e => e.type === 'query_analysis')?.timestamp}
-                    isCompleted={true}
-                    accentColor="#818cf8"
-                    summary={routerSummary}
-                    isLast={!ragEvents.length && Object.keys(agents).length === 0 && !isComplete}
-                  >
-                    <FormatContent text={routingReasoning} />
-                    {agentsNeeded.length > 0 && (
-                      <div className="tl-agent-pills">
-                        <span className="tl-pills-label">Specialists assigned</span>
-                        <div className="tl-pills">
-                          {agentsNeeded.map((agent, i) => (
-                            <span key={i} className="tl-pill">{agent}</span>
-                          ))}
+                {/* Step: Query Analysis */}
+                {routingReasoning && (() => {
+                  stepNum++;
+                  return (
+                    <Step
+                      number={stepNum}
+                      title="Query Analysis"
+                      status="done"
+                      time={fmtTime(events.find(e => e.type === 'query_analysis')?.timestamp)}
+                    >
+                      <Content text={routingReasoning} />
+                      {agentsNeeded.length > 0 && (
+                        <div className="ar-agents-assigned">
+                          <span className="ar-label">Specialists assigned</span>
+                          <div className="ar-tags">
+                            {agentsNeeded.map((agent, i) => (
+                              <span key={i} className="ar-tag ar-tag--accent">{agent}</span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </TimelineStep>
-                )}
+                      )}
+                    </Step>
+                  );
+                })()}
 
-                {/* Phase 2: Knowledge Retrieval */}
-                {ragEvents.length > 0 && (
-                  <TimelineStep
-                    icon="📚"
-                    label="Adaptive Knowledge Retrieval"
-                    timestamp={ragEvents[0]?.timestamp}
-                    duration={ragComplete ? `${ragChunksAfterFilter} chunks` : null}
-                    isActive={!ragComplete && isLoading}
-                    isCompleted={!!ragComplete}
-                    accentColor="#f59e0b"
-                    summary={ragSummary}
-                    isLast={Object.keys(agents).length === 0 && !isComplete}
-                  >
-                    {ragComplete ? (
-                      <>
-                        <AdaptiveRAGDisplay ragData={ragComplete.data} />
-                        <RAGSources
-                          sources={ragComplete.data.source_documents || []}
-                          chunks={ragComplete.data.chunks || []}
-                        />
-                      </>
-                    ) : (
-                      <p className="tl-text">Classifying query and searching domain knowledge base…</p>
-                    )}
-                  </TimelineStep>
-                )}
-
-                {/* Phase 3+: Agent execution */}
-                {Object.entries(agents).map(([name, data], idx, arr) => {
-                  const isLast = idx === arr.length - 1 && !isComplete;
-                  const isAgentActive = activeAgent === name;
-                  const isAgentDone = completedSet.has(name);
+                {/* Step: Knowledge Retrieval */}
+                {ragEvents.length > 0 && (() => {
+                  stepNum++;
+                  const ragStatus = ragComplete ? 'done' : (isLoading ? 'active' : 'pending');
+                  const ragData = ragComplete?.data;
 
                   return (
-                    <TimelineStep
+                    <Step
+                      number={stepNum}
+                      title="Knowledge Retrieval"
+                      status={ragStatus}
+                      time={fmtTime(ragEvents[0]?.timestamp)}
+                      duration={ragComplete ? `${ragData?.chunks_after_filter ?? ragData?.chunks_retrieved} chunks` : null}
+                    >
+                      {ragComplete ? (
+                        <div className="ar-rag">
+                          {ragData?.query_type && (
+                            <div className="ar-rag-row">
+                              <span className="ar-label">Query type</span>
+                              <span className="ar-tag ar-tag--accent">{ragData.query_type}</span>
+                              {ragData.classification_reasoning && (
+                                <p className="ar-muted">{ragData.classification_reasoning}</p>
+                              )}
+                            </div>
+                          )}
+
+                          {ragData?.topics?.length > 0 && (
+                            <div className="ar-rag-row">
+                              <span className="ar-label">Topics</span>
+                              <div className="ar-tags">
+                                {ragData.topics.map((t, i) => <span key={i} className="ar-tag">{t}</span>)}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="ar-rag-stats">
+                            <div className="ar-stat">
+                              <span className="ar-stat-value">{ragData?.chunks_retrieved ?? 0}</span>
+                              <span className="ar-stat-label">Retrieved</span>
+                            </div>
+                            <div className="ar-stat-arrow">→</div>
+                            <div className="ar-stat">
+                              <span className="ar-stat-value ar-stat-value--accent">{ragData?.chunks_after_filter ?? ragData?.chunks_retrieved ?? 0}</span>
+                              <span className="ar-stat-label">After filter</span>
+                            </div>
+                            <div className="ar-stat">
+                              <span className="ar-stat-value">{ragData?.source_documents?.length || 0}</span>
+                              <span className="ar-stat-label">Sources</span>
+                            </div>
+                          </div>
+
+                          {ragData?.citations?.length > 0 && (
+                            <div className="ar-citations">
+                              <span className="ar-label">Source relevance</span>
+                              {ragData.citations.map((cite, i) => {
+                                const score = cite.score ?? cite.relevance_score ?? 0;
+                                const pct = Math.round(Math.max(0, Math.min(1, score)) * 100);
+                                return (
+                                  <div key={i} className="ar-cite">
+                                    <span className="ar-cite-name">{cite.heading || cite.source}</span>
+                                    <div className="ar-cite-bar">
+                                      <div className="ar-cite-fill" style={{ width: `${pct}%` }} />
+                                    </div>
+                                    <span className="ar-cite-score">{pct}%</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="ar-text">Searching knowledge base…</p>
+                      )}
+                    </Step>
+                  );
+                })()}
+
+                {/* Steps: Agent Execution */}
+                {Object.entries(agents).map(([name, data]) => {
+                  stepNum++;
+                  const isAgentActive = activeAgent === name;
+                  const isAgentDone = completedSet.has(name);
+                  const status = isAgentDone ? 'done' : (isAgentActive ? 'active' : 'pending');
+
+                  return (
+                    <Step
                       key={name}
-                      icon="🤖"
-                      label={cleanAgentName(name)}
-                      timestamp={data.startTime || data.thoughts[0]?.timestamp}
+                      number={stepNum}
+                      title={cleanAgentName(name)}
+                      status={status}
+                      time={fmtTime(data.startTime || data.thoughts[0]?.timestamp)}
                       duration={isAgentDone && data.duration ? fmtDuration(data.duration) : null}
-                      isActive={isAgentActive}
-                      isCompleted={isAgentDone}
-                      accentColor="#10b981"
-                      summary={isAgentDone ? `Completed in ${fmtDuration(data.duration)}` : 'Processing…'}
-                      isLast={isLast}
                     >
                       {data.thoughts.map((thought, ti) => (
-                        <SubStep
+                        <ThoughtEntry
                           key={ti}
-                          phase={thought.phase}
+                          label={THOUGHT_LABELS[thought.phase] || thought.phase || 'Step'}
                           text={thought.text}
-                          timestamp={thought.timestamp}
-                          isLast={ti === data.thoughts.length - 1}
+                          time={fmtTime(thought.timestamp)}
                         />
                       ))}
-                    </TimelineStep>
+                    </Step>
                   );
                 })}
 
-                {/* Phase 4: Self-Reflection Quality Review */}
-                {reflectionEvents.length > 0 && (
-                  <TimelineStep
-                    icon="🪞"
-                    label="Self-Reflection"
-                    timestamp={reflectionEvents[0]?.timestamp}
-                    isActive={!reflectionComplete && isLoading}
-                    isCompleted={!!reflectionComplete}
-                    accentColor="#f472b6"
-                    summary={
-                      reflectionComplete
-                        ? `${reflectionComplete.data.pass_count}/${reflectionComplete.data.total_criteria} quality checks passed`
-                        : 'Reviewing response quality…'
-                    }
-                    isLast={!isComplete}
-                  >
-                    {reflectionComplete ? (
-                      <SelfReflectionDisplay reflectionData={reflectionComplete.data} />
-                    ) : (
-                      <p className="tl-text">Verifying accuracy, completeness, and quality…</p>
-                    )}
-                  </TimelineStep>
-                )}
+                {/* Step: Explainability */}
+                {xaiEvents.length > 0 && (() => {
+                  stepNum++;
+                  const xaiStatus = xaiComplete ? 'done' : (isLoading ? 'active' : 'pending');
+                  const xd = xaiComplete?.data;
 
-                {/* Phase 5: XAI / Explainability */}
-                {xaiEvents.length > 0 && (
-                  <TimelineStep
-                    icon="🔬"
-                    label="Explainability Analysis"
-                    timestamp={xaiEvents[0]?.timestamp}
-                    isActive={!xaiComplete && isLoading}
-                    isCompleted={!!xaiComplete}
-                    accentColor="#06b6d4"
-                    summary={
-                      xaiComplete
-                        ? `${xaiComplete.data.overall_confidence}% overall confidence · ${xaiComplete.data.decision_factors?.length || 0} factors analyzed`
-                        : 'Decomposing decision-making process…'
-                    }
-                    isLast={!isComplete}
-                  >
-                    {xaiComplete ? (
-                      <XAIExplanationDisplay xaiData={xaiComplete.data} />
-                    ) : (
-                      <p className="tl-text">Analyzing decision factors, confidence levels, and assumptions…</p>
-                    )}
-                  </TimelineStep>
-                )}
+                  return (
+                    <Step
+                      number={stepNum}
+                      title="Explainability Analysis"
+                      status={xaiStatus}
+                      time={fmtTime(xaiEvents[0]?.timestamp)}
+                    >
+                      {xaiComplete ? (
+                        <div className="ar-xai">
+                          {xd?.overall_confidence != null && (
+                            <div className="ar-xai-confidence">
+                              <span className="ar-label">Overall confidence</span>
+                              <div className="ar-confidence-meter">
+                                <div className="ar-confidence-fill" style={{ width: `${xd.overall_confidence}%` }} />
+                                <span className="ar-confidence-value">{xd.overall_confidence}%</span>
+                              </div>
+                            </div>
+                          )}
 
-                {/* Final: Completion step */}
-                {isComplete && (
-                  <TimelineStep
-                    icon="✅"
-                    label="Analysis Complete"
-                    isCompleted={true}
-                    accentColor="#22c55e"
-                    isLast={true}
-                  >
-                    <div className="tl-complete-info">
-                      <span className="tl-complete-label">Total processing time</span>
-                      <span className="tl-complete-time">{fmtElapsed(runStart, runEnd)}</span>
-                    </div>
-                  </TimelineStep>
-                )}
+                          {xd?.decision_factors?.length > 0 && (
+                            <div className="ar-xai-section">
+                              <span className="ar-label">Decision factors</span>
+                              {xd.decision_factors
+                                .sort((a, b) => (b.influence || 0) - (a.influence || 0))
+                                .map((f, i) => (
+                                  <div key={i} className="ar-factor">
+                                    <div className="ar-factor-header">
+                                      <span className="ar-factor-name">{f.factor}</span>
+                                      <span className="ar-factor-pct">{f.influence}%</span>
+                                    </div>
+                                    <div className="ar-factor-bar">
+                                      <div className="ar-factor-fill" style={{ width: `${f.influence}%` }} />
+                                    </div>
+                                    {f.reasoning && <p className="ar-muted ar-small">{f.reasoning}</p>}
+                                  </div>
+                                ))}
+                            </div>
+                          )}
 
-                {/* Thinking dots */}
+                          {xd?.agent_contributions?.length > 0 && (
+                            <div className="ar-xai-section">
+                              <span className="ar-label">Agent contributions</span>
+                              {xd.agent_contributions.map((ac, i) => (
+                                <div key={i} className="ar-factor">
+                                  <div className="ar-factor-header">
+                                    <span className="ar-factor-name">{ac.agent}</span>
+                                    <span className="ar-factor-pct">{ac.influence_pct}%</span>
+                                  </div>
+                                  <div className="ar-factor-bar ar-factor-bar--cyan">
+                                    <div className="ar-factor-fill" style={{ width: `${ac.influence_pct}%` }} />
+                                  </div>
+                                  {ac.contribution && <p className="ar-muted ar-small">{ac.contribution}</p>}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {(xd?.assumptions?.length > 0 || xd?.limitations?.length > 0) && (
+                            <div className="ar-xai-grid">
+                              {xd.assumptions?.length > 0 && (
+                                <div className="ar-xai-col">
+                                  <span className="ar-label">Assumptions</span>
+                                  <ul className="ar-simple-list">
+                                    {xd.assumptions.map((a, i) => <li key={i}>{a}</li>)}
+                                  </ul>
+                                </div>
+                              )}
+                              {xd.limitations?.length > 0 && (
+                                <div className="ar-xai-col ar-xai-col--warn">
+                                  <span className="ar-label">Limitations</span>
+                                  <ul className="ar-simple-list">
+                                    {xd.limitations.map((l, i) => <li key={i}>{l}</li>)}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {xd?.counterfactuals?.length > 0 && (
+                            <div className="ar-xai-section">
+                              <span className="ar-label">What-if scenarios</span>
+                              {xd.counterfactuals.map((cf, i) => (
+                                <div key={i} className="ar-whatif">
+                                  <p className="ar-whatif-if"><strong>If</strong> {cf.scenario}</p>
+                                  <p className="ar-whatif-then"><strong>Then</strong> {cf.impact}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="ar-text">Analyzing decision factors…</p>
+                      )}
+                    </Step>
+                  );
+                })()}
+
+                {/* Final: Complete */}
+                {isComplete && (() => {
+                  stepNum++;
+                  return (
+                    <Step
+                      number={stepNum}
+                      title="Complete"
+                      status="done"
+                      duration={fmtElapsed(runStart, runEnd)}
+                    >
+                      <p className="ar-text">All steps completed successfully.</p>
+                    </Step>
+                  );
+                })()}
+
+                {/* Loading indicator */}
                 {isLoading && !isComplete && (
-                  <div className="tl-thinking">
-                    <span className="tl-thinking-dot" />
-                    <span className="tl-thinking-dot" />
-                    <span className="tl-thinking-dot" />
+                  <div className="ar-loading">
+                    <span /><span /><span />
                   </div>
                 )}
 

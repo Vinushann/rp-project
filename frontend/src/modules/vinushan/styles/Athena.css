@@ -193,7 +193,8 @@
 }
 
 .athena-chat-section.with-reasoning {
-  flex: 0 0 60%;
+  flex: 1;
+  min-width: 0;
 }
 
 /* Chat Header */
@@ -812,7 +813,7 @@
 }
 
 .athena-msg.user-msg {
-  background: var(--athena-primary);
+  background: #22c55e;
   color: #ffffff;
   margin-left: 80px;
   border-bottom-right-radius: 4px;
