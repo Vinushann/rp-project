@@ -1,0 +1,541 @@
+{
+  "metadata": {
+    "timestamp": "2026-03-05T16:26:17.737445",
+    "endpoint": "http://127.0.0.1:8000/api/v1/vinushan/chat",
+    "total_questions": 20,
+    "system_version": "pre-rag-baseline"
+  },
+  "results": [
+    {
+      "id": 1,
+      "category": "historical",
+      "difficulty": "simple",
+      "question": "What were the top selling items last March?",
+      "expected_agents": [
+        "historical"
+      ],
+      "actual_agents": [
+        "historical"
+      ],
+      "success": true,
+      "latency_seconds": 19.07,
+      "answer_length": 745,
+      "answer_preview": "The top selling items in March were:\n\n- **Sweet Burger 12**\n  - Monthly Quantity Sold: 36\n  - Average Daily Quantity: 6.0\n  - Average Ticket: $1,767.85\n  - Average Discount: 3.6%\n\n- **Veggie Roll**\n  - Monthly Quantity Sold: 28\n  - Average Daily Quantity: 2.55\n  - Average Ticket: $1,558.47\n  - Average Discount: 12.9%\n\n- **Zesty Pasta 9**\n  - Monthly Quantity Sold: 23\n  - Average Daily Quantity: 3.29\n  - Average Ticket: $2,766.69\n  - Average Discount: 17.5%\n\n- **Sweet Chicken 19**\n  - Monthly Qua",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is a business inquiry about past sales data, specifically focusing on the top-selling items from last March. This requires analysis of historical sales data.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a comprehensive list of the top selling items from March, including detailed sales metrics for each item."
+    },
+    {
+      "id": 2,
+      "category": "historical",
+      "difficulty": "simple",
+      "question": "Which items have been declining in sales over the past 6 months?",
+      "expected_agents": [
+        "historical"
+      ],
+      "actual_agents": [
+        "historical"
+      ],
+      "success": true,
+      "latency_seconds": 22.93,
+      "answer_length": 640,
+      "answer_preview": "- **Items Declining in Sales Over the Past 6 Months:**\n  - **Spicy Chicken 9**\n    - Avg Daily Qty: 2.0\n    - Monthly Qty: 2\n    - Avg Ticket: $2789.49\n    - Avg Discount: 50%\n  - **Veggie Pasta 19**\n    - Avg Daily Qty: 3.0\n    - Monthly Qty: 6\n    - Avg Ticket: $5352.37\n    - Avg Discount: 49.9%\n  - **Spicy Roll 9**\n    - Avg Daily Qty: 3.0\n    - Monthly Qty: 9\n    - Avg Ticket: $1683.28\n    - Avg Discount: 34.1%\n  - **Classic Roll**\n    - Avg Daily Qty: 2.0\n    - Monthly Qty: 2\n    - Avg Tick",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is a business inquiry about declining sales items over the past 6 months, which requires analysis of historical sales data.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a comprehensive list of items declining in sales, along with relevant details such as average daily quantity, monthly quantity, average ticket, and average discount."
+    },
+    {
+      "id": 3,
+      "category": "historical",
+      "difficulty": "simple",
+      "question": "Show me the discount patterns from last December",
+      "expected_agents": [
+        "historical"
+      ],
+      "actual_agents": [
+        "historical"
+      ],
+      "success": true,
+      "latency_seconds": 30.52,
+      "answer_length": 1753,
+      "answer_preview": "**Discount Patterns from Last December:**\n\n- **Top Discounted Items:**\n  - **Sweet Pasta 12**\n    - Avg Daily Quantity: 3.0\n    - Monthly Quantity: 3\n    - Avg Ticket: $2024.79\n    - Avg Discount: 50%\n  \n  - **Spicy Pizza 9**\n    - Avg Daily Quantity: 1.0\n    - Monthly Quantity: 1\n    - Avg Ticket: $965.26\n    - Avg Discount: 50%\n  \n  - **Deluxe Pizza 22**\n    - Avg Daily Quantity: 1.0\n    - Monthly Quantity: 1\n    - Avg Ticket: $186.50\n    - Avg Discount: 50%\n  \n  - **Zesty Burger**\n    - Avg D",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is a business inquiry specifically asking for discount patterns from last December, which requires analysis of past sales data. Therefore, the 'historical' agent is needed to provide insights on discount patterns.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a comprehensive overview of discount patterns from last December, including detailed information on top discounted items and their sales metrics."
+    },
+    {
+      "id": 4,
+      "category": "forecasting",
+      "difficulty": "simple",
+      "question": "How much will I sell next month?",
+      "expected_agents": [
+        "forecasting"
+      ],
+      "actual_agents": [
+        "forecasting"
+      ],
+      "success": true,
+      "latency_seconds": 29.28,
+      "answer_length": 1024,
+      "answer_preview": "- **Total Expected Sales for April 2026**: 150.08 units  \n- **Busiest Predicted Days**:  \n  - April 27, 2026: Expected sales of 8.06 units (range: 0 to 22.2)  \n  - April 28, 2026: Expected sales of 7.94 units (range: 0 to 22.51)  \n  - Other notable days: April 6, April 20, and April 21 (exact numbers not specified)  \n- **Confidence Intervals**: The predictions for the busiest days indicate a significant range of uncertainty, suggesting variability in actual sales.  \n- **Recommendations**:  \n  - ",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is a business question that requires forecasting future sales for next month. Therefore, the forecasting agent is needed to predict future demand.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a comprehensive forecast for sales next month, including total expected sales, specific busy days, confidence intervals, actionable recommendations, and model accuracy metrics."
+    },
+    {
+      "id": 5,
+      "category": "forecasting",
+      "difficulty": "simple",
+      "question": "What are the predicted busiest days in the next 2 weeks?",
+      "expected_agents": [
+        "forecasting"
+      ],
+      "actual_agents": [
+        "forecasting"
+      ],
+      "success": true,
+      "latency_seconds": 22.32,
+      "answer_length": 730,
+      "answer_preview": "The predicted busiest days in the next 2 weeks are as follows:\n\n- **April 27, 2026**: Expected quantity of **8.06** (yhat)  \n  - Confidence Interval: **0 to 21.61**\n  \n- **April 28, 2026**: Expected quantity of **7.94** (yhat)  \n  - Confidence Interval: **0 to 21.03**\n\n- **April 6, 2026**: Expected quantity of **5.31** (yhat)  \n- **April 20, 2026**: Expected quantity of **5.04** (yhat)  \n- **April 21, 2026**: Expected quantity of **4.67** (yhat)  \n\n**Actionable Recommendations**:  \n- Increase st",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is a business-related inquiry about predicting the busiest days in the next two weeks, which requires forecasting analysis.",
+      "judge_score": 3,
+      "judge_justification": "The answer provides some relevant predictions for busy days but includes incorrect dates and lacks clarity on the overall context."
+    },
+    {
+      "id": 6,
+      "category": "forecasting",
+      "difficulty": "medium",
+      "question": "Forecast daily demand for July 2025",
+      "expected_agents": [
+        "forecasting"
+      ],
+      "actual_agents": [
+        "forecasting"
+      ],
+      "success": true,
+      "latency_seconds": 42.82,
+      "answer_length": 777,
+      "answer_preview": "- **Forecasted Daily Demand for July 2025**:  \n  - **Total Quantity**: 421.47 units for the month  \n  - **Average Daily Demand**: Approximately 14.05 units (421.47 units / 30 days)  \n  - **Busiest Days**:  \n    - July 10: Highest demand expected  \n    - July 11: Second highest demand  \n    - July 9, July 1, July 7: Other significant demand days  \n- **Confidence Intervals**:  \n  - Lower Bound: 0 units  \n  - Upper Bound: 22.8 units  \n- **Model Metrics**:  \n  - Mean Absolute Error (MAE): 7.94  \n  -",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is a business-related inquiry about forecasting daily demand for a specific month in the future, which requires predictive analysis.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a comprehensive forecast with detailed daily demand, key metrics, and actionable recommendations."
+    },
+    {
+      "id": 7,
+      "category": "holiday",
+      "difficulty": "simple",
+      "question": "How do Poya days affect my sales?",
+      "expected_agents": [
+        "holiday"
+      ],
+      "actual_agents": [
+        "holiday"
+      ],
+      "success": true,
+      "latency_seconds": 21.35,
+      "answer_length": 969,
+      "answer_preview": "- **Bak Full Moon Poya Day**: Sales increase by **7.86%**. Recommended action: Stock up and highlight best sellers.\n- **Day Before Sinhala and Tamil New Year**: Sales decrease by **3.21%**. Recommended action: Monitor closely; keep standard operations.\n- **Eid al-Fitr**: No effect on sales (**0.0%**). Recommended action: Monitor closely; keep standard operations.\n- **Good Friday**: Sales decrease by **1.4%**. Recommended action: Monitor closely; keep standard operations.\n- **Sinhala and Tamil Ne",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is about how Poya days affect sales, which requires an analysis of the impact of specific days on sales performance. Therefore, the holiday agent is needed to analyze the effects of Poya days on sales.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides specific sales data for various Poya days, actionable recommendations, and a clear summary of the overall impact on sales."
+    },
+    {
+      "id": 8,
+      "category": "holiday",
+      "difficulty": "simple",
+      "question": "What impact do holidays have on coffee shop sales in April?",
+      "expected_agents": [
+        "holiday"
+      ],
+      "actual_agents": [
+        "holiday"
+      ],
+      "success": true,
+      "latency_seconds": 20.58,
+      "answer_length": 921,
+      "answer_preview": "- **Bak Full Moon Poya Day**: Sales increase by **7.86%** (Action: Stock up and highlight best sellers).\n- **Day Before Sinhala and Tamil New Year**: Sales decrease by **3.21%** (Action: Monitor closely; keep standard operations).\n- **Eid al-Fitr**: No impact on sales (**0.0%**) (Action: Monitor closely; keep standard operations).\n- **Good Friday**: Sales decrease by **1.4%** (Action: Monitor closely; keep standard operations).\n- **Sinhala and Tamil New Year**: Sales increase by **1.41%** (Actio",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is a business inquiry about the impact of holidays on sales specifically in April, which requires analysis of holiday effects on sales.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a detailed analysis of the impact of specific holidays on coffee shop sales in April, including percentage changes and actionable recommendations."
+    },
+    {
+      "id": 9,
+      "category": "weather",
+      "difficulty": "simple",
+      "question": "How does rainy weather affect my sales?",
+      "expected_agents": [
+        "weather"
+      ],
+      "actual_agents": [
+        "weather"
+      ],
+      "success": true,
+      "latency_seconds": 27.1,
+      "answer_length": 770,
+      "answer_preview": "- Rainy weather has a minimal impact on sales:\n  - Food pastries: Decrease of approximately 2.1% in sales.\n  - \"Other\" category (beverages and snacks): Decrease of about 1.54%.\n  \n- Temperature effects on drink sales are stable:\n  - Food pastries: \n    - Cool temperatures: Average sales of 2.62.\n    - Warm temperatures: Average sales of 2.78.\n    - Hot temperatures: Average sales of 2.39.\n  - \"Other\" category:\n    - Cool temperatures: Average sales of 2.39.\n    - Warm temperatures: Average sales",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is a business question that seeks to understand the impact of rainy weather on sales. Therefore, the weather agent is needed to analyze this specific effect.",
+      "judge_score": 4,
+      "judge_justification": "The answer provides relevant details about the impact of rainy weather on sales, including specific percentages and recommendations, but could be more concise."
+    },
+    {
+      "id": 10,
+      "category": "weather",
+      "difficulty": "simple",
+      "question": "What happens to cold drink sales when temperature rises?",
+      "expected_agents": [
+        "weather"
+      ],
+      "actual_agents": [
+        "weather"
+      ],
+      "success": true,
+      "latency_seconds": 54.38,
+      "answer_length": 646,
+      "answer_preview": "- As the temperature rises, cold drink sales increase significantly.\n- For every 5\u00b0F increase in temperature, cold drink sales rise by approximately 15%.\n- In month 4, when the average temperature was 75\u00b0F, cold drink sales were 20% higher compared to the previous month (average temperature of 65\u00b0F).\n- Specifically, cold drink sales reached 10,000 units in month 4, compared to 8,500 units in month 3.\n- Additionally, on days when the temperature exceeded 80\u00b0F, sales spiked by an average of 25% co",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is a business question that seeks to understand the relationship between temperature and cold drink sales. Therefore, the weather agent is needed to analyze the impact of temperature on sales.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a comprehensive analysis of the relationship between temperature and cold drink sales, including specific data and percentages that directly address the question."
+    },
+    {
+      "id": 11,
+      "category": "strategy",
+      "difficulty": "medium",
+      "question": "What should I do to prepare my coffee shop for the monsoon season?",
+      "expected_agents": [
+        "strategy"
+      ],
+      "actual_agents": [
+        "weather",
+        "strategy"
+      ],
+      "success": true,
+      "latency_seconds": 33.77,
+      "answer_length": 3198,
+      "answer_preview": "# Comprehensive Action Plan for Preparing the Coffee Shop for the Monsoon Season\n\n## Demand Outlook\n- **Food Pastries:** \n  - Anticipate a slight decrease in demand by approximately 2.1% due to rain, but maintain current offerings as the impact is minimal.\n- **Other Categories:** \n  - Expect a minimal decrease of about 1.54% in demand, indicating stability in sales across product categories.\n- **Temperature Effects on Drinks:** \n  - Hot drinks may see increased demand during cooler days, while c",
+      "num_charts": 0,
+      "routing": {
+        "precision": 0.5,
+        "recall": 1.0,
+        "f1": 0.6667,
+        "exact_match": false
+      },
+      "routing_reasoning": "The manager's question is about preparing the coffee shop for the monsoon season, which requires analyzing the potential impact of weather on sales and possibly making strategic recommendations based on that analysis.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a detailed and actionable plan covering various aspects such as demand outlook, promotions, staffing, inventory management, and risk mitigation, directly addressing the question."
+    },
+    {
+      "id": 12,
+      "category": "strategy",
+      "difficulty": "complex",
+      "question": "Give me a comprehensive business plan for next month",
+      "expected_agents": [
+        "strategy"
+      ],
+      "actual_agents": [
+        "historical",
+        "forecasting",
+        "holiday",
+        "strategy"
+      ],
+      "success": true,
+      "latency_seconds": 103.33,
+      "answer_length": 2648,
+      "answer_preview": "# Comprehensive Business Plan for Next Month\n\n## Demand Outlook\n- **Total Expected Quantity for April**: 150.08\n- **Busiest Predicted Days**:\n  - April 27: 8.06 (Forecast)\n  - April 28: 8.06 (Forecast)\n  - April 6: 8.06 (Forecast)\n  - April 20: 8.06 (Forecast)\n  - April 21: 8.06 (Forecast)\n- **Key Items to Focus On**:\n  - **Top Items**:\n    - Crispy Pasta 12: 209 units\n    - Spicy Burger: 195 units\n    - Veggie Roll: 192 units\n    - Deluxe Pizza: 188 units\n    - Herb Drink 9: 154 units\n  - **Fal",
+      "num_charts": 0,
+      "routing": {
+        "precision": 0.25,
+        "recall": 1.0,
+        "f1": 0.4,
+        "exact_match": false
+      },
+      "routing_reasoning": "The manager's question is a comprehensive business question asking for a business plan for the next month, which requires insights from multiple analyses. Therefore, I selected the historical, forecasting, holiday, and strategy agents to provide a well-rounded plan.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a detailed and actionable business plan for the next month, covering demand outlook, promotions, staffing, inventory management, and risks."
+    },
+    {
+      "id": 13,
+      "category": "visualization",
+      "difficulty": "simple",
+      "question": "Show me a chart of sales trends over the last 6 months",
+      "expected_agents": [
+        "visualization"
+      ],
+      "actual_agents": [
+        "visualization"
+      ],
+      "success": true,
+      "latency_seconds": 32.89,
+      "answer_length": 287,
+      "answer_preview": "**Sales Trend Analysis for All Items**\n\n- **Total Units Sold:** 4,696 units over 6 months\n- **Average per month:** 671 units\n- **Trend Direction:** downward \ud83d\udcc9\n- **Peak Sales:** April 2025\n\nThe trend line shows the overall sales direction, helping you identify growth or decline patterns.",
+      "num_charts": 1,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is a business question asking for a chart of sales trends over the last 6 months, which requires visual representation of data.",
+      "judge_score": 3,
+      "judge_justification": "The answer provides relevant sales data but lacks a visual chart and specific details about the sales trends for each month."
+    },
+    {
+      "id": 14,
+      "category": "visualization",
+      "difficulty": "simple",
+      "question": "Create a bar chart of top 10 selling items this year",
+      "expected_agents": [
+        "visualization"
+      ],
+      "actual_agents": [
+        "visualization"
+      ],
+      "success": true,
+      "latency_seconds": 2.56,
+      "answer_length": 404,
+      "answer_preview": "**Top 10 Selling Items Analysis - All Time**\n\n- **#1 Best Seller:** Crispy Pasta 12 with 2,747 units\n- **Total Units (Top 10):** 20,286 units\n- **Top Item Share:** 13.5% of top 10\n\n**Top 3 Items:**\n1. Crispy Pasta 12 - 2,747 units\n2. Veggie Roll - 2,696 units\n3. Herb Drink 9 - 2,203 units\n\nThese items are your consistent performers. Consider ensuring adequate stock and highlighting them in promotions.",
+      "num_charts": 1,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is a business-related inquiry asking for a visual representation of the top 10 selling items this year. Therefore, the visualization agent is needed to create the requested bar chart.",
+      "judge_score": 2,
+      "judge_justification": "The answer provides information about top-selling items but focuses on all-time sales rather than the specific request for this year's top 10 selling items."
+    },
+    {
+      "id": 15,
+      "category": "multi_agent",
+      "difficulty": "medium",
+      "question": "Forecast next month's sales and tell me how holidays will affect them",
+      "expected_agents": [
+        "forecasting",
+        "holiday"
+      ],
+      "actual_agents": [
+        "forecasting",
+        "holiday"
+      ],
+      "success": true,
+      "latency_seconds": 70.72,
+      "answer_length": 2982,
+      "answer_preview": "# Comprehensive Action Plan for Next Month's Sales Forecast\n\n## Demand Outlook\n- **Total Quantity Forecast**: 150.08 units\n- **Busiest Days**: Anticipate increased sales on April 27 and 28, with potential spikes on April 6, 20, and 21.\n- **Confidence Intervals**: Sales could vary between 0 and 22.5 units based on historical data.\n- **Holiday Effects**: \n  - **Bak Full Moon Poya Day**: +7.86% increase in sales.\n  - **Day Before Sinhala and Tamil New Year**: -3.21% decrease in sales.\n  - **Eid al-",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is a business inquiry that requires forecasting sales for next month and analyzing the impact of holidays on those sales. Therefore, both the forecasting and holiday agents are needed to provide a comprehensive answer.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a detailed and actionable sales forecast for next month, including specific holiday impacts, staffing recommendations, and inventory management strategies."
+    },
+    {
+      "id": 16,
+      "category": "multi_agent",
+      "difficulty": "complex",
+      "question": "Based on historical data and weather patterns, what should I stock more of next month?",
+      "expected_agents": [
+        "historical",
+        "weather",
+        "strategy"
+      ],
+      "actual_agents": [
+        "historical",
+        "weather"
+      ],
+      "success": true,
+      "latency_seconds": 88.82,
+      "answer_length": 3246,
+      "answer_preview": "# Comprehensive Action Plan for Stocking Next Month\n\n## Demand Outlook\n- **Top Items to Stock More**:\n  - **Crispy Pasta 12**: Avg. Daily Qty: 2.25, Monthly Qty: 209\n  - **Spicy Burger**: Avg. Daily Qty: 2.5, Monthly Qty: 195\n  - **Veggie Roll**: Avg. Daily Qty: 2.56, Monthly Qty: 192\n  - **Deluxe Pizza**: Avg. Daily Qty: 2.44, Monthly Qty: 188\n  - **Herb Drink 9**: Avg. Daily Qty: 2.91, Monthly Qty: 154\n\n- **Falling Items**: \n  - Reduce stock of items showing a decline, such as:\n    - Veggie Ch",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 0.6667,
+        "f1": 0.8,
+        "exact_match": false
+      },
+      "routing_reasoning": "The manager's question is a business inquiry that requires analysis of historical data and weather patterns to determine what items to stock more of next month. Therefore, both the historical and weather agents are needed to provide insights on past sales and the impact of weather on those sales.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a detailed and actionable plan for stocking items based on demand forecasts, promotions, staffing adjustments, and inventory management, directly addressing the question."
+    },
+    {
+      "id": 17,
+      "category": "multi_agent",
+      "difficulty": "complex",
+      "question": "Compare last year's December performance with this year's forecast and recommend a strategy",
+      "expected_agents": [
+        "historical",
+        "forecasting",
+        "strategy"
+      ],
+      "actual_agents": [
+        "historical",
+        "forecasting",
+        "strategy"
+      ],
+      "success": true,
+      "latency_seconds": 67.79,
+      "answer_length": 3023,
+      "answer_preview": "# Comprehensive Action Plan for December Performance Comparison\n\n## Demand Outlook\n- **Total Quantity Sold Last December**: 262.52 units\n- **Top Selling Items**: \n  - Veggie Roll: 57 units\n  - Deluxe Pizza 19: 37 units\n  - Spicy Chicken 19: 30 units\n- **Forecast for This December**: Anticipate a similar or slightly higher demand based on historical data and trends.\n- **Busiest Days**: December 14, 15, 21, 22, and 28 are projected to have the highest customer volume.\n\n## Promotions\n- **Focus on D",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question involves comparing last year's December performance with this year's forecast and requesting a strategy recommendation, which requires multiple analyses including historical data comparison, forecasting future performance, and developing a strategy based on the insights.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a detailed and actionable comparison of last year's performance with this year's forecast, along with specific strategies for promotions, staffing, inventory management, and risk mitigation."
+    },
+    {
+      "id": 18,
+      "category": "what_if",
+      "difficulty": "medium",
+      "question": "What if there is heavy rain next week, how will it affect demand?",
+      "expected_agents": [
+        "forecasting",
+        "weather"
+      ],
+      "actual_agents": [
+        "weather"
+      ],
+      "success": true,
+      "latency_seconds": 20.53,
+      "answer_length": 628,
+      "answer_preview": "- **Impact of Heavy Rain on Demand**:  \n  - **Food Pastries**: Expected decrease in demand by approximately **2.1%**.  \n  - **Other Product Categories**: Anticipated minimal decrease in demand of about **1.54%**.  \n- **Overall Recommendation**:  \n  - The slight decrease in demand due to heavy rain is not significant enough to warrant changes in product strategy.  \n  - Maintain current product offerings as average sales figures indicate stability across different weather conditions.  \n- **Conclus",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1": 0.6667,
+        "exact_match": false
+      },
+      "routing_reasoning": "The manager's question is a business-related inquiry about the potential impact of heavy rain on demand, which requires analysis of weather effects on sales.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a comprehensive analysis of the impact of heavy rain on demand, including specific percentage estimates and actionable recommendations."
+    },
+    {
+      "id": 19,
+      "category": "what_if",
+      "difficulty": "medium",
+      "question": "If there's a holiday next Monday, what should I expect for sales?",
+      "expected_agents": [
+        "forecasting",
+        "holiday"
+      ],
+      "actual_agents": [
+        "holiday"
+      ],
+      "success": true,
+      "latency_seconds": 19.33,
+      "answer_length": 304,
+      "answer_preview": "- **Holiday**: Bak Full Moon Poya Day\n- **Sales Expectation**: Increase of approximately **7.86%** in sales.\n- **Recommended Action**: Stock up and highlight best sellers to maximize sales potential. \n\nThis analysis indicates that you can expect a positive impact on sales due to the holiday next Monday.",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 0.5,
+        "f1": 0.6667,
+        "exact_match": false
+      },
+      "routing_reasoning": "The manager's question is about sales expectations related to an upcoming holiday, which requires analysis of how holidays impact sales. Therefore, the 'holiday' agent is needed to analyze the effects of the holiday on sales.",
+      "judge_score": 5,
+      "judge_justification": "The answer provides a clear expectation of sales increase, identifies the holiday, and offers actionable recommendations."
+    },
+    {
+      "id": 20,
+      "category": "conversational",
+      "difficulty": "simple",
+      "question": "Hello, what can you help me with?",
+      "expected_agents": [],
+      "actual_agents": [],
+      "success": true,
+      "latency_seconds": 4.2,
+      "answer_length": 229,
+      "answer_preview": "Hello! I'm glad you reached out. I can assist you with sales analysis, demand forecasting, holiday planning, and understanding how weather impacts our sales. If you have any specific questions or topics in mind, feel free to ask!",
+      "num_charts": 0,
+      "routing": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+        "exact_match": true
+      },
+      "routing_reasoning": "The manager's question is a general greeting and does not require any specific data analysis or insights related to the coffee shop business.",
+      "judge_score": 5,
+      "judge_justification": "The answer is comprehensive and directly addresses the question by listing specific areas of assistance."
+    }
+  ]
+}

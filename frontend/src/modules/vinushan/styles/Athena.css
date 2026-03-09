@@ -1,25 +1,66 @@
 /* ============================================
    ATHENA - Context-Aware Forecasting System
-   Clean White UI Styling
+   Premium Viva-Ready UI
    ============================================ */
 
-/* Root Variables - Light Theme with Blue Accent */
-:root {
-  --athena-primary: #2563eb;
-  --athena-primary-dark: #1d4ed8;
-  --athena-primary-light: #3b82f6;
-  --athena-secondary: #666666;
-  --athena-bg: #ffffff;
-  --athena-surface: #f8fafc;
-  --athena-card: #ffffff;
-  --athena-text: #0f172a;
-  --athena-text-secondary: #64748b;
-  --athena-text-muted: #94a3b8;
-  --athena-border: #e2e8f0;
+/* Root Variables - Dark Theme (Default) */
+:root,
+[data-theme="dark"] {
+  --athena-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  --athena-primary: #6366f1;
+  --athena-primary-dark: #4f46e5;
+  --athena-primary-light: #818cf8;
+  --athena-primary-hover: #4f46e5;
+  --athena-primary-glow: rgba(99, 102, 241, 0.15);
+  --athena-secondary: #a1a1aa;
+  --athena-bg: #09090b;
+  --athena-surface: #111113;
+  --athena-card: #18181b;
+  --athena-card-hover: #1f1f23;
+  --athena-text: #fafafa;
+  --athena-text-primary: #fafafa;
+  --athena-text-secondary: #a1a1aa;
+  --athena-text-tertiary: #71717a;
+  --athena-text-muted: #52525b;
+  --athena-border: rgba(255, 255, 255, 0.06);
+  --athena-border-hover: rgba(255, 255, 255, 0.12);
   --athena-success: #22c55e;
-  --athena-accent: #2563eb;
-  --athena-accent-light: #dbeafe;
-  --athena-accent-hover: #1d4ed8;
+  --athena-accent: #6366f1;
+  --athena-accent-light: rgba(99, 102, 241, 0.1);
+  --athena-accent-hover: #4f46e5;
+  --athena-radius: 10px;
+  --athena-radius-lg: 16px;
+  --athena-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --athena-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Light Theme */
+[data-theme="light"] {
+  --athena-primary: #4f46e5;
+  --athena-primary-dark: #4338ca;
+  --athena-primary-light: #6366f1;
+  --athena-primary-hover: #4338ca;
+  --athena-primary-glow: rgba(79, 70, 229, 0.08);
+  --athena-secondary: #64748b;
+  --athena-bg: #f8fafc;
+  --athena-surface: #ffffff;
+  --athena-card: #ffffff;
+  --athena-card-hover: #f1f5f9;
+  --athena-text: #0f172a;
+  --athena-text-primary: #0f172a;
+  --athena-text-secondary: #475569;
+  --athena-text-tertiary: #94a3b8;
+  --athena-text-muted: #cbd5e1;
+  --athena-border: #e2e8f0;
+  --athena-border-hover: #cbd5e1;
+  --athena-success: #16a34a;
+  --athena-accent: #4f46e5;
+  --athena-accent-light: #eef2ff;
+  --athena-accent-hover: #4338ca;
+  --athena-radius: 10px;
+  --athena-radius-lg: 16px;
+  --athena-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --athena-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 
 /* Main Container */
@@ -29,68 +70,83 @@
   height: 100vh;
   background: var(--athena-bg);
   color: var(--athena-text);
+  font-family: var(--athena-font);
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Header - Combined Title and Navigation */
+/* ============ HEADER ============ */
 .athena-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  padding: 20px 32px;
-  background: var(--athena-card);
+  align-items: center;
+  padding: 12px 28px;
+  background: var(--athena-surface);
   border-bottom: 1px solid var(--athena-border);
   z-index: 100;
+  min-height: 54px;
 }
 
 .athena-logo {
   display: flex;
   flex-direction: column;
+  gap: 1px;
 }
 
 .athena-title {
-  font-size: 1.5rem;
+  font-size: 1.1rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  color: var(--athena-text);
+  letter-spacing: 0.14em;
   margin: 0;
-  text-decoration: none;
+  background: linear-gradient(135deg, var(--athena-primary-light), var(--athena-primary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .athena-subtitle {
-  font-size: 0.85rem;
-  color: var(--athena-text-secondary);
-  margin-top: 4px;
-  text-decoration: none;
+  font-size: 0.68rem;
+  color: var(--athena-text-tertiary);
+  margin: 0;
+  letter-spacing: 0.01em;
+  font-weight: 400;
 }
 
-/* Navigation Bar - Now inside header */
+/* Navigation - Pill Style */
 .athena-nav {
   display: flex;
-  gap: 8px;
-  align-items: flex-start;
+  gap: 2px;
+  align-items: center;
+  background: var(--athena-bg);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid var(--athena-border);
 }
 
 .nav-tab {
-  padding: 8px 20px;
+  padding: 6px 16px;
   background: transparent;
   border: none;
-  border-bottom: 2px solid transparent;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 0.78rem;
   font-weight: 500;
   color: var(--athena-text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
-  font-family: inherit;
+  font-family: var(--athena-font);
+  white-space: nowrap;
 }
 
 .nav-tab:hover {
-  color: var(--athena-primary);
+  color: var(--athena-text);
+  background: var(--athena-card);
 }
 
 .nav-tab.active {
-  color: var(--athena-primary);
-  border-bottom-color: var(--athena-primary);
+  color: var(--athena-text);
+  background: var(--athena-card);
+  box-shadow: var(--athena-shadow);
 }
 
 .athena-controls {
@@ -103,38 +159,42 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 4px;
-  background: var(--athena-surface);
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: transparent;
   border: 1px solid var(--athena-border);
   cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.2s;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+  color: var(--athena-text-secondary);
 }
 
 .theme-toggle:hover {
-  background: var(--athena-border);
+  background: var(--athena-card);
+  border-color: var(--athena-border-hover);
 }
 
-/* Main Content Area */
+/* ============ MAIN CONTENT ============ */
 .athena-main {
   display: flex;
   flex: 1;
   overflow: hidden;
 }
 
-/* Chat Section */
+/* ============ CHAT SECTION ============ */
 .athena-chat-section {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
   background: var(--athena-bg);
+  transition: flex 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .athena-chat-section.with-reasoning {
-  flex: 0 0 60%;
+  flex: 1;
+  min-width: 0;
 }
 
 /* Chat Header */
@@ -165,11 +225,12 @@
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  background: #f0fdf4;
-  border-radius: 4px;
-  font-size: 0.75rem;
+  background: rgba(34, 197, 94, 0.08);
+  border-radius: 20px;
+  font-size: 0.72rem;
   font-weight: 500;
   color: var(--athena-success);
+  border: 1px solid rgba(34, 197, 94, 0.15);
 }
 
 .athena-status-dot {
@@ -177,101 +238,139 @@
   height: 6px;
   background: var(--athena-success);
   border-radius: 50%;
+  animation: statusPulse 2s ease-in-out infinite;
 }
 
-/* Chat Messages Container */
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ============ MESSAGES AREA ============ */
 .athena-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 32px;
-  background: var(--athena-bg);
+  padding: 20px 28px;
+  scroll-behavior: smooth;
 }
 
-/* Welcome Screen */
+/* ============ WELCOME SCREEN ============ */
 .athena-welcome {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 100%;
   padding: 48px 24px;
   text-align: center;
-  max-width: 550px;
-  margin: 0 auto;
+  animation: welcomeFade 0.5s ease;
+}
+
+@keyframes welcomeFade {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .athena-welcome h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.7rem;
+  font-weight: 700;
   margin: 0 0 8px 0;
-  color: var(--athena-text);
+  background: linear-gradient(135deg, var(--athena-text) 0%, var(--athena-text-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .athena-welcome p {
-  color: var(--athena-text-secondary);
-  margin: 0 0 28px 0;
-  max-width: 400px;
-  font-size: 0.9rem;
-  line-height: 1.5;
+  color: var(--athena-text-tertiary);
+  margin: 0 0 36px 0;
+  max-width: 420px;
+  font-size: 0.88rem;
+  line-height: 1.6;
 }
 
-/* Example Questions Grid */
+/* Example Questions */
 .athena-examples {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
-  max-width: 500px;
+  max-width: 520px;
   width: 100%;
 }
 
 .athena-example-btn {
-  padding: 12px 14px;
+  padding: 14px 16px;
   background: var(--athena-surface);
   border: 1px solid var(--athena-border);
-  border-radius: 6px;
-  font-size: 0.85rem;
-  color: var(--athena-text);
+  border-radius: var(--athena-radius);
+  font-size: 0.82rem;
+  color: var(--athena-text-secondary);
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  transition: all 0.2s ease;
+  font-family: var(--athena-font);
+  line-height: 1.4;
+  position: relative;
+  overflow: hidden;
+}
+
+.athena-example-btn::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--athena-primary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 .athena-example-btn:hover {
+  color: var(--athena-text);
   border-color: var(--athena-primary);
   background: var(--athena-accent-light);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px var(--athena-primary-glow);
 }
 
-/* Chat Input Section */
+.athena-example-btn:hover::before {
+  opacity: 1;
+}
+
+/* ============ INPUT SECTION ============ */
 .athena-input-section {
-  padding: 16px 32px;
-  background: var(--athena-card);
+  padding: 14px 28px 18px;
+  background: var(--athena-surface);
   border-top: 1px solid var(--athena-border);
 }
 
 .athena-input-wrapper {
   display: flex;
-  gap: 12px;
-  max-width: 700px;
+  gap: 10px;
+  max-width: 740px;
   margin: 0 auto;
+  align-items: flex-end;
 }
 
 .athena-input {
   flex: 1;
-  padding: 12px 16px;
+  padding: 11px 16px;
   background: var(--athena-bg);
   border: 1px solid var(--athena-border);
-  border-radius: 6px;
-  font-size: 0.9rem;
+  border-radius: var(--athena-radius);
+  font-size: 0.875rem;
   color: var(--athena-text);
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
   resize: none;
-  font-family: inherit;
+  font-family: var(--athena-font);
+  line-height: 1.5;
 }
 
 .athena-input:focus {
   border-color: var(--athena-primary);
-  box-shadow: 0 0 0 3px var(--athena-accent-light);
+  box-shadow: 0 0 0 3px var(--athena-primary-glow);
 }
 
 .athena-input::placeholder {
@@ -279,51 +378,63 @@
 }
 
 .athena-send-btn {
-  padding: 12px 24px;
+  padding: 11px 20px;
   background: var(--athena-primary);
   color: white;
   border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
+  border-radius: var(--athena-radius);
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
+  transition: all 0.2s ease;
+  font-family: var(--athena-font);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
 }
 
 .athena-send-btn:hover:not(:disabled) {
   background: var(--athena-accent-hover);
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--athena-primary-glow);
+}
+
+.athena-send-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .athena-send-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-/* Error Banner */
+/* ============ ERROR BANNER ============ */
 .athena-error {
-  margin: 0 32px 16px;
-  padding: 12px 16px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 6px;
-  color: #991b1b;
+  margin: 0 28px 12px;
+  padding: 10px 16px;
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: var(--athena-radius);
+  color: #f87171;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 
 .athena-error button {
   background: none;
   border: none;
-  color: #991b1b;
+  color: #f87171;
   font-weight: 500;
   cursor: pointer;
+  font-family: var(--athena-font);
+  font-size: 0.78rem;
 }
 
 /* ============================================
-   Reasoning Panel
+   Reasoning Panel (legacy styles - actual panel uses AgentThoughts.css)
    ============================================ */
 
 .athena-reasoning-panel {
@@ -331,7 +442,7 @@
   background: var(--athena-card);
   border-left: 1px solid var(--athena-border);
   overflow: hidden;
-  transition: width 0.3s ease;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
 }
@@ -351,7 +462,7 @@
 }
 
 .reasoning-header h3 {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
   margin: 0;
   display: flex;
@@ -361,24 +472,24 @@
 }
 
 .reasoning-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
-  background: var(--athena-bg);
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: transparent;
   border: 1px solid var(--athena-border);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  transition: all 0.15s ease;
   color: var(--athena-text-secondary);
 }
 
 .reasoning-close:hover {
-  background: #fef2f2;
-  color: #991b1b;
-  border-color: #fecaca;
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.2);
 }
 
 .reasoning-content {
@@ -393,11 +504,11 @@
 }
 
 .reasoning-section-title {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--athena-text-secondary);
+  letter-spacing: 0.06em;
+  color: var(--athena-text-tertiary);
   margin-bottom: 10px;
   display: flex;
   align-items: center;
@@ -407,13 +518,13 @@
 .routing-card {
   background: var(--athena-surface);
   border: 1px solid var(--athena-border);
-  border-radius: 6px;
+  border-radius: var(--athena-radius);
   padding: 12px;
 }
 
 .routing-card p {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   line-height: 1.5;
   color: var(--athena-text-secondary);
 }
@@ -422,10 +533,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  font-size: 0.7rem;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  font-size: 0.68rem;
   font-weight: 600;
   background: var(--athena-primary);
   color: #fff;
@@ -443,12 +554,12 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 12px;
-  background: var(--athena-surface);
-  border: 1px solid var(--athena-border);
-  color: var(--athena-text);
-  border-radius: 4px;
-  font-size: 0.75rem;
+  padding: 5px 12px;
+  background: var(--athena-accent-light);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  color: var(--athena-primary-light);
+  border-radius: 20px;
+  font-size: 0.72rem;
   font-weight: 500;
 }
 
@@ -543,18 +654,28 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px;
+  padding: 14px 18px;
+  margin-bottom: 8px;
+  border-radius: var(--athena-radius);
+  background: var(--athena-card);
+  border: 1px solid var(--athena-border);
+  animation: messageSlide 0.3s ease;
+}
+
+@keyframes messageSlide {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .loading-avatar {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   background: var(--athena-primary);
-  border-radius: 4px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 0.9rem;
   color: white;
 }
 
@@ -565,29 +686,72 @@
 .loading-dots {
   display: flex;
   gap: 4px;
-  margin-bottom: 6px;
 }
 
 .loading-dots span {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   background: var(--athena-primary);
   border-radius: 50%;
-  animation: bounce 1.4s ease-in-out infinite;
+  animation: dotBounce 1.4s ease-in-out infinite;
 }
 
-.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+.loading-dots span:nth-child(2) { animation-delay: 0.16s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.32s; }
 
-@keyframes bounce {
-  0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
-  40% { transform: scale(1.2); opacity: 1; }
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: scale(0.7); opacity: 0.4; }
+  40% { transform: scale(1.1); opacity: 1; }
 }
 
 .loading-text {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: var(--athena-text-secondary);
   margin: 0;
+  flex: 1;
+}
+
+.stop-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--athena-font);
+}
+
+.stop-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.35);
+}
+
+/* Clear All Button */
+.clear-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  background: transparent;
+  border: 1px solid var(--athena-border);
+  border-radius: 6px;
+  color: var(--athena-text-muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: var(--athena-font);
+}
+
+.clear-all-btn:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
 }
 
 /* Empty Reasoning State */
@@ -605,18 +769,18 @@
 .reasoning-empty-icon {
   font-size: 2rem;
   margin-bottom: 12px;
-  opacity: 0.4;
+  opacity: 0.3;
 }
 
 .reasoning-empty h4 {
   margin: 0 0 6px 0;
   color: var(--athena-text);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .reasoning-empty p {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   margin: 0;
 }
 
@@ -634,10 +798,401 @@
   height: 5px !important;
 }
 
-/* Scrollbar */
+/* ============ MESSAGE COMPONENT STYLES ============ */
+/* Moved from inline styles for consistency */
+
+.athena-msg {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 18px;
+  border-radius: var(--athena-radius);
+  margin-bottom: 10px;
+  transition: box-shadow 0.2s ease;
+  animation: messageSlide 0.3s ease;
+  position: relative;
+}
+
+.athena-msg.user-msg {
+  background: #22c55e;
+  color: #ffffff;
+  margin-left: 80px;
+  border-bottom-right-radius: 4px;
+}
+
+.athena-msg.assistant-msg {
+  background: var(--athena-card);
+  border: 1px solid var(--athena-border);
+  margin-right: 40px;
+  border-bottom-left-radius: 4px;
+}
+
+.athena-msg.assistant-msg:hover {
+  border-color: var(--athena-border-hover);
+}
+
+.athena-msg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  gap: 12px;
+}
+
+.athena-msg-role {
+  font-weight: 600;
+  font-size: 0.78rem;
+}
+
+.user-msg .athena-msg-role {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.assistant-msg .athena-msg-role {
+  color: var(--athena-primary-light);
+}
+
+.athena-msg-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.athena-msg:hover .athena-msg-actions {
+  opacity: 1;
+}
+
+.athena-msg-time {
+  font-size: 0.68rem;
+  color: var(--athena-text-muted);
+  margin-left: 4px;
+}
+
+.user-msg .athena-msg-time {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* Action buttons on messages */
+.msg-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid var(--athena-border);
+  background: var(--athena-surface);
+  color: var(--athena-text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.78rem;
+  gap: 4px;
+  white-space: nowrap;
+  font-family: var(--athena-font);
+}
+
+.msg-action-btn:hover {
+  background: var(--athena-card-hover);
+  border-color: var(--athena-border-hover);
+  color: var(--athena-text);
+}
+
+.msg-action-btn.active {
+  background: var(--athena-primary);
+  border-color: var(--athena-primary);
+  color: white;
+}
+
+.msg-action-btn.send-email {
+  border-color: rgba(34, 197, 94, 0.25);
+  color: #22c55e;
+  font-weight: 500;
+  font-size: 0.7rem;
+}
+
+.msg-action-btn.send-email:hover {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.msg-action-btn.delete:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.06);
+}
+
+/* Message content */
+.athena-msg-content {
+  line-height: 1.7;
+  font-size: 0.88rem;
+  color: var(--athena-text);
+}
+
+.athena-msg-content p {
+  margin: 0 0 8px;
+}
+
+.athena-msg-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Chart container */
+.chart-container {
+  background: var(--athena-surface);
+  border-radius: var(--athena-radius-lg);
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 1px solid var(--athena-border);
+}
+
+.chart-title {
+  margin: 0 0 12px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--athena-primary-light);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* RAG Citations */
+.rag-citations-section {
+  margin-top: 14px;
+  border-radius: var(--athena-radius);
+  overflow: hidden;
+  border: 1px solid var(--athena-border);
+}
+
+.rag-citations-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--athena-accent-light);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  user-select: none;
+}
+
+.rag-citations-header:hover {
+  background: var(--athena-primary-glow);
+}
+
+.rag-citations-label {
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--athena-primary-light);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rag-citations-toggle {
+  font-size: 0.72rem;
+  color: var(--athena-text-muted);
+  transition: transform 0.2s ease;
+}
+
+.rag-citations-toggle.expanded {
+  transform: rotate(180deg);
+}
+
+.rag-citations-body {
+  padding: 10px 14px;
+  background: var(--athena-surface);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  animation: citationsFade 0.2s ease;
+}
+
+@keyframes citationsFade {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 120px; }
+}
+
+.rag-source-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--athena-accent-light);
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: 20px;
+  font-size: 0.7rem;
+  color: var(--athena-primary-light);
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.rag-source-pill:hover {
+  background: var(--athena-primary-glow);
+  border-color: var(--athena-primary);
+}
+
+/* Export/Delete Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modalFadeIn 0.15s ease;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: var(--athena-card);
+  border: 1px solid var(--athena-border);
+  border-radius: var(--athena-radius-lg);
+  padding: 28px;
+  min-width: 340px;
+  max-width: 90%;
+  box-shadow: var(--athena-shadow-lg);
+  animation: modalSlideUp 0.2s ease;
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-title {
+  margin: 0 0 6px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--athena-text);
+}
+
+.modal-subtitle {
+  margin: 0 0 20px;
+  font-size: 0.82rem;
+  color: var(--athena-text-secondary);
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 20px;
+  border: none;
+  border-radius: var(--athena-radius);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+  text-align: left;
+  font-family: var(--athena-font);
+}
+
+.modal-btn-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.modal-btn-primary.pdf {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.modal-btn-primary.word {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.modal-btn-icon {
+  font-size: 1.3rem;
+}
+
+.modal-btn-text-sub {
+  font-size: 0.7rem;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+.modal-btn-cancel {
+  width: 100%;
+  margin-top: 4px;
+  padding: 11px;
+  background: var(--athena-surface);
+  color: var(--athena-text-secondary);
+  border: 1px solid var(--athena-border);
+  border-radius: var(--athena-radius);
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-family: var(--athena-font);
+  transition: all 0.15s ease;
+}
+
+.modal-btn-cancel:hover {
+  background: var(--athena-card-hover);
+}
+
+.modal-delete-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.modal-btn-delete {
+  flex: 1;
+  padding: 11px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border: none;
+  border-radius: var(--athena-radius);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--athena-font);
+  transition: all 0.15s ease;
+}
+
+.modal-btn-delete:hover {
+  filter: brightness(1.08);
+}
+
+.modal-btn-secondary {
+  flex: 1;
+  padding: 11px;
+  background: var(--athena-surface);
+  color: var(--athena-text-secondary);
+  border: 1px solid var(--athena-border);
+  border-radius: var(--athena-radius);
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: var(--athena-font);
+  transition: all 0.15s ease;
+}
+
+.modal-btn-secondary:hover {
+  background: var(--athena-card-hover);
+}
+
+/* ============ SCROLLBAR ============ */
 .athena-messages::-webkit-scrollbar,
 .reasoning-content::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .athena-messages::-webkit-scrollbar-track,
@@ -653,10 +1208,10 @@
 
 .athena-messages::-webkit-scrollbar-thumb:hover,
 .reasoning-content::-webkit-scrollbar-thumb:hover {
-  background: var(--athena-primary-light);
+  background: var(--athena-text-muted);
 }
 
-/* Responsive */
+/* ============ RESPONSIVE ============ */
 @media (max-width: 1024px) {
   .athena-reasoning-panel.open {
     position: fixed;
@@ -666,21 +1221,28 @@
     width: 100%;
     max-width: 380px;
     z-index: 200;
-    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.2);
   }
   
   .athena-chat-section.with-reasoning {
     flex: 1;
   }
+
+  .athena-header {
+    padding: 10px 16px;
+  }
 }
 
 @media (max-width: 640px) {
   .athena-header {
-    padding: 12px 16px;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 10px 14px;
   }
   
   .athena-title {
-    font-size: 1.1rem;
+    font-size: 0.95rem;
   }
   
   .athena-examples {
@@ -689,6 +1251,18 @@
   
   .athena-messages,
   .athena-input-section {
-    padding: 16px;
+    padding: 14px;
+  }
+  
+  .athena-input-wrapper {
+    max-width: 100%;
+  }
+  
+  .athena-msg.user-msg {
+    margin-left: 40px;
+  }
+  
+  .athena-msg.assistant-msg {
+    margin-right: 20px;
   }
 }
