@@ -42,7 +42,34 @@ from app.modules.ayathma.app.services.training_logger import (
     load_training_examples,
     delete_training_examples_for_dataset,
 )
-from app.modules.ayathma.app.services.trainer import train_recommender_from_jsonl
+from app.modules.ayathma.app.services.kpi_feedback_logger import (
+    append_kpi_feedback,
+    load_kpi_feedback,
+)
+from app.modules.ayathma.app.services.kpi_preference_trainer import (
+    train_kpi_preference,
+)
+from app.modules.ayathma.app.services.trainer import (
+    train_recommender_from_jsonl,
+    get_model_metrics,
+)
+
+# SQL training logger for user corrections
+from app.modules.ayathma.app.services.sql_training_logger import (
+    append_sql_correction,
+    load_sql_corrections,
+    get_sql_training_stats,
+    find_similar_correction,
+)
+
+# SQL Vector Store for retrieval-augmented SQL generation
+from app.modules.ayathma.app.services.sql_vector_store import (
+    add_sql_case,
+    search_similar_sql,
+    get_sql_few_shot_prompt,
+    get_vector_store_stats,
+    get_vector_store,
+)
 
 # New services for enhanced features
 from app.modules.ayathma.app.services.data_quality import assess_data_quality
@@ -53,6 +80,11 @@ from app.modules.ayathma.app.services.comparative import (
 from app.modules.ayathma.app.services.chart_types import (
     generate_time_heatmap, generate_scatter_data, generate_treemap_data,
     generate_radar_data, generate_donut_data, generate_waterfall_data
+)
+from app.modules.ayathma.app.services.insights import (
+    _topn_table,
+    _time_agg,
+    _make_card,
 )
 
 # PDF generator (optional)
@@ -219,7 +251,12 @@ async def analyze(
             if ml_rec and ml_rec.get("cards_selected"):
                 cards_selected = list(ml_rec["cards_selected"])
         except Exception as e:
-            warnings.append(f"ML recommender failed: {type(e).__name__}: {e}")
+            # Only show warning if it's not a "model not trained yet" error
+            error_name = type(e).__name__
+            error_msg = str(e)
+            if "NotFittedError" not in error_name and "not fitted" not in error_msg.lower():
+                warnings.append(f"ML recommender failed: {error_name}: {error_msg}")
+            # Model not trained yet - silently fall back to heuristics
             ml_features = None
             ml_rec = None
             cards_selected = None
@@ -238,10 +275,11 @@ async def analyze(
             roles=roles,
             business_names_map=names,
             fa=fa,
+            dataset_name=file.filename,  # For SQL query generation
         )
     except TypeError as e:
         warnings.append(f"generate_insights signature mismatch: {e}")
-        insights = generate_insights(df=df, semantic=semantic.__dict__)
+        insights = generate_insights(df=df, semantic=semantic.__dict__, dataset_name=file.filename)
 
     results: Dict[str, Any] = {
         "dataset_name": file.filename,
@@ -322,6 +360,101 @@ def delete_training_examples(dataset_id: str):
     return {"ok": True, "removed": removed}
 
 
+# ---------------------------------------------------------------------------
+# KPI preference feedback endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post("/kpi/feedback")
+async def save_kpi_feedback(payload: Dict[str, Any] = Body(...)):
+    """Save user feedback about a specific KPI card.
+
+    Expected payload (flexible, but these are recommended fields):
+
+        {
+          "dataset_id": str,
+          "kpi_id": str,           # stable id for this KPI instance
+          "card_id": str,          # e.g. "top_dimension_by_measure"
+          "measure_col": str|null,
+          "dimension_col": str|null,
+          "time_col": str|null,
+          "prompt_text": str,      # human-readable KPI description
+          "liked": bool,           # True if user kept/liked it, False if removed
+          "user_text": str|null    # free-text KPI typed by user, if any
+        }
+
+    The backend stores this as JSONL for later training of a
+    KPI preference model.
+    """
+    dataset_id = str(payload.get("dataset_id") or "").strip()
+    card_id = str(payload.get("card_id") or "").strip()
+    liked = payload.get("liked")
+
+    if not dataset_id or not card_id:
+        return JSONResponse(
+            {"ok": False, "error": "dataset_id and card_id are required"},
+            status_code=400,
+        )
+
+    if liked is None:
+        return JSONResponse(
+            {"ok": False, "error": "liked flag (True/False) is required"},
+            status_code=400,
+        )
+
+    # Normalize a subset of well-known fields and keep the rest as-is
+    record: Dict[str, Any] = {
+        "dataset_id": dataset_id,
+        "kpi_id": str(payload.get("kpi_id") or "").strip() or None,
+        "card_id": card_id,
+        "measure_col": payload.get("measure_col"),
+        "dimension_col": payload.get("dimension_col"),
+        "time_col": payload.get("time_col"),
+        "prompt_text": payload.get("prompt_text") or "",
+        "liked": bool(liked),
+        "user_text": payload.get("user_text"),
+    }
+
+    # Merge any extra keys provided by the frontend to allow evolution
+    for k, v in payload.items():
+        if k not in record:
+            record[k] = v
+
+    append_kpi_feedback(record)
+    
+    # Auto-train after every 10 feedback examples
+    feedback_examples = load_kpi_feedback()
+    if len(feedback_examples) >= 10 and len(feedback_examples) % 10 == 0:
+        try:
+            train_result = train_kpi_preference()
+            return {
+                "ok": True, 
+                "saved": True,
+                "auto_trained": True,
+                "model_metrics": train_result.get("metrics", {})
+            }
+        except Exception as e:
+            # Don't fail the feedback save if training fails
+            return {
+                "ok": True, 
+                "saved": True,
+                "auto_trained": False,
+                "training_error": str(e)
+            }
+    
+    return {"ok": True, "saved": True}
+
+
+@router.get("/kpi/feedback")
+def list_kpi_feedback():
+    """Return all stored KPI feedback examples.
+
+    This is mainly intended for debugging and offline analysis.
+    """
+    items = load_kpi_feedback()
+    return {"ok": True, "items": items}
+
+
 @router.post("/training/retrain")
 def retrain_recommender():
     """Retrain the KPI recommender model from stored training data.
@@ -336,6 +469,386 @@ def retrain_recommender():
     except Exception as e:
         return JSONResponse(
             {"ok": False, "error": f"Training failed: {type(e).__name__}: {e}"},
+            status_code=500,
+        )
+
+
+@router.post("/kpi/retrain")
+def retrain_kpi_preference():
+    """Train or retrain the KPI preference model from feedback.
+
+    Uses JSONL feedback logged via /kpi/feedback and stores the
+    resulting model bundle under the module's ml/ folder.
+    """
+    try:
+        metrics = train_kpi_preference()
+        return {"ok": True, "metrics": metrics}
+    except Exception as e:
+        return JSONResponse(
+            {"ok": False, "error": f"KPI preference training failed: {type(e).__name__}: {e}"},
+            status_code=500,
+        )
+
+
+@router.get("/training/metrics")
+def get_training_metrics():
+    """Get the model's evaluation metrics (accuracy, precision, recall, F1).
+    
+    Returns metrics from the last training run, including:
+    - Pack classifier metrics (single-label classification)
+    - Cards classifier metrics (multi-label classification)
+    - Per-class breakdown for card recommendations
+    """
+    metrics = get_model_metrics()
+    if metrics is None:
+        return JSONResponse(
+            {"ok": False, "error": "No metrics available. Train the model first."},
+            status_code=404,
+        )
+    return {"ok": True, "metrics": metrics}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SQL Query Training Endpoints
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post("/sql/corrections")
+async def save_sql_correction(payload: Dict[str, Any] = Body(...)):
+    """
+    Save a user's SQL correction for training.
+    
+    When a user corrects a generated SQL query, this endpoint stores the
+    correction in both:
+    1. The JSONL training log (for persistence)
+    2. The vector store (for similarity-based retrieval)
+    
+    Expected payload:
+    {
+        "card_id": "top_dimension_by_measure",
+        "card_title": "Top Region by Revenue",
+        "chart_type": "bar",
+        "x_column": "Region",
+        "y_column": "Revenue",
+        "original_sql": "SELECT ...",
+        "corrected_sql": "SELECT ...",
+        "dataset_name": "sales_data.csv",
+        "columns": ["Region", "Revenue", "Date", ...],
+        "column_types": {"Region": "string", "Revenue": "float", ...},
+        "feedback": "Optional feedback about what was wrong"
+    }
+    """
+    required = ["card_id", "original_sql", "corrected_sql", "dataset_name"]
+    missing = [f for f in required if f not in payload]
+    if missing:
+        return JSONResponse(
+            {"ok": False, "error": f"Missing required fields: {missing}"},
+            status_code=400,
+        )
+    
+    try:
+        # 1. Save to JSONL log
+        example = append_sql_correction(
+            card_id=payload.get("card_id", ""),
+            card_title=payload.get("card_title", ""),
+            chart_type=payload.get("chart_type", ""),
+            x_column=payload.get("x_column"),
+            y_column=payload.get("y_column"),
+            original_sql=payload["original_sql"],
+            corrected_sql=payload["corrected_sql"],
+            dataset_name=payload["dataset_name"],
+            columns=payload.get("columns", []),
+            feedback=payload.get("feedback"),
+        )
+        
+        # 2. Add to vector store for retrieval-augmented generation
+        # Build intent from card title
+        card_title = payload.get("card_title", "")
+        intent = f"Generate SQL for: {card_title}" if card_title else f"Generate {payload.get('chart_type', 'chart')} visualization"
+        
+        vector_case = add_sql_case(
+            card_type=payload.get("card_id", ""),
+            chart_type=payload.get("chart_type", ""),
+            intent=intent,
+            columns=payload.get("columns", []),
+            column_types=payload.get("column_types"),
+            original_sql=payload["original_sql"],
+            corrected_sql=payload["corrected_sql"],
+            dataset_name=payload["dataset_name"],
+            feedback=payload.get("feedback"),
+        )
+        
+        return {
+            "ok": True, 
+            "saved": example,
+            "vector_stored": vector_case is not None,
+            "message": "Correction saved and added to learning database"
+        }
+    except Exception as e:
+        return JSONResponse(
+            {"ok": False, "error": f"Failed to save correction: {e}"},
+            status_code=500,
+        )
+
+
+@router.get("/sql/corrections")
+def list_sql_corrections():
+    """Return all stored SQL corrections."""
+    corrections = load_sql_corrections()
+    stats = get_sql_training_stats()
+    return {"ok": True, "corrections": corrections, "stats": stats}
+
+
+@router.get("/sql/corrections/stats")
+def get_sql_stats():
+    """Get statistics about SQL training data."""
+    stats = get_sql_training_stats()
+    return {"ok": True, "stats": stats}
+
+
+@router.post("/sql/suggest")
+async def suggest_sql_correction(payload: Dict[str, Any] = Body(...)):
+    """
+    Check if there's a learned correction for this card type.
+    
+    Returns a previously corrected SQL if one matches the card context.
+    """
+    card_id = payload.get("card_id", "")
+    chart_type = payload.get("chart_type", "")
+    x_column = payload.get("x_column")
+    y_column = payload.get("y_column")
+    
+    suggestion = find_similar_correction(card_id, chart_type, x_column, y_column)
+    
+    if suggestion:
+        return {"ok": True, "has_suggestion": True, "suggested_sql": suggestion}
+    return {"ok": True, "has_suggestion": False, "suggested_sql": None}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SQL Vector Store Endpoints (Retrieval-Augmented SQL Generation)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@router.post("/sql/vector/search")
+async def vector_search_sql(payload: Dict[str, Any] = Body(...)):
+    """
+    Search for similar SQL cases using vector similarity.
+    
+    This endpoint uses embeddings to find the most similar past SQL corrections
+    based on card type, chart type, intent, and schema.
+    
+    Expected payload:
+    {
+        "card_type": "top_dimension_by_measure",
+        "chart_type": "bar",
+        "intent": "Show top 10 regions by revenue",
+        "columns": ["Region", "Revenue", "Date"],
+        "top_k": 3
+    }
+    
+    Returns:
+    {
+        "ok": true,
+        "results": [
+            {"case": {...}, "similarity": 0.85},
+            ...
+        ],
+        "few_shot_prompt": "Here are similar SQL queries..."
+    }
+    """
+    card_type = payload.get("card_type", "")
+    chart_type = payload.get("chart_type", "")
+    intent = payload.get("intent", "")
+    columns = payload.get("columns", [])
+    top_k = payload.get("top_k", 3)
+    
+    try:
+        # Search for similar cases
+        results = search_similar_sql(
+            card_type=card_type,
+            chart_type=chart_type,
+            intent=intent,
+            columns=columns,
+            top_k=top_k,
+        )
+        
+        # Generate few-shot prompt
+        few_shot = get_sql_few_shot_prompt(
+            card_type=card_type,
+            chart_type=chart_type,
+            intent=intent,
+            columns=columns,
+            top_k=top_k,
+        )
+        
+        # Format results
+        formatted_results = []
+        for case, similarity in results:
+            formatted_results.append({
+                "case": {
+                    "id": case.id,
+                    "card_type": case.card_type,
+                    "chart_type": case.chart_type,
+                    "intent": case.intent,
+                    "schema_summary": case.schema_summary,
+                    "corrected_sql": case.corrected_sql,
+                    "feedback": case.feedback,
+                },
+                "similarity": similarity,
+            })
+        
+        return {
+            "ok": True,
+            "results": formatted_results,
+            "few_shot_prompt": few_shot,
+            "total_cases_searched": len(get_vector_store().cases),
+        }
+    except Exception as e:
+        return JSONResponse(
+            {"ok": False, "error": f"Vector search failed: {e}"},
+            status_code=500,
+        )
+
+
+@router.get("/sql/vector/stats")
+def get_vector_stats():
+    """
+    Get statistics about the SQL vector store.
+    
+    Returns information about:
+    - Total cases stored
+    - Embedding availability
+    - Distribution by card type and chart type
+    """
+    try:
+        stats = get_vector_store_stats()
+        return {"ok": True, "stats": stats}
+    except Exception as e:
+        return JSONResponse(
+            {"ok": False, "error": f"Failed to get stats: {e}"},
+            status_code=500,
+        )
+
+
+@router.get("/sql/vector/cases")
+def list_vector_cases():
+    """
+    List all cases in the vector store.
+    """
+    try:
+        store = get_vector_store()
+        cases = [
+            {
+                "id": case.id,
+                "card_type": case.card_type,
+                "chart_type": case.chart_type,
+                "intent": case.intent,
+                "schema_summary": case.schema_summary,
+                "corrected_sql": case.corrected_sql,
+                "dataset_name": case.dataset_name,
+                "feedback": case.feedback,
+                "created_at": case.created_at,
+            }
+            for case in store.cases
+        ]
+        return {"ok": True, "cases": cases, "total": len(cases)}
+    except Exception as e:
+        return JSONResponse(
+            {"ok": False, "error": f"Failed to list cases: {e}"},
+            status_code=500,
+        )
+
+
+@router.delete("/sql/vector/clear")
+def clear_vector_store():
+    """
+    Clear all cases from the vector store.
+    """
+    try:
+        store = get_vector_store()
+        count = store.clear()
+        return {"ok": True, "cleared": count}
+    except Exception as e:
+        return JSONResponse(
+            {"ok": False, "error": f"Failed to clear store: {e}"},
+            status_code=500,
+        )
+
+
+@router.post("/sql/generate-with-examples")
+async def generate_sql_with_examples(payload: Dict[str, Any] = Body(...)):
+    """
+    Generate SQL with few-shot examples from similar past corrections.
+    
+    This endpoint:
+    1. Searches the vector store for similar cases
+    2. Returns them as few-shot examples
+    3. Provides context for improved SQL generation
+    
+    Expected payload:
+    {
+        "card_type": "top_dimension_by_measure",
+        "chart_type": "bar",
+        "card_title": "Top Region by Revenue",
+        "x_column": "Region",
+        "y_column": "Revenue",
+        "columns": ["Region", "Revenue", "Date"],
+        "current_sql": "SELECT Region, SUM(Revenue)..."
+    }
+    """
+    card_type = payload.get("card_type", "")
+    chart_type = payload.get("chart_type", "")
+    card_title = payload.get("card_title", "")
+    columns = payload.get("columns", [])
+    current_sql = payload.get("current_sql", "")
+    
+    # Build intent
+    intent = f"Generate SQL for: {card_title}" if card_title else f"Generate {chart_type} visualization"
+    
+    try:
+        # Get similar examples
+        results = search_similar_sql(
+            card_type=card_type,
+            chart_type=chart_type,
+            intent=intent,
+            columns=columns,
+            top_k=3,
+        )
+        
+        # Build response with examples
+        examples = []
+        for case, similarity in results:
+            examples.append({
+                "intent": case.intent,
+                "schema": case.schema_summary,
+                "sql": case.corrected_sql,
+                "similarity": round(similarity, 3),
+            })
+        
+        # Generate few-shot prompt
+        few_shot = get_sql_few_shot_prompt(
+            card_type=card_type,
+            chart_type=chart_type,
+            intent=intent,
+            columns=columns,
+            top_k=3,
+        )
+        
+        # Check if any example is highly similar (might be directly usable)
+        best_match = None
+        if results and results[0][1] > 0.8:
+            best_match = results[0][0].corrected_sql
+        
+        return {
+            "ok": True,
+            "current_sql": current_sql,
+            "examples": examples,
+            "few_shot_prompt": few_shot,
+            "best_match": best_match,
+            "has_learned_examples": len(examples) > 0,
+        }
+    except Exception as e:
+        return JSONResponse(
+            {"ok": False, "error": f"Failed to generate with examples: {e}"},
             status_code=500,
         )
 
@@ -376,8 +889,234 @@ def download_results(format: str):
             media_type="text/plain",
             headers={"Content-Disposition": "attachment; filename=kpi_analysis.txt"},
         )
+
+
+@router.post("/kpi/generate")
+async def generate_custom_kpi(payload: Dict[str, Any] = Body(...)):
+    """Generate a single KPI card from a free-text KPI request.
+
+    This endpoint reuses the last analyzed dataset held in memory
+    (_cached_df and _cached_semantic). It is therefore only
+    available after at least one successful /analyze call.
+
+    Expected payload (minimal):
+        {
+          "kpi_text": "Top 5 food items by sales"
+        }
+
+    Optional hints (override heuristics if provided):
+        {
+          "dimension_col": "ITEM_NAME",
+          "measure_col": "SALES_AMOUNT",
+          "time_col": "ORDER_DATE"
+        }
+    """
+    global _cached_df, _cached_semantic
+
+    if _cached_df is None or _cached_semantic is None:
+        return JSONResponse(
+            {"ok": False, "error": "No dataset in memory. Run /analyze first."},
+            status_code=400,
+        )
+
+    kpi_text = str(payload.get("kpi_text") or "").strip()
+    if not kpi_text:
+        return JSONResponse(
+            {"ok": False, "error": "kpi_text is required"},
+            status_code=400,
+        )
+
+    df = _cached_df
+    semantic = _cached_semantic or {}
+
+    # Basic parsing for patterns like "Top 5 X by Y" or "Top X by Y"
+    text_lower = kpi_text.lower()
+    n_top = 5
+    dim_hint = None
+    measure_hint = None
+
+    import re
+
+    m = re.search(r"top\s+(\d+)", text_lower)
+    if m:
+        try:
+            n_top = int(m.group(1))
+        except ValueError:
+            n_top = 5
+
+    # Split around "by" to get dimension vs measure-ish phrase
+    parts = re.split(r"\s+by\s+", kpi_text, flags=re.IGNORECASE)
+    if len(parts) == 2:
+        # e.g. "Top 5 food items" (dimension-ish) / "sales" (measure-ish)
+        dim_hint = parts[0]
+        measure_hint = parts[1]
     else:
-        return Response(f"Unknown format: {format}", status_code=400)
+        measure_hint = kpi_text
+
+    # Allow explicit overrides from payload
+    dim_override = payload.get("dimension_col")
+    measure_override = payload.get("measure_col")
+    time_override = payload.get("time_col")
+
+    # Synonym expansion for common KPI terms
+    MEASURE_SYNONYMS = {
+        "sales": ["sale", "revenue", "amount", "price", "total", "value", "gross", "net"],
+        "revenue": ["sales", "amount", "price", "total", "value", "gross", "income"],
+        "profit": ["margin", "net", "gain", "earnings"],
+        "quantity": ["qty", "count", "units", "volume", "number"],
+        "cost": ["expense", "price", "spend"],
+        "price": ["cost", "amount", "value", "rate"],
+    }
+    DIMENSION_SYNONYMS = {
+        "food": ["item", "product", "menu", "dish"],
+        "item": ["product", "food", "name", "sku"],
+        "product": ["item", "food", "name", "sku"],
+        "category": ["type", "group", "class", "segment"],
+        "customer": ["client", "buyer", "user", "account"],
+        "region": ["area", "location", "zone", "territory"],
+        "date": ["time", "day", "month", "year", "period"],
+    }
+
+    def _expand_synonyms(hint, synonym_dict):
+        """Expand a hint with its synonyms for broader matching."""
+        if not hint:
+            return []
+        hint_l = hint.lower()
+        terms = [hint_l]
+        for base, synonyms in synonym_dict.items():
+            if base in hint_l or hint_l in base:
+                terms.extend(synonyms)
+            for syn in synonyms:
+                if syn in hint_l or hint_l in syn:
+                    terms.append(base)
+                    terms.extend(synonyms)
+        return list(set(terms))
+
+    # Heuristic column matching with synonym support
+    def _best_match(columns, hint, fallback=None, synonym_dict=None):
+        if not hint:
+            return fallback
+        hint_l = hint.lower()
+        # Expand hint with synonyms
+        search_terms = [hint_l]
+        if synonym_dict:
+            search_terms = _expand_synonyms(hint_l, synonym_dict) or [hint_l]
+        
+        best = None
+        best_score = 0
+        for c in columns:
+            name = str(c).lower()
+            score = 0
+            # Check exact/partial matches for all search terms
+            for term in search_terms:
+                if term in name:
+                    score += 3
+                for token in term.split():
+                    if token and len(token) > 2 and token in name:
+                        score += 1
+            # Boost if column name appears in original hint
+            for token in name.replace("_", " ").split():
+                if token and len(token) > 2 and token in hint_l:
+                    score += 2
+            if score > best_score:
+                best_score = score
+                best = c
+        return best or fallback
+
+    all_columns = [str(c) for c in df.columns.tolist()]
+    numeric_cols = semantic.get("numeric_cols", []) or []
+    categorical_cols = semantic.get("categorical_cols", []) or []
+    datetime_cols = semantic.get("datetime_cols", []) or []
+
+    # Pick measure column
+    if measure_override and measure_override in df.columns:
+        measure_col = measure_override
+    else:
+        measure_col = _best_match(numeric_cols or all_columns, measure_hint, synonym_dict=MEASURE_SYNONYMS)
+        # Fallback: if still no match, just use the first numeric column
+        if not measure_col and numeric_cols:
+            measure_col = numeric_cols[0]
+
+    # Pick dimension column
+    if dim_override and dim_override in df.columns:
+        dimension_col = dim_override
+    else:
+        dimension_col = _best_match(categorical_cols or all_columns, dim_hint, synonym_dict=DIMENSION_SYNONYMS)
+        # Fallback: if still no match, just use the first categorical column
+        if not dimension_col and categorical_cols:
+            dimension_col = categorical_cols[0]
+
+    # Pick time column (only used if phrase mentions time/over time)
+    if time_override and time_override in df.columns:
+        time_col = time_override
+    else:
+        if any(p in text_lower for p in [" over time", " by day", " by date", " daily", " monthly"]):
+            if datetime_cols:
+                time_col = datetime_cols[0]
+            else:
+                time_col = _best_match(all_columns, "date", synonym_dict=DIMENSION_SYNONYMS)
+        else:
+            time_col = None
+
+    # Ultimate fallback: if measure_col still not set, try to find ANY numeric-looking column
+    if not measure_col or measure_col not in df.columns:
+        # Check df dtypes directly for numeric columns
+        for col in df.columns:
+            if df[col].dtype in ['int64', 'int32', 'float64', 'float32', 'int', 'float']:
+                measure_col = str(col)
+                break
+    
+    if not measure_col or measure_col not in df.columns:
+        return JSONResponse(
+            {
+                "ok": False, 
+                "error": f"Could not infer a numeric measure column for this KPI. Available columns: {all_columns}. Numeric columns detected: {numeric_cols}. Try specifying measure_col explicitly.",
+            },
+            status_code=400,
+        )
+
+    # Decide chart type: if "over time" is in the phrase and we have time_col -> line chart
+    wants_time = time_col is not None and any(p in text_lower for p in [" over time", " trend", " over the", "over days", "over months"])
+
+    if wants_time and time_col and time_col in df.columns:
+        table = _time_agg(df, time_col=time_col, measure_col=measure_col, freq="D")
+        card = _make_card(
+            title=kpi_text,
+            why=f"User-requested time-series KPI for {measure_col}.",
+            table=table,
+            chart={"type": "line", "x": "time", "y": measure_col},
+        )
+    else:
+        # Default: top-N by dimension
+        if not dimension_col or dimension_col not in df.columns:
+            # Fallback: pick any non-measure categorical-looking column first, then any non-measure column
+            fallback_dim = None
+            for c in categorical_cols:
+                if c != measure_col and c in df.columns:
+                    fallback_dim = c
+                    break
+            if not fallback_dim:
+                for c in all_columns:
+                    if c != measure_col:
+                        fallback_dim = c
+                        break
+            dimension_col = fallback_dim
+
+        if not dimension_col or dimension_col not in df.columns:
+            return JSONResponse(
+                {"ok": False, "error": f"Could not infer a categorical dimension column for this KPI. Available columns: {all_columns}."},
+                status_code=400,
+            )
+
+        table = _topn_table(df, group_col=dimension_col, measure_col=measure_col, n=n_top)
+        card = _make_card(
+            title=kpi_text,
+            why=f"User-requested KPI showing top {n_top} {dimension_col} by {measure_col}.",
+            table=table,
+            chart={"type": "bar", "x": dimension_col, "y": measure_col},
+        )
+
+    return {"ok": True, "card": card}
 
 
 # =====================================================

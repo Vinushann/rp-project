@@ -17,3 +17,5 @@ export { default as DataQuality } from './DataQuality';
 export { default as AnomalyDetection } from './AnomalyDetection';
 export { default as ComparativeAnalysis } from './ComparativeAnalysis';
 export { default as TrainingManager } from './TrainingManager';
+export { default as Dashboard } from './Dashboard';
+export { default as DashboardEnhanced } from './DashboardEnhanced';

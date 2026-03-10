@@ -50,7 +50,6 @@ coverage/
 *.log
 .cache
 
-
 *.safetensors
 *.bin
 *.pt
@@ -64,3 +63,4 @@ __pycache__/
 .env.example
 .env
 /backend/app/modules/vishva/data
+backend/app/modules/ayathma/app/db/*.db

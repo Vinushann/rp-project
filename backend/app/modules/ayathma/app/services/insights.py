@@ -5,6 +5,23 @@ import math
 
 import pandas as pd
 
+# Import SQL generator
+try:
+    from .sql_generator import generate_sql_for_card, generate_kpi_sql
+    SQL_AVAILABLE = True
+except ImportError:
+    SQL_AVAILABLE = False
+    generate_sql_for_card = None
+    generate_kpi_sql = None
+
+# Import KPI preference scorer
+try:
+    from .kpi_preference_trainer import score_kpi_relevance
+    KPI_SCORER_AVAILABLE = True
+except ImportError:
+    KPI_SCORER_AVAILABLE = False
+    score_kpi_relevance = None
+
 
 # ----------------------------
 # helpers
@@ -104,15 +121,19 @@ def _make_card(
     table: List[Dict[str, Any]],
     chart: Dict[str, Any],
     card_id: Optional[str] = None,
+    sql_query: Optional[str] = None,
 ) -> Dict[str, Any]:
     """Create a normalized card dict used by the frontend.
 
     card_id is an optional stable identifier (e.g. "measure_over_time_daily")
     that can be used for ML training labels.
+    sql_query is an optional SQL query that would reproduce this chart's data.
     """
     card = {"title": title, "why": why, "table": table, "chart": chart}
     if card_id:
         card["id"] = card_id
+    if sql_query:
+        card["sql_query"] = sql_query
 
     if table and chart.get("x") and chart.get("y"):
         xk = chart["x"]
@@ -550,10 +571,14 @@ def generate_insights(
     roles: Optional[Dict[str, Any]] = None,
     business_names_map: Optional[Dict[str, Any]] = None,
     fa: Optional[Dict[str, Any]] = None,
+    dataset_name: Optional[str] = None,  # For SQL generation
     **kwargs: Any,  # ✅ swallow any future/extra args safely
 ) -> Dict[str, Any]:
     roles = roles or {}
     business_names_map = business_names_map or {}
+    
+    # Default dataset name for SQL
+    table_name = dataset_name or "dataset"
 
     # Normalize dimension overrides into ONE list
     dims_override_list: Optional[List[str]] = None
@@ -581,6 +606,15 @@ def generate_insights(
         if not cards_selected:
             return True
         return cid in set(cards_selected)
+    
+    # Helper to generate SQL for a card
+    def _get_sql(card: Dict[str, Any]) -> Optional[str]:
+        if not SQL_AVAILABLE or generate_sql_for_card is None:
+            return None
+        try:
+            return generate_sql_for_card(card, table_name, selected)
+        except Exception:
+            return None
 
     cards: List[Dict[str, Any]] = []
 
@@ -597,55 +631,65 @@ def generate_insights(
         dim = dims[0]
         if dim in df.columns:
             table = _topn_table(df, group_col=dim, measure_col=measure, n=10)
-            cards.append(_make_card(
+            card = _make_card(
                 title=f"Top {dim} by {measure}",
                 why=f"Shows what contributes most to {measure}. Useful for focus and prioritization.",
                 table=table,
                 chart={"type": "bar", "x": dim, "y": measure},
                 card_id="top_dimension_by_measure",
-            ))
+            )
+            card["sql_query"] = _get_sql(card)
+            cards.append(card)
 
     if time_col and time_col in df.columns and want("measure_over_time_daily"):
         table = _time_agg(df, time_col=time_col, measure_col=measure, freq="D")
-        cards.append(_make_card(
+        card = _make_card(
             title=f"{measure} trend (daily)",
             why="Daily trend helps spot spikes, dips, and unusual behavior.",
             table=table,
             chart={"type": "line", "x": "time", "y": measure},
             card_id="measure_over_time_daily",
-        ))
+        )
+        card["sql_query"] = _get_sql(card)
+        cards.append(card)
 
     if time_col and time_col in df.columns and want("measure_over_time_monthly"):
         table = _time_agg(df, time_col=time_col, measure_col=measure, freq="M")
-        cards.append(_make_card(
+        card = _make_card(
             title=f"{measure} trend (monthly)",
             why="Monthly trend is better for strategic planning and seasonality.",
             table=table,
             chart={"type": "line", "x": "time", "y": measure},
             card_id="measure_over_time_monthly",
-        ))
+        )
+        card["sql_query"] = _get_sql(card)
+        cards.append(card)
 
     if want("measure_distribution"):
         table = _distribution_table(df, measure_col=measure)
-        cards.append(_make_card(
+        card = _make_card(
             title=f"{measure} distribution",
             why="Distribution helps detect skew, outliers, and typical ranges.",
             table=table,
             chart={"type": "bar", "x": "metric", "y": "value"},
             card_id="measure_distribution",
-        ))
+        )
+        card["sql_query"] = _get_sql(card)
+        cards.append(card)
 
     if dims and want("measure_by_category"):
         dim = dims[1] if len(dims) > 1 else dims[0]
         if dim in df.columns:
             table = _topn_table(df, group_col=dim, measure_col=measure, n=12)
-            cards.append(_make_card(
+            card = _make_card(
                 title=f"{measure} by {dim}",
                 why="Breakdown by category-like field is a classic analyst view for strategy decisions.",
                 table=table,
                 chart={"type": "bar", "x": dim, "y": measure},
                 card_id="measure_by_category",
-            ))
+            )
+            card["sql_query"] = _get_sql(card)
+            cards.append(card)
 
     experimental = {"ok": False, "reason": "FA not provided.", "cards": []}
     if fa is not None:
@@ -656,6 +700,25 @@ def generate_insights(
             selected=selected,
             dims=dims,
         )
+
+    # ✅ Re-rank cards using KPI preference model if available
+    if KPI_SCORER_AVAILABLE and score_kpi_relevance is not None and cards:
+        try:
+            # Build dataset context text from column names
+            dataset_text = " ".join(df.columns.tolist())
+            
+            # Score each card
+            for card in cards:
+                kpi_text = f"{card.get('title', '')} {card.get('why', '')}"
+                score = score_kpi_relevance(dataset_text=dataset_text, kpi_text=kpi_text)
+                card["relevance_score"] = score
+            
+            # Sort cards by relevance score (highest first)
+            cards.sort(key=lambda c: c.get("relevance_score", 0.5), reverse=True)
+            
+        except Exception as e:
+            # If scoring fails, just log and continue with original order
+            print(f"⚠️ KPI re-ranking failed: {e}")
 
     return {
         "selected": selected,
