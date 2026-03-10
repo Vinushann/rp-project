@@ -8,13 +8,9 @@ from datetime import datetime
 import os
 import sys
 
-# Load .env from both the backend root and the module directory
+# Load .env from the backend root directory (single source of truth)
 backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 load_dotenv(os.path.join(backend_dir, '.env'))
-
-# Also try module-level .env as fallback
-module_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-load_dotenv(os.path.join(module_dir, '.env'))
 
 
 def extract_menu_data(url: str, output_dir: str = "data/raw", headless: bool = False) -> dict:
@@ -124,6 +120,13 @@ def extract_menu_data(url: str, output_dir: str = "data/raw", headless: bool = F
             print("[OK] Used string conversion (fallback)")
         
         if text_output:
+            # Ensure text_output is a string (agent may return non-serializable objects like ActionResult)
+            if not isinstance(text_output, str):
+                try:
+                    text_output = json.dumps(text_output, ensure_ascii=False, indent=2, default=str)
+                except (TypeError, ValueError):
+                    text_output = str(text_output)
+
             # Generate timestamp and filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_filename = os.path.join(output_dir, f"raw_output_{timestamp}.txt")

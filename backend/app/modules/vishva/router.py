@@ -98,6 +98,7 @@ class ModelStatus(BaseModel):
     accuracy: Optional[float] = None
     f1_score: Optional[float] = None
     categories: Optional[List[str]] = None
+    trained_at: Optional[str] = None
 
 
 # ============================================
@@ -208,6 +209,12 @@ async def extract_menu(request: ExtractRequest):
         
         # Write a temporary extraction script
         backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(MODULE_DIR)))
+        # Pass URL safely via environment variable to avoid code injection
+        import tempfile
+        env_for_extract = os.environ.copy()
+        env_for_extract['_EXTRACT_URL'] = request.url
+        env_for_extract['_EXTRACT_OUTPUT_DIR'] = output_dir
+        
         script_content = f'''
 import sys
 import os
@@ -224,7 +231,9 @@ load_dotenv(os.path.join(backend_dir, ".env"))
 from app.modules.vishva.tools import extract_menu_data
 import json
 
-result = extract_menu_data(r"{request.url}", r"{output_dir}")
+url = os.environ["_EXTRACT_URL"]
+output_dir = os.environ["_EXTRACT_OUTPUT_DIR"]
+result = extract_menu_data(url, output_dir)
 print("__RESULT_JSON__")
 print(json.dumps(result))
 '''
@@ -232,15 +241,10 @@ print(json.dumps(result))
         with open(extract_script, 'w') as f:
             f.write(script_content)
         
-        # Run in subprocess with clean environment (avoid anaconda conflicts)
-        # Use the venv's python explicitly, not sys.executable (which might be anaconda)
-        venv_python = os.path.join(backend_dir, "..", "venv", "Scripts", "python.exe")
-        venv_python = os.path.normpath(venv_python)
-        if not os.path.exists(venv_python):
-            # Fallback to sys.executable
-            venv_python = sys.executable
+        # Use current Python executable (from the active venv)
+        venv_python = sys.executable
         
-        env = os.environ.copy()
+        env = env_for_extract
         # Remove conda paths that might interfere
         if 'PYTHONPATH' in env:
             del env['PYTHONPATH']
@@ -440,7 +444,8 @@ async def train_model_stream():
         await asyncio.sleep(4)
         
         best_model = result['best_model']
-        yield f"data: {json.dumps({'type': 'substep', 'message': f'Best model: {best_model["name"]} with {best_model["accuracy"]*100:.1f}% accuracy', 'progress': 90})}\n\n"
+        best_model_message = f"Best model: {best_model['name']} with {best_model['accuracy']*100:.1f}% accuracy"
+        yield f"data: {json.dumps({'type': 'substep', 'message': best_model_message, 'progress': 90})}\n\n"
         await asyncio.sleep(2)
         
         # Step 8: Saving Model
@@ -986,7 +991,9 @@ os.chdir(r"{backend_dir}")
 from app.modules.vishva.tools.extract_tool import extract_menu_data
 import json
 
-result = extract_menu_data(r"{url}", r"{output_dir}")
+url = os.environ["_EXTRACT_URL"]
+output_dir = os.environ["_EXTRACT_OUTPUT_DIR"]
+result = extract_menu_data(url, output_dir)
 print("__RESULT_JSON__")
 print(json.dumps(result))
 '''
@@ -1001,6 +1008,8 @@ print(json.dumps(result))
             python_exe = sys.executable
             env = os.environ.copy()
             env['PYTHONUNBUFFERED'] = '1'
+            env['_EXTRACT_URL'] = url
+            env['_EXTRACT_OUTPUT_DIR'] = output_dir
             
             # On Windows, use CREATE_NO_WINDOW to prevent console window issues
             creation_flags = 0
