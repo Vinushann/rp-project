@@ -49,3 +49,4 @@ coverage/
 # Misc
 *.log
 .cache
+backend/app/modules/ayathma/app/db/*.db
