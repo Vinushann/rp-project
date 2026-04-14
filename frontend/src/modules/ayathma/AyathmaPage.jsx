@@ -97,8 +97,8 @@ function AyathmaPage() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Smart KPI Analyzer</h1>
-                <p className="text-sm text-gray-500">AI-powered KPI extraction from your datasets</p>
+                <h1 className="text-2xl font-bold text-gray-900">KPIForge</h1>
+                <p className="text-sm text-gray-500">AI-powered KPI extraction and recommendations</p>
               </div>
             </div>
             {results && (

@@ -1,53 +1,44 @@
-# Action Plan to Increase Sales for December 26, 2025
+# Comprehensive Action Plan for Next Month
 
 ## Demand Outlook
-- **Predicted Total Sales Quantity:** 1,030 units for the day.
-- **Busiest Days Ahead:** 
-  - January 12, 2026: 68.23 units
-  - January 13, 2026: 82.63 units
-  - January 14, 2026: 84.43 units
-- **Focus on High-Demand Items:** 
-  - Top-selling items include Herb Drink 9, Crispy Pasta 12, and Veggie Roll, which should be prioritized in promotions.
+- **Day Following Vesak Full Moon Poya Day**: Expect a demand increase of **3.94%**. Stock up on best sellers and highlight them prominently.
+- **Eid al-Fitr**: Anticipate a demand decrease of **-11.11%**. Implement light promotions to stimulate sales.
+- **International Workers' Day**: Monitor closely with a slight demand decrease of **-2.23%**. Maintain standard operations.
+- **Special Public Holiday**: Expect a demand decrease of **-5.85%**. Consider light promotions to lift demand.
+- **Vesak Full Moon Poya Day**: Minimal impact with a decrease of **-0.88%**. Continue standard operations and monitor sales.
 
 ## Promotions
-- **Discount Strategy:**
-  - Implement a **50% discount** on Spicy Drink 22 and **28% discount** on Herb Dessert 19 to attract customers.
-  - Offer a **Buy One Get One Free** on Veggie Roll and Deluxe Pizza to increase foot traffic.
-- **Limited-Time Offers:**
-  - Create a **"Holiday Special" menu** featuring top items at a discounted rate for December 26 only.
-- **Social Media Campaign:**
-  - Promote the discounts and special menu through social media channels to reach a wider audience.
+- **Post-Holidays**:
+  - Highlight best sellers after Vesak Full Moon Poya Day.
+- **Eid al-Fitr**:
+  - Implement light promotions to counteract the expected demand drop.
+- **Pre-Holidays**:
+  - For International Workers' Day and Special Public Holiday, consider light promotions to stimulate interest and sales.
 
 ## Staffing
-- **Increase Staff for Peak Hours:**
-  - Schedule additional staff during peak hours (11 AM - 2 PM) to ensure quick service and customer satisfaction.
-- **Training:**
-  - Brief staff on the promotions and new menu items to ensure they can effectively communicate offers to customers.
+- **Post-Holidays**: Increase staffing levels to handle the anticipated uptick in sales after Vesak Full Moon Poya Day.
+- **Eid al-Fitr**: Maintain standard staffing levels but be prepared to adjust based on sales performance.
+- **Pre-Holidays**: Monitor staffing needs closely, especially during International Workers' Day and Special Public Holiday, to ensure efficient operations without overstaffing.
 
 ## Inventory
-- **Stock Up on Top Items:**
-  - Ensure sufficient inventory of high-demand items such as Herb Drink 9, Crispy Pasta 12, and Veggie Roll.
-- **Monitor Falling Items:**
-  - Reduce stock of falling items like Herb Chicken 12 and Sweet Pasta to minimize waste and focus on more profitable items.
+- **Stock Management**:
+  - Ensure best sellers are well-stocked leading into the Day Following Vesak Full Moon Poya Day.
+  - Prepare for potential slow sales during Eid al-Fitr by managing inventory levels carefully.
+  - Maintain standard inventory levels for International Workers' Day and Vesak Full Moon Poya Day, adjusting as necessary based on sales trends.
 
 ## Risks
-- **Potential Risks:**
-  - Risk of overstocking on items that may not sell despite discounts.
-  - Customer response to promotions may be lower than expected.
-- **Mitigation Strategies:**
-  - Monitor sales closely throughout the day and adjust promotions if certain items are not selling.
-  - Be prepared to pivot marketing strategies based on real-time sales data.
+- **Demand Fluctuations**: The potential for decreased sales during Eid al-Fitr poses a risk. Mitigate this by implementing promotions.
+- **Weather Impact**: While rain has a minimal impact on food pastries, ensure that inventory reflects customer preferences for both hot and cold drinks regardless of temperature.
+- **Operational Efficiency**: Monitor staffing and inventory closely to avoid overstocking or understaffing during fluctuating demand periods.
 
 ## Summary Table of Key Metrics
 
-| Metric                     | Value               |
-|----------------------------|---------------------|
-| Predicted Total Sales Qty   | 1,030 units         |
-| Top Selling Item            | Herb Drink 9        |
-| Discount on Spicy Drink 22  | 50%                 |
-| Discount on Herb Dessert 19  | 28%                 |
-| Additional Staff Scheduled   | Yes (Peak Hours)    |
-| Inventory Focus             | High-demand items    |
-| Risks Identified            | Overstock, Low response |
+| Holiday/Event                     | Phase        | Effect (%) | Action                                   |
+|-----------------------------------|--------------|------------|------------------------------------------|
+| Day Following Vesak Full Moon Poya| Post-Holiday | +3.94      | Stock up and highlight best sellers      |
+| Eid al-Fitr                       | Post-Holiday | -11.11     | Consider light promos to lift demand     |
+| International Workers' Day        | Pre-Holiday  | -2.23      | Monitor closely; keep standard operations |
+| Special Public Holiday             | Pre-Holiday  | -5.85      | Consider light promos to lift demand     |
+| Vesak Full Moon Poya Day          | Pre-Holiday  | -0.88      | Monitor closely; keep standard operations |
 
-By implementing this comprehensive action plan, we aim to maximize sales on December 26, 2025, while effectively managing inventory and staffing to enhance customer experience.
+This comprehensive action plan outlines the necessary steps to optimize sales and manage operations effectively in the upcoming month, taking into account weather conditions and holiday impacts.

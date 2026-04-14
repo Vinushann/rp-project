@@ -749,11 +749,11 @@ function VishvaPage() {
         <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
             <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-200">
-              Vishva workspace
+              ExtractIQ workspace
             </span>
             <div className="mt-4 flex items-center gap-4">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/12 text-2xl font-bold text-white ring-1 ring-white/20 backdrop-blur">
-                V
+                E
               </div>
               <div>
                 <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Web Extraction & Classification Studio</h1>

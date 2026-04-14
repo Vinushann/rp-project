@@ -11,10 +11,10 @@ function App() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
-        <Route path="vinushan" element={<VinushanPage />} />
-        <Route path="vishva" element={<VishvaPage />} />
-        <Route path="nandika" element={<NandikaPage />} />
-        <Route path="ayathma" element={<AyathmaPage />} />
+        <Route path="athena" element={<VinushanPage />} />
+        <Route path="signalsift" element={<VishvaPage />} />
+        <Route path="sentipulse" element={<NandikaPage />} />
+        <Route path="kpiforge" element={<AyathmaPage />} />
       </Route>
     </Routes>
   )

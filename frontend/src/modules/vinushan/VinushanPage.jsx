@@ -469,7 +469,7 @@ function VinushanPage() {
               <div className="athena-messages">
                 {messages.length === 0 ? (
                   <div className="athena-welcome">
-                    <h3>Welcome, Vinushan!</h3>
+                    <h3>Welcome to ATHENA!</h3>
                     <p>
                       I can analyze sales, forecast demand, explain holiday and weather impacts, and create charts.
                     </p>

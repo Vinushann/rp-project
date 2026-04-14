@@ -2,28 +2,28 @@ import { Link } from 'react-router-dom';
 
 const modules = [
   { 
-    name: 'Vinushan', 
-    path: '/vinushan', 
+    name: 'ATHENA', 
+    path: '/athena', 
     color: 'bg-blue-500',
-    description: 'Module description here'
+    description: 'Context-aware forecasting and decision support.'
   },
   { 
-    name: 'Vishva', 
-    path: '/vishva', 
+    name: 'ExtractIQ', 
+    path: '/signalsift', 
     color: 'bg-green-500',
-    description: 'Module description here'
+    description: 'Web extraction and smart classification pipeline.'
   },
   { 
-    name: 'Nandika', 
-    path: '/nandika', 
+    name: 'SentiPulse', 
+    path: '/sentipulse', 
     color: 'bg-purple-500',
-    description: 'Module description here'
+    description: 'Multilingual sentiment insights with AI replies.'
   },
   { 
-    name: 'Ayathma', 
-    path: '/ayathma', 
+    name: 'KPIForge', 
+    path: '/kpiforge', 
     color: 'bg-orange-500',
-    description: 'Module description here'
+    description: 'Automated KPI extraction with actionable insights.'
   },
 ];
 
@@ -33,7 +33,7 @@ function HomePage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Welcome to RP Project Dashboard
+          Welcome to Contrextra
         </h1>
         <p className="text-gray-600">
           Select a module from the sidebar or click on a card below to get started.
