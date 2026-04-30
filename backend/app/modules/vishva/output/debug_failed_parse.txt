@@ -1,18 +1,74 @@
-Parse attempt failed at 2026-04-11 19:28:25.057054
-Error: Unterminated string starting at: line 4 column 14 (char 71)
+Parse attempt failed at 2026-04-26 20:32:40.696988
+Error: Expecting value: line 1 column 2 (char 1)
 
 ============================================================
 ORIGINAL CONTENT (first 2000 chars):
 ============================================================
-"""[
-  {
-    "name": "The Yankee (Crispy Chicken & Cheese)",
-    "price": "RS 1
+<url>
+about:blank
+</url>
+<query>
+//div[@class='menu-item-wrap']/div[contains(@class, 'menu-item-price')]/text()
+</query>
+<result>
+- **Lunch Menu:**
+  - The Yankee (Crispy Chicken & Cheese) - RS 1,650
+  - El Double (Grilled Beef & Cheese) - RS 1,950
+  - Holy Chunk (Belly Pork & Cheese) - RS 1,850
+  - Chicken Bowl - RS 1,750
+  - Tuna Bowl - RS 1,850
+  - Tofu Bowl - RS 1,650
+  - Prawn Bowl - RS 1,950
+  - Executive Lunch Set Menu: Seafood - RS 1,490, Chicken - RS 1,490
+
+- **Salads & Soups:**
+  - Greek Salad - RS 1,850
+  - Hawaiian Chicken Salad - RS 1,950
+  - Caesar Salad - RS 2,100
+  - Beef Bone Marrow Soup - RS 1,850
+  - Chicken Noodle Soup - RS 1,750
+  - Pepper Mutton Broth - RS 2,650
+  - Seafood Tom Yum Soup - RS 2,950
+  - Thai Spicy Beef Salad - RS 2,350
+  - Cream of Shiitake Mushroom Soup - RS 1,600
+
+- **Mains:**
+  - Crispy Fried Whole Tilapia Fish & Chip - Per 100g RS 490
+  - Grilled Greek Chicken - RS 3,100
+  - Grilled Beef Fillet - RS 4,950
+  - Teriyaki Beef - RS 3,850
+  - Herb Marinated Pork Leg Steak - RS 2,950
+  - Teriyaki Pork Belly - RS 3,550
+  - Crispy Pork Knuckle - Per 100g RS 750
+  - Sizzling Thai Grilled Calamari - RS 2,950
+  - Grilled Tiger Prawns - RS 5,100
+  - Garlic Butter Crab - 800g RS 4,500
+  - Singaporean Style Chilli Crab - 800g RS 4,200
+  - Thai Crab Curry - 800g RS 4,200
+  - Murex Calamari - RS 3,100
+  - Hot Butter Calamari - Large RS 2,950
+  - Battered Prawns - Large RS 2,950
+  - Battered Chicken - Large RS 2,950
+
+- **Island Delights:**
+  - Red Chicken Curry - RS 2,950
+  - Black Pork Curry - RS 3,100
+  - Red Beef Curry - RS 3,300
+  - Red Mutton Curry - RS 4,100
+  - Red Prawns Curry - RS 3,950
+  - Jaffna Crab Curry - RS 4,100
+  - Tilapiya Fish Curry - RS 3,100
+
+- **Pasta & Rice:**
+  - Spaghetti Aglio e Olio - RS 2,650
+  - Spaghetti with Fresh Basil Pesto - RS 2,650
+  - Spaghetti Alle Vongole - RS 3,450
+  - Fettuccine with Beef and White Truffle - RS 3,450
+  - Chicken Bolognese - RS 2,950
+  - Creamy Seafood Penne Pasta - RS 3,450
+  - Wok Fri
 
 ============================================================
 CLEANED CONTENT (first 2000 chars):
 ============================================================
-[
-  {
-    "name": "The Yankee (Crispy Chicken & Cheese)",
-    "price": "RS 1
+[@class='menu-item-wrap']/div[contains(@class, 'menu-item-price')]

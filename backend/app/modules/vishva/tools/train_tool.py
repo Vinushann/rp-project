@@ -1,6 +1,6 @@
 import json
 import numpy as np
-import pandas as pd
+from collections import Counter
 from datetime import datetime
 import os
 import joblib
@@ -24,24 +24,18 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import (
     accuracy_score, 
     precision_recall_fscore_support,
-    classification_report,
-    confusion_matrix
+    classification_report
 )
 
 # Text preprocessing
 import re
 import nltk
 try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt', quiet=True)
-try:
     nltk.data.find('corpora/stopwords')
 except LookupError:
     nltk.download('stopwords', quiet=True)
 
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 
 class MenuCategoryClassifier:
     """
@@ -55,11 +49,9 @@ class MenuCategoryClassifier:
             'Logistic Regression': LogisticRegression(max_iter=1000, random_state=42),
             'Multinomial Naive Bayes': MultinomialNB()
         }
-        
-        self.vectorizers = {
-            'Bag-of-Words': CountVectorizer(max_features=1000, ngram_range=(1, 2)),
-            'TF-IDF': TfidfVectorizer(max_features=1000, ngram_range=(1, 2)),
-        }
+
+        self.vectorizers = {}
+        self._configure_vectorizers(n_samples_hint=100)
         
         self.feature_selectors = {
             'Chi-Square': 'chi2',
@@ -71,13 +63,40 @@ class MenuCategoryClassifier:
         self.best_vectorizer = None
         self.best_feature_selector = None
         self.best_selector_object = None
+        self.best_scaler = None
         self.best_score = 0
         self.results = []
+
+        # Explicitly track what is used for training features.
+        self.training_feature_info = {
+            'text_feature_field': 'name',
+            'label_field': 'category',
+            'ignored_fields': ['price', 'description'],
+            'uses_only_name_and_label': True
+        }
+        self.data_stats = {}
         
         try:
             self.stop_words = set(stopwords.words('english'))
         except:
             self.stop_words = set()
+
+    def _configure_vectorizers(self, n_samples_hint: int):
+        """Configure vectorizers based on dataset size while staying name-only."""
+        max_features = min(5000, max(1000, n_samples_hint * 20))
+
+        self.vectorizers = {
+            'Bag-of-Words': CountVectorizer(max_features=max_features, ngram_range=(1, 2)),
+            'TF-IDF': TfidfVectorizer(max_features=max_features, ngram_range=(1, 2), sublinear_tf=True),
+        }
+
+    def normalize_label(self, label: str) -> str:
+        """Normalize category labels for consistent training targets."""
+        if not label:
+            return ""
+
+        normalized = ' '.join(str(label).split())
+        return normalized
     
     def preprocess_text(self, text: str) -> str:
         """Preprocess text: lowercase, remove special chars, remove stopwords"""
@@ -109,25 +128,66 @@ class MenuCategoryClassifier:
         
         if not isinstance(data, list):
             raise ValueError("JSON file must contain a list of menu items")
-        
+
         texts = []
         categories = []
-        
+
+        missing_required = 0
+        invalid_records = 0
+        duplicate_records = 0
+        conflicting_labels = 0
+
+        seen_pairs = set()
+        seen_name_to_label = {}
+
         for item in data:
-            # Use only name for classification (no description - POS items won't have it)
-            # Handle None values explicitly
-            name = (item.get('name') or '').strip()
-            category = (item.get('category') or '').strip()
-            
-            if not name or not category:
+            if not isinstance(item, dict):
+                invalid_records += 1
                 continue
-            
-            # Use only name for classification
+
+            # Training intentionally uses only product name + category label.
+            name = (item.get('name') or '').strip()
+            category = self.normalize_label((item.get('category') or '').strip())
+
+            if not name or not category:
+                missing_required += 1
+                continue
+
             preprocessed = self.preprocess_text(name)
-            
-            if preprocessed:  # Only add if text is not empty after preprocessing
-                texts.append(preprocessed)
-                categories.append(category)
+            if not preprocessed:
+                missing_required += 1
+                continue
+
+            pair = (preprocessed, category)
+            if pair in seen_pairs:
+                duplicate_records += 1
+                continue
+
+            # Avoid contradictory supervision for exactly the same item name.
+            if preprocessed in seen_name_to_label and seen_name_to_label[preprocessed] != category:
+                conflicting_labels += 1
+                continue
+
+            seen_pairs.add(pair)
+            seen_name_to_label[preprocessed] = category
+            texts.append(preprocessed)
+            categories.append(category)
+
+        self.data_stats = {
+            'source_records': len(data),
+            'kept_records': len(texts),
+            'missing_required': missing_required,
+            'invalid_records': invalid_records,
+            'duplicate_records': duplicate_records,
+            'conflicting_labels': conflicting_labels,
+            'unique_categories': len(set(categories))
+        }
+
+        self._configure_vectorizers(n_samples_hint=len(texts))
+
+        print("🧠 Training features: product name -> category (price is ignored)")
+        print(f"🧹 Data filtering: missing={missing_required}, invalid={invalid_records}, "
+              f"duplicates={duplicate_records}, conflicts={conflicting_labels}")
         
         print(f"✅ Loaded {len(texts)} items")
         print(f"📊 Categories found: {len(set(categories))}")
@@ -137,7 +197,7 @@ class MenuCategoryClassifier:
     
     def apply_feature_selection(self, X_train, X_test, y_train, method: str, n_features: int = 500):
         """Apply feature selection method and return both transformed data and selector"""
-        n_features = min(n_features, X_train.shape[1] - 1)
+        n_features = min(n_features, max(1, X_train.shape[1] - 1))
         
         if method == 'chi2':
             # Chi-Square - works with non-negative features
@@ -148,14 +208,17 @@ class MenuCategoryClassifier:
         
         elif method == 'mutual_info':
             # Mutual Information
-            selector = SelectKBest(mutual_info_classif, k=n_features)
+            def mi_score(X, y):
+                return mutual_info_classif(X, y, discrete_features=True)
+
+            selector = SelectKBest(mi_score, k=n_features)
             X_train_selected = selector.fit_transform(X_train, y_train)
             X_test_selected = selector.transform(X_test)
             return X_train_selected, X_test_selected, selector
         
         elif method == 'lsa':
             # Latent Semantic Analysis
-            n_components = min(100, X_train.shape[1] - 1, n_features)
+            n_components = min(100, max(1, X_train.shape[1] - 1), n_features)
             selector = TruncatedSVD(n_components=n_components, random_state=42)
             X_train_selected = selector.fit_transform(X_train)
             X_test_selected = selector.transform(X_test)
@@ -163,16 +226,24 @@ class MenuCategoryClassifier:
         
         return X_train, X_test, None
     
-    def ensure_non_negative(self, X):
-        """Ensure features are non-negative for MultinomialNB"""
-        if np.any(X < 0):
-            # Scale to [0, 1] range
+    def ensure_non_negative(self, X, scaler=None):
+        """Ensure features are non-negative for MultinomialNB."""
+        if hasattr(X, 'data'):
+            has_negative = X.data.size > 0 and float(X.data.min()) < 0
+        else:
+            has_negative = bool(np.any(np.asarray(X) < 0))
+
+        if not has_negative:
+            return X, scaler
+
+        dense_X = X.toarray() if hasattr(X, 'toarray') else np.asarray(X)
+        if scaler is None:
             scaler = MinMaxScaler()
-            if hasattr(X, 'toarray'):
-                X = X.toarray()
-            X_scaled = scaler.fit_transform(X)
-            return X_scaled, scaler
-        return X, None
+            dense_X = scaler.fit_transform(dense_X)
+        else:
+            dense_X = scaler.transform(dense_X)
+
+        return dense_X, scaler
     
     def train_and_evaluate(self, texts: List[str], categories: List[str]) -> Dict:
         """Train all model combinations and find the best one"""
@@ -189,9 +260,19 @@ class MenuCategoryClassifier:
         print(f"\n📊 Data split:")
         print(f"   Training: {len(X_train_text)} items")
         print(f"   Testing: {len(X_test_text)} items")
+
+        class_counts = Counter(y_train)
+        min_class_count = min(class_counts.values()) if class_counts else 0
+        cv_folds = min(5, min_class_count) if min_class_count >= 2 else 0
+        if cv_folds >= 2:
+            print(f"   Cross-validation folds: {cv_folds}")
+        else:
+            print("   Cross-validation: skipped (not enough samples per class)")
         
         results = []
         best_accuracy = 0
+        best_f1 = -1.0
+        best_cv = -1.0
         best_config = None
         
         # Try all combinations
@@ -230,13 +311,7 @@ class MenuCategoryClassifier:
                         
                         if isinstance(model_clone, MultinomialNB):
                             X_train_final, scaler = self.ensure_non_negative(X_train_selected)
-                            if scaler is not None:
-                                # Transform test data using the scaler fitted on training data
-                                if hasattr(X_test_selected, 'toarray'):
-                                    X_test_final = scaler.transform(X_test_selected.toarray())
-                                else:
-                                    X_test_final = scaler.transform(X_test_selected)
-                            # else: X_test_final already set above (no scaling needed)
+                            X_test_final, _ = self.ensure_non_negative(X_test_selected, scaler=scaler)
                         
                         # Train
                         model_clone.fit(X_train_final, y_train)
@@ -251,12 +326,21 @@ class MenuCategoryClassifier:
                         )
                         
                         # Cross-validation score
-                        cv_scores = cross_val_score(
-                            model_clone, X_train_final, y_train, cv=min(5, len(set(y_train))), 
-                            scoring='accuracy'
-                        )
-                        cv_mean = cv_scores.mean()
-                        cv_std = cv_scores.std()
+                        cv_mean = 0.0
+                        cv_std = 0.0
+                        if cv_folds >= 2:
+                            try:
+                                cv_scores = cross_val_score(
+                                    model_clone,
+                                    X_train_final,
+                                    y_train,
+                                    cv=cv_folds,
+                                    scoring='accuracy'
+                                )
+                                cv_mean = cv_scores.mean()
+                                cv_std = cv_scores.std()
+                            except Exception as cv_error:
+                                print(f"       ⚠ CV skipped: {str(cv_error)[:60]}")
                         
                         result = {
                             'vectorizer': vec_name,
@@ -281,8 +365,14 @@ class MenuCategoryClassifier:
                         print(f"       ✓ CV Score: {cv_mean:.4f} (±{cv_std:.4f})")
                         
                         # Track best model
-                        if accuracy > best_accuracy:
+                        if (
+                            accuracy > best_accuracy or
+                            (np.isclose(accuracy, best_accuracy) and f1 > best_f1) or
+                            (np.isclose(accuracy, best_accuracy) and np.isclose(f1, best_f1) and cv_mean > best_cv)
+                        ):
                             best_accuracy = accuracy
+                            best_f1 = f1
+                            best_cv = cv_mean
                             best_config = {
                                 'model': model_clone,
                                 'vectorizer': vectorizer,
@@ -318,7 +408,7 @@ class MenuCategoryClassifier:
                 X_test_selected = X_test_vec
             
             if self.best_scaler and isinstance(self.best_model, MultinomialNB):
-                X_test_final, _ = self.ensure_non_negative(X_test_selected)
+                X_test_final, _ = self.ensure_non_negative(X_test_selected, scaler=self.best_scaler)
             else:
                 X_test_final = X_test_selected
             
@@ -394,7 +484,9 @@ class MenuCategoryClassifier:
                     'accuracy': float(self.best_score),
                     'f1_score': float(best_result.get('f1_score', 0))
                 },
-                'categories': categories or [],
+                'training_features': self.training_feature_info,
+                'data_stats': self.data_stats,
+                'categories': sorted(categories or []),
                 'all_results': results_to_save
             }, f, indent=2)
         
@@ -479,7 +571,7 @@ def train_category_classifier(training_file: str, output_dir: str = "models") ->
         
         # Save model with categories
         print(f"\n💾 Saving best model...")
-        unique_categories = list(set(categories))
+        unique_categories = sorted(set(categories))
         model_file, vec_file, results_file = classifier.save_model(output_dir, unique_categories)
         
         print(f"✅ Model saved to: {model_file}")
@@ -511,8 +603,10 @@ def train_category_classifier(training_file: str, output_dir: str = "models") ->
             "vectorizer_file": vec_file,
             "results_file": results_file,
             "total_models_tested": len(classifier.results),
-            "categories": list(set(categories)),
-            "n_samples": len(texts)
+            "categories": unique_categories,
+            "n_samples": len(texts),
+            "training_features": classifier.training_feature_info,
+            "data_stats": classifier.data_stats
         }
         
     except Exception as e:

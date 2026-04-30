@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from browser_use import Agent
 from browser_use.browser.profile import BrowserProfile
-from browser_use.llm.browser_use.chat import ChatBrowserUse
+from browser_use.llm.ollama.chat import ChatOllama
 import asyncio
 import json
 from datetime import datetime
@@ -67,7 +67,10 @@ def extract_menu_data(url: str, output_dir: str = "data/raw", headless: bool = F
         Include ALL items in the JSON array.
         Your entire response should be valid JSON that starts with [ and ends with ].
         """,
-        llm=ChatBrowserUse(api_key=os.getenv("BROWSER_USE_API_KEY")),
+        llm=ChatOllama(
+            model=os.getenv("OLLAMA_MODEL", "qwen2.5:7b"),
+            host=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
+        ),
         browser_profile=BrowserProfile(headless=headless),
     )
     
