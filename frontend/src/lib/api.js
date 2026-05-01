@@ -695,8 +695,11 @@ export async function sendAgentMessage(message, sessionId = 'default') {
  * @param {string} sessionId - Session identifier
  * @param {AbortSignal} signal - Optional abort signal to cancel the stream
  */
-export function streamAgentChat(message, callbacks = {}, sessionId = 'default', signal = null) {
-  const params = new URLSearchParams({ message, session_id: sessionId });
+export function streamAgentChat(message, callbacks = {}, sessionId = 'default', signal = null, options = {}) {
+  // options: { llm: 'ollama'|'browser'|... }
+  const paramsObj = { message, session_id: sessionId };
+  if (options.llm) paramsObj.llm = options.llm;
+  const params = new URLSearchParams(paramsObj);
   const url = `${API_BASE_URL}/api/v1/vishva/agent/chat-stream?${params}`;
 
   const eventSource = new EventSource(url);

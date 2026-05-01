@@ -1,12 +1,31 @@
 from dotenv import load_dotenv
 from browser_use import Agent
-from browser_use.browser.profile import BrowserProfile
-from browser_use.llm.browser_use.chat import ChatBrowserUse
+from browser_use.browser.browser import Browser, BrowserConfig
+
+try:
+    from browser_use.llm.browser_use.chat import ChatBrowserUse
+except Exception:
+    ChatBrowserUse = None
+
+try:
+    from browser_use.llm.ollama.chat import ChatOllama
+except Exception:
+    ChatOllama = None
 import asyncio
 import json
 from datetime import datetime
 import os
 import sys
+
+try:
+    from ollama import Client as OllamaClient
+except Exception:
+    OllamaClient = None
+
+try:
+    from playwright.sync_api import sync_playwright
+except Exception:
+    sync_playwright = None
 
 # Load .env from both the backend root and the module directory
 backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
@@ -17,7 +36,130 @@ module_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(module_dir, '.env'))
 
 
-def extract_menu_data(url: str, output_dir: str = "data/raw", headless: bool = False) -> dict:
+def _build_llm(llm_provider: str = "auto"):
+    provider = (llm_provider or "auto").lower()
+
+    if provider in ("browser-use", "browser"):
+        if ChatBrowserUse is None:
+            raise RuntimeError("BrowserUse LLM is not available in this environment")
+        api_key = os.getenv("BROWSER_USE_API_KEY")
+        if not api_key:
+            raise RuntimeError("BROWSER_USE_API_KEY is not set")
+        return ChatBrowserUse(api_key=api_key)
+
+    if provider in ("ollama", "local"):
+        if ChatOllama is None:
+            raise RuntimeError("browser_use ollama client is not available")
+        model = os.getenv("VISHVA_OLLAMA_MODEL", "qwen2.5:7b")
+        host = os.getenv("OLLAMA_URL", "http://localhost:11434")
+        return ChatOllama(model=model, host=host)
+
+    # auto: prefer BrowserUse if available and configured, otherwise use Ollama
+    if ChatBrowserUse is not None and os.getenv("BROWSER_USE_API_KEY"):
+        return ChatBrowserUse(api_key=os.getenv("BROWSER_USE_API_KEY"))
+    if ChatOllama is not None:
+        model = os.getenv("VISHVA_OLLAMA_MODEL", "qwen2.5:7b")
+        host = os.getenv("OLLAMA_URL", "http://localhost:11434")
+        return ChatOllama(model=model, host=host)
+
+    raise RuntimeError("No LLM available for browser agent. Configure BROWSER_USE_API_KEY or install langchain_ollama.")
+
+
+def _extract_json_array(text: str):
+    start = text.find("[")
+    end = text.rfind("]")
+    if start == -1 or end == -1 or end <= start:
+        return None
+    try:
+        return json.loads(text[start:end + 1])
+    except json.JSONDecodeError:
+        return None
+
+
+def _extract_with_local_llm(url: str, output_dir: str, headless: bool) -> dict:
+    if sync_playwright is None:
+        return {
+            "success": False,
+            "file_path": None,
+            "message": "Playwright is not available in this environment",
+            "item_count": 0
+        }
+    if OllamaClient is None:
+        return {
+            "success": False,
+            "file_path": None,
+            "message": "Ollama client is not available in this environment",
+            "item_count": 0
+        }
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=headless)
+        page = browser.new_page()
+        page.goto(url, wait_until="load", timeout=60000)
+        page.wait_for_timeout(1000)
+        try:
+            body_text = page.inner_text("body")
+        except Exception:
+            body_text = ""
+        html = page.content()
+        browser.close()
+
+    text_input = body_text or html
+    if len(text_input) > 15000:
+        text_input = text_input[:15000]
+
+    prompt = (
+        "Extract all menu items with fields name, price, category (if visible). "
+        "Return ONLY a JSON array of objects.\n\n"
+        "Page content:\n"
+        f"{text_input}"
+    )
+
+    model = os.getenv("VISHVA_OLLAMA_MODEL", "qwen2.5:7b")
+    host = os.getenv("OLLAMA_URL", "http://localhost:11434")
+    client = OllamaClient(host=host)
+    response = client.chat(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        options={"temperature": 0}
+    )
+
+    content = ""
+    if isinstance(response, dict):
+        content = (response.get("message") or {}).get("content", "")
+    else:
+        message = getattr(response, "message", None)
+        if message is not None:
+            content = getattr(message, "content", "") or ""
+
+    data = _extract_json_array(content)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_filename = os.path.join(output_dir, f"raw_output_{timestamp}.txt")
+    with open(output_filename, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    if data is None or not isinstance(data, list):
+        return {
+            "success": False,
+            "file_path": output_filename,
+            "message": "Local model returned invalid JSON",
+            "item_count": 0
+        }
+
+    normalized = json.dumps(data, ensure_ascii=False)
+    with open(output_filename, "w", encoding="utf-8") as f:
+        f.write(normalized)
+
+    return {
+        "success": True,
+        "file_path": output_filename,
+        "message": f"Successfully extracted data to {output_filename}",
+        "item_count": len(data),
+        "data_length": len(normalized)
+    }
+
+
+def extract_menu_data(url: str, output_dir: str = "data/raw", headless: bool = False, llm_provider: str = "auto") -> dict:
     """
     Tool to extract menu data from a website (synchronous version).
     NOTE: Only works when called from a standalone script (not inside an existing event loop).
@@ -39,6 +181,19 @@ def extract_menu_data(url: str, output_dir: str = "data/raw", headless: bool = F
     print(f"[URL] Target: {url}")
     print("-" * 50)
     
+    provider = (llm_provider or "auto").lower()
+    if provider in ("ollama", "local", "local-ollama"):
+        return _extract_with_local_llm(url, output_dir, headless)
+
+    llm = _build_llm(llm_provider)
+    use_vision = True
+    if str(getattr(llm, "provider", "")).lower() == "ollama":
+        use_vision = False
+    if os.getenv("VISHVA_EXTRACT_USE_VISION") is not None:
+        use_vision = os.getenv("VISHVA_EXTRACT_USE_VISION", "true").lower() in ("1", "true", "yes")
+
+    browser = Browser(config=BrowserConfig(headless=headless))
+
     agent = Agent(
         task=f"""
         Visit {url}
@@ -71,8 +226,9 @@ def extract_menu_data(url: str, output_dir: str = "data/raw", headless: bool = F
         Include ALL items in the JSON array.
         Your entire response should be valid JSON that starts with [ and ends with ].
         """,
-        llm=ChatBrowserUse(api_key=os.getenv("BROWSER_USE_API_KEY")),
-        browser_profile=BrowserProfile(headless=headless),
+        llm=llm,
+        browser=browser,
+        use_vision=use_vision,
     )
     
     try:
@@ -124,6 +280,9 @@ def extract_menu_data(url: str, output_dir: str = "data/raw", headless: bool = F
             print("[OK] Used string conversion (fallback)")
         
         if text_output:
+            if isinstance(text_output, (list, dict)):
+                text_output = json.dumps(text_output, ensure_ascii=False)
+
             # Generate timestamp and filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_filename = os.path.join(output_dir, f"raw_output_{timestamp}.txt")
@@ -181,7 +340,7 @@ def extract_menu_data(url: str, output_dir: str = "data/raw", headless: bool = F
         }
 
 
-async def extract_menu_data_async(url: str, output_dir: str = "data/raw", headless: bool = False) -> dict:
+async def extract_menu_data_async(url: str, output_dir: str = "data/raw", headless: bool = False, llm_provider: str = "auto") -> dict:
     """
     Async version of extract_menu_data. Safe to call from within an existing event loop
     (e.g. FastAPI/uvicorn). Runs the browser agent in a separate thread with its own
@@ -199,7 +358,7 @@ async def extract_menu_data_async(url: str, output_dir: str = "data/raw", headle
         # On Windows, ensure the thread uses ProactorEventLoop for subprocess support
         if sys.platform == 'win32':
             asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-        return extract_menu_data(url, output_dir=output_dir, headless=headless)
+        return extract_menu_data(url, output_dir=output_dir, headless=headless, llm_provider=llm_provider)
     
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _run_in_thread)

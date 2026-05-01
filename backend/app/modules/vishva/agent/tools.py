@@ -24,7 +24,8 @@ async def extract_menu(url: str) -> str:
     Returns a JSON string with the extraction result including file path and item count."""
     from app.modules.vishva.tools.extract_tool import extract_menu_data_async
 
-    result = await extract_menu_data_async(url, output_dir=RAW_DIR)
+    llm_provider = os.getenv("VISHVA_EXTRACT_LLM", "auto")
+    result = await extract_menu_data_async(url, output_dir=RAW_DIR, llm_provider=llm_provider)
     return json.dumps(result, default=str)
 
 

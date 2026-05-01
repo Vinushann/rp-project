@@ -35,14 +35,14 @@
     "category": "Healthy Bowls"
   },
   {
-    "name": "Seafood",
+    "name": "Seafood Kebabs + Corn and Egg Rice + Stir Fried Mushroom and Green Beans + Tofu + Prawn Crackers + Mixed Green Salad + Chocolate Mousse + Fruit Salsa",
     "price": "RS 1,490",
-    "category": "Executive Lunch Set Menu"
+    "category": "Executive Lunch Set Menu - Seafood"
   },
   {
-    "name": "Chicken",
+    "name": "Chicken Kebabs + Corn and Egg Rice + Stir Fried Mushroom and Green Beans + Tofu + Prawn Crackers + Mixed Green Salad + Chocolate Mousse + Fruit Salsa",
     "price": "RS 1,490",
-    "category": "Executive Lunch Set Menu"
+    "category": "Executive Lunch Set Menu - Chicken"
   },
   {
     "name": "Greek Salad",
@@ -190,119 +190,134 @@
     "category": "Fried Meat And Seafood"
   },
   {
-    "name": "Crispy Fried Calamari",
+    "name": "Sizzling Thai Grilled Calamari",
     "price": "RS 2,950",
     "category": "Fried Meat And Seafood"
   },
   {
-    "name": "Hot Butter Calamari",
-    "price": "Large RS 1,950",
+    "name": "Grilled Tiger Prawns",
+    "price": "RS 5,100",
     "category": "Fried Meat And Seafood"
   },
   {
-    "name": "Mocktails",
-    "price": "Amberella Mint & Lime Cooler RS 950",
-    "category": "Beverages"
+    "name": "Garlic Rice",
+    "price": "RS 590",
+    "category": "Kids Menu"
+  },
+  {
+    "name": "Egg Rice",
+    "price": "RS 590",
+    "category": "Kids Menu"
+  },
+  {
+    "name": "Pol Rotti",
+    "price": "RS 490",
+    "category": "Kids Menu"
+  },
+  {
+    "name": "Amberella Mint & Lime Cooler",
+    "price": "RS 950",
+    "category": "Beverages - Mocktails"
   },
   {
     "name": "Virgin Mojito",
     "price": "RS 850",
-    "category": "Beverages"
+    "category": "Beverages - Mocktails"
   },
   {
     "name": "Limy Watermelon Fizz",
     "price": "RS 850",
-    "category": "Beverages"
+    "category": "Beverages - Mocktails"
   },
   {
     "name": "Mint Passion Refresher",
     "price": "RS 900",
-    "category": "Beverages"
+    "category": "Beverages - Mocktails"
   },
   {
     "name": "Creamy Tropical Piña Colada",
     "price": "RS 950",
-    "category": "Beverages"
+    "category": "Beverages - Mocktails"
   },
   {
     "name": "Soda",
     "price": "400ml RS 350",
-    "category": "Soft Drinks"
+    "category": "Beverages - Soft Drinks"
   },
   {
     "name": "Coca-Cola",
     "price": "400ml RS 400",
-    "category": "Soft Drinks"
+    "category": "Beverages - Soft Drinks"
   },
   {
     "name": "Sprite",
     "price": "400ml RS 400",
-    "category": "Soft Drinks"
+    "category": "Beverages - Soft Drinks"
   },
   {
     "name": "Ginger Beer",
     "price": "400ml RS 400",
-    "category": "Soft Drinks"
+    "category": "Beverages - Soft Drinks"
   },
   {
     "name": "Ginger Ale",
     "price": "400ml RS 400",
-    "category": "Soft Drinks"
+    "category": "Beverages - Soft Drinks"
   },
   {
     "name": "Lemonade",
     "price": "400ml RS 400",
-    "category": "Soft Drinks"
+    "category": "Beverages - Soft Drinks"
   },
   {
     "name": "Tonic",
     "price": "400ml RS 400",
-    "category": "Soft Drinks"
+    "category": "Beverages - Soft Drinks"
   },
   {
     "name": "Redbull",
     "price": "250ml RS 1,450",
-    "category": "Soft Drinks"
+    "category": "Beverages - Soft Drinks"
   },
   {
     "name": "Mineral Water Bottle",
     "price": "1L RS 450",
-    "category": "Soft Drinks"
+    "category": "Beverages - Soft Drinks"
   },
   {
     "name": "Fresh Mixed Fruit Juice",
     "price": "RS 850",
-    "category": "Juices & Shakes"
+    "category": "Beverages - Juices & Shakes"
   },
   {
     "name": "Fresh Orange Juice",
     "price": "RS 950",
-    "category": "Juices & Shakes"
+    "category": "Beverages - Juices & Shakes"
   },
   {
     "name": "Fresh Papaya Juice",
     "price": "RS 750",
-    "category": "Juices & Shakes"
+    "category": "Beverages - Juices & Shakes"
   },
   {
     "name": "Fresh Passion Juice",
     "price": "RS 750",
-    "category": "Juices & Shakes"
+    "category": "Beverages - Juices & Shakes"
   },
   {
     "name": "Fresh Pineapple Juice",
     "price": "RS 800",
-    "category": "Juices & Shakes"
+    "category": "Beverages - Juices & Shakes"
   },
   {
     "name": "Fresh Watermelon Juice",
     "price": "RS 700",
-    "category": "Juices & Shakes"
+    "category": "Beverages - Juices & Shakes"
   },
   {
     "name": "Fresh Lime Juice",
     "price": "RS 650",
-    "category": "Juices & Shakes"
+    "category": "Beverages - Juices & Shakes"
   },
   {
     "name": "Chocolate",
@@ -315,18 +330,28 @@
     "category": "Desserts"
   },
   {
-    "name": "Chocolate Mousse",
-    "price": "RS 690",
-    "category": "Desserts"
+    "name": "Espresso",
+    "price": "RS 500",
+    "category": "Hot Beverages"
   },
   {
-    "name": "White Chocolate Mousse",
-    "price": "RS 690",
-    "category": "Desserts"
+    "name": "Double Espresso",
+    "price": "RS 600",
+    "category": "Hot Beverages"
   },
   {
-    "name": "Ice Cream",
-    "price": "French Vanilla RS 750",
-    "category": "Desserts"
+    "name": "Cappucino",
+    "price": "RS 650",
+    "category": "Hot Beverages"
+  },
+  {
+    "name": "Cafe Latte",
+    "price": "RS 650",
+    "category": "Hot Beverages"
+  },
+  {
+    "name": "Americano",
+    "price": "RS 600",
+    "category": "Hot Beverages"
   }
 ]

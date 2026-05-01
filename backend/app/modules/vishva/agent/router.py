@@ -10,6 +10,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional, List
 import json
+import os
 
 router = APIRouter()
 
@@ -41,7 +42,8 @@ async def agent_ping():
     try:
         from .menu_agent import MenuAgent
         # Just verify import works — don't instantiate yet
-        return {"status": "ok", "agent": "menu-intelligence", "llm": "qwen2.5:7b (local)"}
+        model = os.getenv('VISHVA_OLLAMA_MODEL', 'qwen2.5:7b')
+        return {"status": "ok", "agent": "menu-intelligence", "llm": f"{model} (local)"}
     except ImportError as e:
         return {"status": "error", "message": f"Agent dependencies not installed: {e}"}
 
@@ -63,7 +65,10 @@ async def agent_chat(request: AgentChatRequest):
     """
     from .menu_agent import MenuAgent
 
-    agent = MenuAgent()
+    # Use default local ollama model unless overridden in environment
+    model = os.getenv('VISHVA_OLLAMA_MODEL', 'qwen2.5:7b')
+    base_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+    agent = MenuAgent(model=model, base_url=base_url)
     result = await agent.ainvoke(request.message, thread_id=request.session_id or "default")
 
     return AgentChatResponse(
@@ -75,7 +80,7 @@ async def agent_chat(request: AgentChatRequest):
 
 
 @router.get("/chat-stream")
-async def agent_chat_stream(message: str, session_id: str = "default"):
+async def agent_chat_stream(message: str, session_id: str = "default", llm: Optional[str] = None):
     """
     Stream the agent's reasoning and tool usage in real-time via Server-Sent Events.
 
@@ -87,14 +92,33 @@ async def agent_chat_stream(message: str, session_id: str = "default"):
     """
     from .menu_agent import MenuAgent
 
-    agent = MenuAgent()
+    use_local = llm and llm.lower() in ('ollama', 'local', 'local-ollama')
+
+    # Determine LLM selection. If client requests 'ollama' or 'local', use local Ollama settings.
+    if use_local:
+        model = os.getenv('VISHVA_OLLAMA_MODEL', 'qwen2.5:7b')
+        base_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+        agent = MenuAgent(model=model, base_url=base_url)
+    else:
+        # Fallback to default agent configuration (still uses Ollama by default)
+        model = os.getenv('VISHVA_OLLAMA_MODEL', 'qwen2.5:7b')
+        base_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+        agent = MenuAgent(model=model, base_url=base_url)
 
     async def generate():
+        prev_extract_llm = os.getenv("VISHVA_EXTRACT_LLM")
+        os.environ["VISHVA_EXTRACT_LLM"] = "ollama" if use_local else "auto"
+
         try:
             async for event in agent.astream(message, thread_id=session_id):
                 yield f"data: {json.dumps(event)}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+        finally:
+            if prev_extract_llm is None:
+                os.environ.pop("VISHVA_EXTRACT_LLM", None)
+            else:
+                os.environ["VISHVA_EXTRACT_LLM"] = prev_extract_llm
 
     return StreamingResponse(
         generate(),

@@ -423,6 +423,8 @@ function VishvaPage() {
 
     const message = `Extract menu from ${extractUrl} and clean the data`;
 
+    const llmChoice = extractionMode === 'local-agent' ? 'ollama' : 'browser';
+
     const es = streamAgentChat(message, {
       onThought: (text) => {
         setAgentThoughts(prev => {
@@ -479,7 +481,7 @@ function VishvaPage() {
         setExtracting(false);
         eventSourceRef.current = null;
       },
-    });
+    }, 'default', null, { llm: llmChoice });
 
     eventSourceRef.current = es;
   };
