@@ -226,18 +226,6 @@ export async function getApiInfo() {
 // ============================================
 
 /**
- * Extract menu data from a URL
- * @param {string} url - The restaurant menu URL to scrape
- * @returns {Promise<{success: boolean, message: string, item_count: number}>}
- */
-export async function extractMenu(url) {
-  return apiRequest('/api/v1/vishva/extract', {
-    method: 'POST',
-    body: JSON.stringify({ url }),
-  });
-}
-
-/**
  * Train the category classifier model
  * @param {string} trainingFile - Optional path to training file
  * @returns {Promise<{success: boolean, message: string, best_model: string, accuracy: number}>}
@@ -275,24 +263,6 @@ export async function getMenuData() {
  */
 export async function getModelStatus() {
   return apiRequest('/api/v1/vishva/model-status');
-}
-
-/**
- * Stop the currently running extraction agent
- * @returns {Promise<{success: boolean, message: string}>}
- */
-export async function stopExtraction() {
-  return apiRequest('/api/v1/vishva/extract-stop', {
-    method: 'POST',
-  });
-}
-
-/**
- * Get extraction status
- * @returns {Promise<{running: boolean, stop_requested: boolean}>}
- */
-export async function getExtractionStatus() {
-  return apiRequest('/api/v1/vishva/extract-status');
 }
 
 /**
@@ -463,15 +433,12 @@ export default {
   checkHealth,
   getApiInfo,
   // Vishva module
-  extractMenu,
   trainModel,
   predictCategories,
   predictFromFile,
   exportPredictions,
   getMenuData,
   getModelStatus,
-  stopExtraction,
-  getExtractionStatus,
   getEmailSettings,
   updateEmailSettings,
   getReportDateRange,

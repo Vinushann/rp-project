@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+<<<<<<< Updated upstream
 from browser_use import Agent
 from browser_use.browser.browser import Browser, BrowserConfig
 
@@ -11,6 +12,8 @@ try:
     from browser_use.llm.ollama.chat import ChatOllama
 except Exception:
     ChatOllama = None
+=======
+>>>>>>> Stashed changes
 import asyncio
 import json
 from datetime import datetime
@@ -174,6 +177,31 @@ def extract_menu_data(url: str, output_dir: str = "data/raw", headless: bool = F
         dict with keys: success, file_path, message, item_count
     """
     
+    try:
+        from browser_use import Agent
+        from browser_use.browser import BrowserProfile
+        from browser_use.llm.browser_use.chat import ChatBrowserUse
+        from browser_use.llm.ollama.chat import ChatOllama
+    except Exception as exc:
+        return {
+            "success": False,
+            "file_path": None,
+            "message": f"browser-use is unavailable or incompatible: {exc}",
+            "item_count": 0,
+        }
+
+    llm_provider = os.getenv("VISHVA_BROWSER_LLM", "ollama").lower().strip()
+    if llm_provider == "browser-use":
+        llm = ChatBrowserUse(
+            api_key=os.getenv("BROWSER_USE_API_KEY"),
+            model=os.getenv("BROWSER_USE_MODEL", "bu-latest"),
+        )
+    else:
+        llm = ChatOllama(
+            model=os.getenv("VISHVA_OLLAMA_MODEL", "qwen2.5:7b"),
+            host=os.getenv("VISHVA_OLLAMA_HOST", "http://localhost:11434"),
+        )
+
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
@@ -227,8 +255,12 @@ def extract_menu_data(url: str, output_dir: str = "data/raw", headless: bool = F
         Your entire response should be valid JSON that starts with [ and ends with ].
         """,
         llm=llm,
+<<<<<<< Updated upstream
         browser=browser,
         use_vision=use_vision,
+=======
+        browser_profile=BrowserProfile(headless=headless),
+>>>>>>> Stashed changes
     )
     
     try:

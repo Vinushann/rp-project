@@ -1,16 +1,28 @@
+<<<<<<< Updated upstream
 Parse attempt failed at 2026-05-01 00:00:48.119904
+=======
+Parse attempt failed at 2026-05-04 15:58:01.880681
+>>>>>>> Stashed changes
 Error: Expecting value: line 1 column 1 (char 0)
 
 ============================================================
 ORIGINAL CONTENT (first 2000 chars):
 ============================================================
+<<<<<<< Updated upstream
 Error at 2026-05-01 00:00:43.810227
+=======
+Error at 2026-05-04 15:57:56.906128
+>>>>>>> Stashed changes
 Type: TypeError
 Details: write() argument must be str, not list
 
 Full Traceback:
 Traceback (most recent call last):
+<<<<<<< Updated upstream
   File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 133, in extract_menu_data
+=======
+  File "C:\SLIIT\Y4S2\RP\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 155, in extract_menu_data
+>>>>>>> Stashed changes
     f.write(text_output)
     ~~~~~~~^^^^^^^^^^^^^
 TypeError: write() argument must be str, not list
@@ -19,13 +31,21 @@ TypeError: write() argument must be str, not list
 ============================================================
 CLEANED CONTENT (first 2000 chars):
 ============================================================
+<<<<<<< Updated upstream
 Error at 2026-05-01 00:00:43.810227
+=======
+Error at 2026-05-04 15:57:56.906128
+>>>>>>> Stashed changes
 Type: TypeError
 Details: write() argument must be str, not list
 
 Full Traceback:
 Traceback (most recent call last):
+<<<<<<< Updated upstream
   File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 133, in extract_menu_data
+=======
+  File "C:\SLIIT\Y4S2\RP\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 155, in extract_menu_data
+>>>>>>> Stashed changes
     f.write(text_output)
     ~~~~~~~^^^^^^^^^^^^^
 TypeError: write() argument must be str, not list

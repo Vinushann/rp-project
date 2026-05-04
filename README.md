@@ -5,30 +5,29 @@ A multi-module web application for the Final Year Research Project.
 ## 📁 Project Structure
 
 ```
-rp-project-root/
-├── apps/
-│   ├── backend/                    # FastAPI Backend
-│   │   ├── app/
-│   │   │   ├── main.py            # Main FastAPI app (entry point)
-│   │   │   ├── schemas.py         # Shared Pydantic models
-│   │   │   └── modules/           # Module-specific code
-│   │   │       ├── vinushan/      # Vinushan's backend code
-│   │   │       ├── vishva/        # Vishva's backend code
-│   │   │       ├── nandika/       # Nandika's backend code
-│   │   │       └── ayathma/       # Ayathma's backend code
-│   │   └── requirements.txt       # Python dependencies
-│   │
-│   └── frontend/                   # React + Vite Frontend
-│       ├── src/
-│       │   ├── components/        # Shared UI components
-│       │   ├── lib/               # Shared utilities (API client)
-│       │   ├── pages/             # Main pages (Home)
-│       │   └── modules/           # Module-specific pages
-│       │       ├── vinushan/      # Vinushan's frontend code
-│       │       ├── vishva/        # Vishva's frontend code
-│       │       ├── nandika/       # Nandika's frontend code
-│       │       └── ayathma/       # Ayathma's frontend code
-│       └── package.json           # Node dependencies
+rp-project/
+├── backend/                        # FastAPI Backend
+│   ├── app/
+│   │   ├── main.py                # Main FastAPI app (entry point)
+│   │   ├── schemas.py             # Shared Pydantic models
+│   │   └── modules/               # Module-specific code
+│   │       ├── vinushan/          # Vinushan's backend code
+│   │       ├── vishva/            # Vishva's backend code
+│   │       ├── nandika/           # Nandika's backend code
+│   │       └── ayathma/           # Ayathma's backend code
+│   └── requirements.txt           # Python dependencies
+│
+├── frontend/                       # React + Vite Frontend
+│   ├── src/
+│   │   ├── components/            # Shared UI components
+│   │   ├── lib/                   # Shared utilities (API client)
+│   │   ├── pages/                 # Main pages (Home)
+│   │   └── modules/               # Module-specific pages
+│   │       ├── vinushan/          # Vinushan's frontend code
+│   │       ├── vishva/            # Vishva's frontend code
+│   │       ├── nandika/           # Nandika's frontend code
+│   │       └── ayathma/           # Ayathma's frontend code
+│   └── package.json                # Node dependencies
 │
 ├── shared/                         # Shared resources (optional)
 │   └── README.md
@@ -46,14 +45,14 @@ rp-project-root/
 ### 1. Clone the Repository
 ```bash
 git clone <your-repo-url>
-cd rp-project-root
+cd rp-project
 ```
 
 ### 2. Start the Backend
 
 ```bash
 # Navigate to backend
-cd apps/backend
+cd backend
 
 # Create virtual environment (recommended)
 python -m venv venv
@@ -74,7 +73,7 @@ The API will be available at: http://localhost:8000
 
 ```bash
 # In a new terminal, navigate to frontend
-cd apps/frontend
+cd frontend
 
 # Install dependencies
 npm install
@@ -89,10 +88,10 @@ The frontend will be available at: http://localhost:5173
 
 | Member | Module | Backend Path | Frontend Path | API Prefix |
 |--------|--------|--------------|---------------|------------|
-| Vinushan | vinushan-component | `apps/backend/app/modules/vinushan/` | `apps/frontend/src/modules/vinushan/` | `/api/v1/vinushan` |
-| Vishva | vishva-component | `apps/backend/app/modules/vishva/` | `apps/frontend/src/modules/vishva/` | `/api/v1/vishva` |
-| Nandika | nandika-component | `apps/backend/app/modules/nandika/` | `apps/frontend/src/modules/nandika/` | `/api/v1/nandika` |
-| Ayathma | ayathma-component | `apps/backend/app/modules/ayathma/` | `apps/frontend/src/modules/ayathma/` | `/api/v1/ayathma` |
+| Vinushan | vinushan-component | `backend/app/modules/vinushan/` | `frontend/src/modules/vinushan/` | `/api/v1/vinushan` |
+| Vishva | vishva-component | `backend/app/modules/vishva/` | `frontend/src/modules/vishva/` | `/api/v1/vishva` |
+| Nandika | nandika-component | `backend/app/modules/nandika/` | `frontend/src/modules/nandika/` | `/api/v1/nandika` |
+| Ayathma | ayathma-component | `backend/app/modules/ayathma/` | `frontend/src/modules/ayathma/` | `/api/v1/ayathma` |
 
 ## 📡 API Endpoints
 
@@ -128,8 +127,8 @@ Response:
 ### For Individual Development
 1. Clone the repo
 2. Work only in your module folder:
-   - Backend: `apps/backend/app/modules/<your-name>/`
-   - Frontend: `apps/frontend/src/modules/<your-name>/`
+  - Backend: `backend/app/modules/<your-name>/`
+  - Frontend: `frontend/src/modules/<your-name>/`
 3. Test your changes locally
 4. Push to your branch
 
@@ -142,12 +141,12 @@ Response:
 ## 📝 Adding New Features
 
 ### Backend
-1. Go to your module folder: `apps/backend/app/modules/<your-name>/`
+1. Go to your module folder: `backend/app/modules/<your-name>/`
 2. Edit `router.py` to add new endpoints
 3. Create additional files as needed (services.py, models.py, etc.)
 
 ### Frontend
-1. Go to your module folder: `apps/frontend/src/modules/<your-name>/`
+1. Go to your module folder: `frontend/src/modules/<your-name>/`
 2. Edit your page component
 3. Create additional components in subfolders
 

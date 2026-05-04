@@ -8,10 +8,10 @@ const modules = [
     description: 'Module description here'
   },
   { 
-    name: 'Vishva', 
+    name: 'Agentic Web Scraper', 
     path: '/vishva', 
     color: 'bg-green-500',
-    description: 'Module description here'
+    description: ''
   },
   { 
     name: 'Nandika', 

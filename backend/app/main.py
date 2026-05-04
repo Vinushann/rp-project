@@ -21,7 +21,7 @@ from app.modules.ayathma.router import router as ayathma_router
 async def lifespan(app: FastAPI):
     """Application lifespan handler - initialize models at startup."""
     # Startup: Load ML models
-    print("\n🚀 Starting RP Project API...")
+    print("\n[START] Starting RP Project API...")
     
     # Initialize Prophet model for Vinushan's forecasting module
     try:
@@ -29,18 +29,18 @@ async def lifespan(app: FastAPI):
             initialize_model_registry,
         )
         if initialize_model_registry():
-            print("  ✅ Prophet time series model loaded successfully")
+            print("  [SUCCESS] Prophet time series model loaded successfully")
         else:
-            print("  ⚠️  Prophet model could not be loaded - forecasting may be limited")
+            print("  [WARNING] Prophet model could not be loaded - forecasting may be limited")
     except Exception as e:
-        print(f"  ❌ Error initializing model registry: {e}")
+        print(f"  [ERROR] Error initializing model registry: {e}")
     
-    print("✅ API startup complete\n")
+    print("[OK] API startup complete\n")
     
     yield  # Application runs here
     
     # Shutdown: Cleanup (if needed)
-    print("\n👋 Shutting down RP Project API...")
+    print("\n[STOP] Shutting down RP Project API...")
 
 
 app = FastAPI(

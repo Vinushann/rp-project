@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from 'framer-motion';
 import '../styles/PipelineVisualization.css';
@@ -772,11 +773,59 @@ export default function PipelineVisualization({ events = [], isLoading = false, 
           )}
         </AnimatePresence>
 
+=======
+import ReasoningPanel from './ReasoningPanel';
+
+function PipelineVisualization({
+  events = [],
+  isLoading = false,
+  routingReasoning,
+  agentsNeeded = [],
+  onSendMessage,
+  currentRunId,
+}) {
+  return (
+    <div className="p-6 h-full overflow-auto bg-[var(--athena-bg)]">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div className="rounded-2xl border border-[var(--athena-border)] bg-[var(--athena-card)] p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-lg font-semibold text-[var(--athena-text)]">
+                Decision Flow
+              </h2>
+              <p className="text-sm text-[var(--athena-text-secondary)] mt-1">
+                Follow the live reasoning pipeline, tool usage, and agent output for the current question.
+              </p>
+            </div>
+            {typeof onSendMessage === 'function' && (
+              <button
+                type="button"
+                onClick={() => onSendMessage('Show me the reasoning flow for my next question')}
+                className="px-4 py-2 rounded-lg border border-[var(--athena-border)] text-sm text-[var(--athena-text-secondary)] hover:text-[var(--athena-text)] hover:bg-[var(--athena-card-hover)] transition-colors"
+              >
+                Try a sample question
+              </button>
+            )}
+          </div>
+        </div>
+
+        <ReasoningPanel
+          isOpen={true}
+          onClose={() => {}}
+          onClear={() => {}}
+          events={events}
+          currentRunId={currentRunId}
+          isLoading={isLoading}
+          routingReasoning={routingReasoning}
+          agentsNeeded={agentsNeeded}
+        />
+>>>>>>> Stashed changes
       </div>
     </div>
   );
 }
 
+<<<<<<< Updated upstream
 /* ─── Metric ─── */
 function Metric({ icon, label, value, color }) {
   return (
@@ -787,3 +836,6 @@ function Metric({ icon, label, value, color }) {
     </div>
   );
 }
+=======
+export default PipelineVisualization;
+>>>>>>> Stashed changes
