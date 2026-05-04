@@ -1,12 +1,12 @@
-Parse attempt failed at 2026-05-04 23:19:49.835053
-Error: Expecting ',' delimiter: line 1 column 113 (char 112)
+Parse attempt failed at 2026-05-05 05:16:40.732723
+Error: Expecting ',' delimiter: line 1 column 24 (char 23)
 
 ============================================================
 ORIGINAL CONTENT (first 2000 chars):
 ============================================================
-[{"name": "Samsung Galaxy S25 Ultra", "price": "$1,299", "category": "Mobile Phones"}, {"name": "MacBook Pro 16"", "price": "$2,499$2,799", "category": "Laptops"}, {"name": "iPad Pro 13"", "price": "$1,199", "category": "Tablets"}, {"name": "Sony WH-1000XM6", "price": "$399", "category": "Accessories"}]
+[{"name": "iPad Pro 13"", "price": "$1,299", "category": "Tablets"}, {"name": "Galaxy Tab S10 Ultra", "price": "$1,099", "category": "Tablets"}, {"name": "Surface Pro 11 Edition", "price": "$999$1,199", "category": "Tablets"}, {"name": "iPad Air 11"", "price": "$599", "category": "Tablets"}]
 
 ============================================================
 CLEANED CONTENT (first 2000 chars):
 ============================================================
-[{"name": "Samsung Galaxy S25 Ultra", "price": "$1,299", "category": "Mobile Phones"}, {"name": "MacBook Pro 16"", "price": "$2,499$2,799", "category": "Laptops"}, {"name": "iPad Pro 13"", "price": "$1,199", "category": "Tablets"}, {"name": "Sony WH-1000XM6", "price": "$399", "category": "Accessories"}]
+[{"name": "iPad Pro 13"", "price": "$1,299", "category": "Tablets"}, {"name": "Galaxy Tab S10 Ultra", "price": "$1,099", "category": "Tablets"}, {"name": "Surface Pro 11 Edition", "price": "$999$1,199", "category": "Tablets"}, {"name": "iPad Air 11"", "price": "$599", "category": "Tablets"}]

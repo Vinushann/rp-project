@@ -64,3 +64,6 @@ __pycache__/
 .env.example
 .env
 /backend/app/modules/vishva/data
+/backend/app/modules/vishva/output
+/backend/app/modules/vishva/output
+/backend/app/modules/vishva/output
