@@ -1,31 +1,12 @@
-Parse attempt failed at 2026-05-01 00:00:48.119904
-Error: Expecting value: line 1 column 1 (char 0)
+Parse attempt failed at 2026-05-04 23:19:49.835053
+Error: Expecting ',' delimiter: line 1 column 113 (char 112)
 
 ============================================================
 ORIGINAL CONTENT (first 2000 chars):
 ============================================================
-Error at 2026-05-01 00:00:43.810227
-Type: TypeError
-Details: write() argument must be str, not list
-
-Full Traceback:
-Traceback (most recent call last):
-  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 133, in extract_menu_data
-    f.write(text_output)
-    ~~~~~~~^^^^^^^^^^^^^
-TypeError: write() argument must be str, not list
-
+[{"name": "Samsung Galaxy S25 Ultra", "price": "$1,299", "category": "Mobile Phones"}, {"name": "MacBook Pro 16"", "price": "$2,499$2,799", "category": "Laptops"}, {"name": "iPad Pro 13"", "price": "$1,199", "category": "Tablets"}, {"name": "Sony WH-1000XM6", "price": "$399", "category": "Accessories"}]
 
 ============================================================
 CLEANED CONTENT (first 2000 chars):
 ============================================================
-Error at 2026-05-01 00:00:43.810227
-Type: TypeError
-Details: write() argument must be str, not list
-
-Full Traceback:
-Traceback (most recent call last):
-  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 133, in extract_menu_data
-    f.write(text_output)
-    ~~~~~~~^^^^^^^^^^^^^
-TypeError: write() argument must be str, not list
+[{"name": "Samsung Galaxy S25 Ultra", "price": "$1,299", "category": "Mobile Phones"}, {"name": "MacBook Pro 16"", "price": "$2,499$2,799", "category": "Laptops"}, {"name": "iPad Pro 13"", "price": "$1,199", "category": "Tablets"}, {"name": "Sony WH-1000XM6", "price": "$399", "category": "Accessories"}]
