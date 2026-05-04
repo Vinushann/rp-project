@@ -15,6 +15,13 @@ export default defineConfig({
         timeout: 600000,       // 10 minutes for long-running extraction
         proxyTimeout: 600000,  // 10 minutes proxy timeout
       },
+      // Agent stream also needs long timeout
+      '/api/v1/vishva/agent/chat-stream': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        timeout: 600000,
+        proxyTimeout: 600000,
+      },
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,

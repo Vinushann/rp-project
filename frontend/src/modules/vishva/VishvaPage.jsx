@@ -19,7 +19,6 @@ import {
   exportPredictions,
   getMenuData, 
   getModelStatus,
-  stopExtraction,
   // Training Data Management
   getTrainingData,
   addTrainingItem,
@@ -113,9 +112,6 @@ function VishvaPage() {
     category_thresholds: {}
   });
   
-  // State for extraction mode: 'browser-use' (original) or 'local-agent' (agentic AI)
-  const [extractionMode, setExtractionMode] = useState('browser-use');
-
   // State for errors
   const [error, setError] = useState(null);
 
@@ -325,92 +321,8 @@ function VishvaPage() {
     }
   };
 
-  // Streaming extraction with agent thoughts
+  // Local agent-based extraction using the visible browser session
   const handleExtract = async () => {
-    if (!extractUrl.trim()) {
-      setError('Please enter a URL');
-      return;
-    }
-    
-    setExtracting(true);
-    setError(null);
-    setExtractResult(null);
-    setAgentThoughts([]);
-    
-    try {
-      const eventSource = new EventSource(`/api/v1/vishva/extract-stream?url=${encodeURIComponent(extractUrl)}`);
-      eventSourceRef.current = eventSource;  // Store reference for stopping
-      
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          
-          if (data.type === 'thought' || data.type === 'status') {
-            setAgentThoughts(prev => [...prev, {
-              type: data.type,
-              message: data.message,
-              timestamp: new Date().toLocaleTimeString()
-            }]);
-          } else if (data.type === 'complete') {
-            setExtractResult({
-              success: data.success,
-              message: data.message,
-              item_count: data.item_count
-            });
-            setExtracting(false);
-            eventSourceRef.current = null;
-            eventSource.close();
-            if (data.success) {
-              loadMenuData();
-            }
-          } else if (data.type === 'stopped') {
-            // Handle stopped by user
-            setExtractResult({
-              success: false,
-              message: data.message || 'Extraction stopped by user'
-            });
-            setExtracting(false);
-            eventSourceRef.current = null;
-            eventSource.close();
-          } else if (data.type === 'error') {
-            setError(data.message);
-            setExtracting(false);
-            eventSourceRef.current = null;
-            eventSource.close();
-          }
-        } catch (e) {
-          console.error('Failed to parse SSE data:', e);
-        }
-      };
-      
-      eventSource.onerror = (err) => {
-        console.error('SSE Error:', err);
-        // Only treat as fatal if the readyState is CLOSED (2)
-        // EventSource may fire transient errors during reconnection (readyState === 0)
-        if (eventSource.readyState === EventSource.CLOSED) {
-          setError('Connection to server lost');
-          setExtracting(false);
-          eventSourceRef.current = null;
-          eventSource.close();
-        } else {
-          // Transient error — let EventSource try to reconnect automatically
-          console.log('SSE transient error, readyState:', eventSource.readyState, '— waiting for reconnect...');
-          setAgentThoughts(prev => [...prev, {
-            type: 'status',
-            message: 'Reconnecting to server...',
-            timestamp: new Date().toLocaleTimeString()
-          }]);
-        }
-      };
-      
-    } catch (err) {
-      setError(err.message);
-      setExtracting(false);
-    }
-  };
-
-  // Agent-based extraction using local Qwen model
-  const handleAgentExtract = async () => {
     if (!extractUrl.trim()) {
       setError('Please enter a URL');
       return;
@@ -422,8 +334,6 @@ function VishvaPage() {
     setAgentThoughts([]);
 
     const message = `Extract menu from ${extractUrl} and clean the data`;
-
-    const llmChoice = extractionMode === 'local-agent' ? 'ollama' : 'browser';
 
     const es = streamAgentChat(message, {
       onThought: (text) => {
@@ -481,42 +391,26 @@ function VishvaPage() {
         setExtracting(false);
         eventSourceRef.current = null;
       },
-    }, 'default', null, { llm: llmChoice });
+    }, 'default', null, { llm: 'ollama' });
 
     eventSourceRef.current = es;
   };
 
   // Stop the extraction agent
-  const handleStopExtract = async () => {
-    try {
-      // Close the SSE connection first
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-      
-      // Call backend to stop the subprocess (kills the browser too)
-      const result = await stopExtraction();
-      
-      setAgentThoughts(prev => [...prev, {
-        type: 'status',
-        message: 'Extraction stopped by user',
-        timestamp: new Date().toLocaleTimeString()
-      }]);
-      
-      // Clear the result and go back to ready state
-      setExtractResult(null);
-      setExtracting(false);
-    } catch (err) {
-      console.error('Failed to stop extraction:', err);
-      // Still try to clean up client-side
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-      setExtracting(false);
-      setExtractResult(null);
+  const handleStopExtract = () => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
     }
+
+    setAgentThoughts(prev => [...prev, {
+      type: 'status',
+      message: 'Extraction canceled by user',
+      timestamp: new Date().toLocaleTimeString()
+    }]);
+
+    setExtractResult({ success: false, message: 'Extraction canceled by user' });
+    setExtracting(false);
   };
 
   const handleTrain = async () => {
@@ -878,39 +772,13 @@ function VishvaPage() {
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Extract Source Records</h3>
             <p className="mb-4 text-sm text-gray-600">
-              Pull raw entries from a public web page, normalize them, and add them to the working dataset.
+              Use the local agent to open the page in a visible browser, verify items against the page text, and add them to the dataset.
             </p>
             <div className="space-y-4">
-              {/* Extraction Mode Toggle */}
+              {/* Extraction Mode */}
               <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
                 <span className="text-sm text-gray-600 font-medium">Mode:</span>
-                <div className="flex bg-gray-200 rounded-lg p-0.5">
-                  <button
-                    onClick={() => setExtractionMode('browser-use')}
-                    disabled={extracting}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                      extractionMode === 'browser-use'
-                        ? 'bg-white text-green-700 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    Browser Flow
-                  </button>
-                  <button
-                    onClick={() => setExtractionMode('local-agent')}
-                    disabled={extracting}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                      extractionMode === 'local-agent'
-                        ? 'bg-white text-purple-700 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    Local Agent
-                  </button>
-                </div>
-                <span className="text-xs text-gray-400 ml-auto">
-                  {extractionMode === 'browser-use' ? 'Remote browser automation' : 'Qwen via Ollama'}
-                </span>
+                <span className="text-xs text-gray-600">Local agent with visible browser</span>
               </div>
 
               <input
@@ -923,11 +791,11 @@ function VishvaPage() {
               />
               <div className="flex gap-2">
                 <button
-                  onClick={extractionMode === 'local-agent' ? handleAgentExtract : handleExtract}
+                  onClick={handleExtract}
                   disabled={extracting}
-                  className={`flex-1 btn-primary disabled:opacity-50 ${extractionMode === 'local-agent' ? 'bg-purple-600 hover:bg-purple-700' : ''}`}
+                  className="flex-1 btn-primary disabled:opacity-50"
                 >
-                  {extracting ? 'Extracting...' : (extractionMode === 'local-agent' ? 'Run Agent Extraction' : 'Start Extraction')}
+                  {extracting ? 'Extracting...' : 'Run Local Agent Extraction'}
                 </button>
                 {extracting && (
                   <button

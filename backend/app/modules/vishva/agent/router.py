@@ -90,35 +90,58 @@ async def agent_chat_stream(message: str, session_id: str = "default", llm: Opti
     - tool_result: tool returned a result
     - done: agent finished
     """
-    from .menu_agent import MenuAgent
+    try:
+        from .menu_agent import MenuAgent
+    except ImportError as e:
+        async def error_gen():
+            yield f"data: {json.dumps({'type': 'error', 'message': f'Agent dependencies not installed: {e}. Install langchain-ollama and langgraph.'})}\n\n"
+        return StreamingResponse(error_gen(), media_type="text/event-stream")
 
-    use_local = llm and llm.lower() in ('ollama', 'local', 'local-ollama')
-
-    # Determine LLM selection. If client requests 'ollama' or 'local', use local Ollama settings.
-    if use_local:
-        model = os.getenv('VISHVA_OLLAMA_MODEL', 'qwen2.5:7b')
-        base_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+    # Always use the local Ollama-backed agent
+    model = os.getenv('VISHVA_OLLAMA_MODEL', 'qwen2.5:7b')
+    base_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+    try:
         agent = MenuAgent(model=model, base_url=base_url)
-    else:
-        # Fallback to default agent configuration (still uses Ollama by default)
-        model = os.getenv('VISHVA_OLLAMA_MODEL', 'qwen2.5:7b')
-        base_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
-        agent = MenuAgent(model=model, base_url=base_url)
+    except Exception as e:
+        async def error_gen():
+            yield f"data: {json.dumps({'type': 'error', 'message': f'Failed to create agent: {type(e).__name__}: {e}'})}\n\n"
+        return StreamingResponse(error_gen(), media_type="text/event-stream")
 
     async def generate():
-        prev_extract_llm = os.getenv("VISHVA_EXTRACT_LLM")
-        os.environ["VISHVA_EXTRACT_LLM"] = "ollama" if use_local else "auto"
+        # Create a queue to collect events from the agent
+        import asyncio
+        queue = asyncio.Queue()
+
+        # Task to run the agent and put events into the queue
+        async def run_agent():
+            try:
+                async for event in agent.astream(message, thread_id=session_id):
+                    await queue.put(event)
+                await queue.put({"type": "done"})
+            except Exception as e:
+                import traceback
+                error_detail = f"{type(e).__name__}: {str(e)}"
+                print(f"[AGENT ERROR] {error_detail}")
+                traceback.print_exc()
+                await queue.put({"type": "error", "message": error_detail})
+
+        agent_task = asyncio.create_task(run_agent())
 
         try:
-            async for event in agent.astream(message, thread_id=session_id):
-                yield f"data: {json.dumps(event)}\n\n"
-        except Exception as e:
-            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+            while True:
+                try:
+                    # Wait for an event with a timeout for heartbeat
+                    event = await asyncio.wait_for(queue.get(), timeout=5.0)
+                    yield f"data: {json.dumps(event)}\n\n"
+                    if event.get("type") in ["done", "error"]:
+                        break
+                except asyncio.TimeoutError:
+                    # Send a keepalive comment to keep the connection open
+                    yield ": keepalive\n\n"
         finally:
-            if prev_extract_llm is None:
-                os.environ.pop("VISHVA_EXTRACT_LLM", None)
-            else:
-                os.environ["VISHVA_EXTRACT_LLM"] = prev_extract_llm
+            if not agent_task.done():
+                agent_task.cancel()
+
 
     return StreamingResponse(
         generate(),

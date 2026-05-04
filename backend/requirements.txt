@@ -14,9 +14,8 @@ python-dotenv>=1.0.0
 httpx>=0.26.0
 
 # Vishva's Dependencies
-browser-use
-langchain-anthropic
 playwright
+ollama
 scikit-learn
 pandas
 numpy

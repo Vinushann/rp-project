@@ -197,7 +197,7 @@
   {
     "name": "Side Dishes",
     "price": "RS 1,950",
-    "category": "Side Dishes"
+    "category": "Mixed Cheese Omelette"
   },
   {
     "name": "Sri Lankan Chicken Omelette",
@@ -438,10 +438,5 @@
     "name": "Cookie Cream",
     "price": "RS 890",
     "category": "Ice Cream"
-  },
-  {
-    "name": "Chicken Bowl -RS 1,750",
-    "price": "",
-    "category": "Healthy Bowls"
   }
 ]

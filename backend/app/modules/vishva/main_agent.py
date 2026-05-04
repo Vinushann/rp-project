@@ -10,7 +10,7 @@ def run_menu_extraction_pipeline(url: str):
     Agentic pipeline to extract and clean menu data.
     
     Steps:
-    1. Extract raw data using browser agent
+    1. Extract raw data using local browser agent
     2. Clean and format the data to JSON
     """
     

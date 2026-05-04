@@ -308,8 +308,8 @@ print(json.dumps(result))
         
     except ImportError as e:
         raise HTTPException(
-            status_code=500, 
-            detail=f"Required dependencies not installed: {str(e)}. Install browser-use and langchain-anthropic."
+            status_code=500,
+            detail=f"Required dependencies not installed: {str(e)}. Install playwright and ollama."
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -969,16 +969,6 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
     force=True
 )
-
-# Also configure the browser_use loggers specifically
-for logger_name in ['browser_use', 'Agent', 'service', 'tools', 'BrowserSession']:
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(logging.INFO)
-    logger.handlers = []
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setFormatter(logging.Formatter('%(message)s'))
-    logger.addHandler(handler)
-    logger.propagate = False
 
 sys.path.insert(0, r"{backend_dir}")
 os.chdir(r"{backend_dir}")

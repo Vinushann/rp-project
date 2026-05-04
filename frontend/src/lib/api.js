@@ -696,7 +696,7 @@ export async function sendAgentMessage(message, sessionId = 'default') {
  * @param {AbortSignal} signal - Optional abort signal to cancel the stream
  */
 export function streamAgentChat(message, callbacks = {}, sessionId = 'default', signal = null, options = {}) {
-  // options: { llm: 'ollama'|'browser'|... }
+  // options: { llm: 'ollama' }
   const paramsObj = { message, session_id: sessionId };
   if (options.llm) paramsObj.llm = options.llm;
   const params = new URLSearchParams(paramsObj);
@@ -732,8 +732,16 @@ export function streamAgentChat(message, callbacks = {}, sessionId = 'default', 
     }
   };
 
-  eventSource.onerror = () => {
-    callbacks.onError?.('Connection lost');
+  eventSource.onerror = (e) => {
+    // Provide more context about the connection failure
+    let errorMsg = 'Connection lost';
+    if (eventSource.readyState === EventSource.CLOSED) {
+      errorMsg = 'Connection closed by server — the extraction may have timed out or the backend crashed. Check the backend terminal for errors.';
+    } else if (eventSource.readyState === EventSource.CONNECTING) {
+      errorMsg = 'Connection interrupted — attempting to reconnect failed. Make sure the backend server is running.';
+    }
+    console.error('[Agent SSE Error]', errorMsg, e);
+    callbacks.onError?.(errorMsg);
     eventSource.close();
   };
 

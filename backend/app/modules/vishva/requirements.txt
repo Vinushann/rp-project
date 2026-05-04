@@ -1,7 +1,6 @@
 python-dotenv
-browser-use
-langchain-anthropic
 playwright
+ollama
 scikit-learn
 pandas
 numpy

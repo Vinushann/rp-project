@@ -5,6 +5,7 @@ This is the entry point for the backend API.
 Each team member's module is mounted as a separate router with its own prefix.
 """
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -65,6 +66,34 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Logging Middleware
+from fastapi import Request
+import time
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = None
+    error = None
+    try:
+        response = await call_next(request)
+        return response
+    except Exception as e:
+        error = str(e)
+        raise e
+    finally:
+        process_time = time.time() - start_time
+        log_dir = os.path.join(os.path.dirname(__file__), "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        log_file = os.path.join(log_dir, "api_requests.log")
+        with open(log_file, "a", encoding="utf-8") as f:
+            status_code = response.status_code if response else "ERROR"
+            f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {request.method} {request.url.path} - Status: {status_code} - Time: {process_time:.4f}s")
+            if error:
+                f.write(f" - Exception: {error}")
+            f.write("\n")
+
 
 
 @app.get("/")
