@@ -121,6 +121,22 @@ function VishvaPage() {
   // State for errors
   const [error, setError] = useState(null);
 
+  // State for UI mode
+  const [isSimpleMode, setIsSimpleMode] = useState(() => {
+    const saved = localStorage.getItem('vishva_simple_mode');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  // Persist mode preference
+  useEffect(() => {
+    localStorage.setItem('vishva_simple_mode', JSON.stringify(isSimpleMode));
+    
+    // If we're in simple mode and on a technical tab, switch to extract
+    if (isSimpleMode && (activeTab === 'training-data' || activeTab === 'performance')) {
+      setActiveTab('extract');
+    }
+  }, [isSimpleMode]);
+
   // Auto-scroll to bottom of thoughts
   useEffect(() => {
     if (thoughtsEndRef.current) {
@@ -667,37 +683,83 @@ function VishvaPage() {
   return (
     <div className="space-y-8 p-6 lg:p-8">
       {/* Page Header */}
-      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-900 px-6 py-8 text-white shadow-xl shadow-slate-200/60 lg:px-8">
-        <div className="flex flex-col gap-8 xl:flex-row xl:items-end xl:justify-between">
+      <div className={`overflow-hidden rounded-3xl border transition-all duration-500 ${
+        isSimpleMode 
+          ? 'border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-sky-50 shadow-lg shadow-emerald-100/50' 
+          : 'border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-900 shadow-xl shadow-slate-200/60'
+      } px-6 py-8 lg:px-8`}>
+        <div className="flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
           <div className="max-w-3xl">
-            <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-200">
-              Vishva workspace
-            </span>
-            <div className="mt-4 flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/12 text-2xl font-bold text-white ring-1 ring-white/20 backdrop-blur">
-                V
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Web Extraction & Classification Studio</h1>
-                <p className="mt-2 max-w-2xl text-sm text-slate-200 sm:text-base">
-                  Capture structured records from live pages or uploaded files, curate labels, train a classifier, and feed review corrections back into the pipeline.
-                </p>
-              </div>
+            <div className="flex items-center gap-3 mb-6">
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={isSimpleMode}
+                  onChange={() => setIsSimpleMode(!isSimpleMode)}
+                />
+                <div className={`w-11 h-6 rounded-full peer transition-all duration-300
+                  ${isSimpleMode ? 'bg-emerald-500' : 'bg-slate-700'}
+                  after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all
+                  peer-checked:after:translate-x-full peer-checked:after:border-white
+                `}></div>
+                <span className={`ml-3 text-sm font-bold uppercase tracking-wider ${isSimpleMode ? 'text-emerald-700' : 'text-slate-400'}`}>
+                  {isSimpleMode ? '✨ Simple Mode' : '🛠️ Advanced Mode'}
+                </span>
+              </label>
             </div>
+
+            {isSimpleMode ? (
+              <div className="animate-in fade-in slide-in-from-top-4 duration-700">
+                <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold uppercase tracking-[0.1em] text-emerald-700">
+                  Vishva Assistant
+                </span>
+                <div className="mt-4 flex items-center gap-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-sky-400 text-3xl font-bold text-white shadow-lg shadow-emerald-200">
+                    V
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-800 sm:text-4xl">Welcome to Vishva</h1>
+                    <p className="mt-2 max-w-2xl text-lg text-slate-600">
+                      Your intelligent assistant for organizing web data. I'll help you collect items from websites and teach the system how to recognize them.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="animate-in fade-in duration-700">
+                <span className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-200">
+                  Vishva workspace
+                </span>
+                <div className="mt-4 flex items-center gap-4">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/12 text-2xl font-bold text-white ring-1 ring-white/20 backdrop-blur">
+                    V
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Web Extraction & Classification Studio</h1>
+                    <p className="mt-2 max-w-2xl text-sm text-slate-200 sm:text-base">
+                      Capture structured records from live pages or uploaded files, curate labels, train a classifier, and feed review corrections back into the pipeline.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3 xl:w-[520px]">
-            {overviewCards.map((card) => (
-              <div
-                key={card.label}
-                className={`rounded-2xl border p-4 backdrop-blur ${card.panelClass}`}
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">{card.label}</p>
-                <p className="mt-3 text-2xl font-semibold text-white">{card.value}</p>
-                <p className="mt-2 text-sm text-slate-300">{card.detail}</p>
-              </div>
-            ))}
-          </div>
+          {!isSimpleMode && (
+            <div className="grid grid-cols-2 gap-3 xl:w-[520px] animate-in fade-in slide-in-from-right-4 duration-700">
+              {overviewCards.map((card) => (
+                <div
+                  key={card.label}
+                  className={`rounded-2xl border p-4 backdrop-blur ${card.panelClass}`}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">{card.label}</p>
+                  <p className="mt-3 text-2xl font-semibold text-white">{card.value}</p>
+                  <p className="mt-2 text-sm text-slate-300">{card.detail}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -719,10 +781,12 @@ function VishvaPage() {
       <div className="rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
         <nav className="flex flex-wrap gap-2">
           {[
-            { id: 'extract', label: 'Pipeline Workspace' },
-            { id: 'training-data', label: 'Dataset Curation' },
-            { id: 'performance', label: 'Quality Metrics' },
-            { id: 'settings', label: 'Rules & Feedback' },
+            { id: 'extract', label: isSimpleMode ? 'Workspace' : 'Pipeline Workspace' },
+            ...(!isSimpleMode ? [
+              { id: 'training-data', label: 'Dataset Curation' },
+              { id: 'performance', label: 'Quality Metrics' },
+            ] : []),
+            { id: 'settings', label: isSimpleMode ? 'Assistant Rules' : 'Rules & Feedback' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -747,52 +811,54 @@ function VishvaPage() {
           <div className="space-y-6">
             
             {/* Connection Status */}
-            <PingButton moduleName={MODULE_NAME} />
+            {!isSimpleMode && <PingButton moduleName={MODULE_NAME} />}
             
             {/* Model Status Card */}
-            <div className="card">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Model Status</h3>
-              {modelStatus ? (
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Status:</span>
-                    <span className={modelStatus.model_exists ? 'text-green-600 font-medium' : 'text-yellow-600'}>
-                      {modelStatus.model_exists ? '✓ Trained' : '○ Not trained'}
-                    </span>
-                  </div>
-                  {modelStatus.model_exists && (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Model:</span>
-                        <span className="font-mono text-sm">{modelStatus.model_name}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Accuracy:</span>
-                        <span className="font-medium">{(modelStatus.accuracy * 100).toFixed(1)}%</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">F1 Score:</span>
-                        <span className="font-medium">{modelStatus.f1_score?.toFixed(4)}</span>
-                      </div>
-                      {modelStatus.categories && (
-                        <div className="mt-3">
-                          <span className="text-gray-500 text-sm">Labels:</span>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {modelStatus.categories.map((cat, i) => (
-                              <span key={i} className="px-2 py-1 bg-gray-100 rounded text-xs">
-                                {cat}
-                              </span>
-                            ))}
-                          </div>
+            {!isSimpleMode && (
+              <div className="card">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Model Status</h3>
+                {modelStatus ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Status:</span>
+                      <span className={modelStatus.model_exists ? 'text-green-600 font-medium' : 'text-yellow-600'}>
+                        {modelStatus.model_exists ? '✓ Trained' : '○ Not trained'}
+                      </span>
+                    </div>
+                    {modelStatus.model_exists && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Model:</span>
+                          <span className="font-mono text-sm">{modelStatus.model_name}</span>
                         </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              ) : (
-              <p className="text-gray-500">Loading model status...</p>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Accuracy:</span>
+                          <span className="font-medium">{(modelStatus.accuracy * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">F1 Score:</span>
+                          <span className="font-medium">{modelStatus.f1_score?.toFixed(4)}</span>
+                        </div>
+                        {modelStatus.categories && (
+                          <div className="mt-3">
+                            <span className="text-gray-500 text-sm">Labels:</span>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {modelStatus.categories.map((cat, i) => (
+                                <span key={i} className="px-2 py-1 bg-gray-100 rounded text-xs">
+                                  {cat}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">Loading model status...</p>
+                )}
+              </div>
             )}
-          </div>
 
           {/* Extract Menu Card */}
           <div className="card">
@@ -847,268 +913,364 @@ function VishvaPage() {
               )}
             </div>
           </div>
+        </div>
 
           {/* Execution & System Monitor */}
-          <div className="card lg:col-span-2 overflow-hidden border-slate-200 shadow-lg">
-            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-slate-800">Execution Monitor</h3>
-              </div>
-              <div className="flex bg-slate-100 p-1 rounded-xl">
-                <button
-                  onClick={() => setLogType('agent')}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    logType === 'agent' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  Agent Thoughts
-                </button>
-                <button
-                  onClick={() => setLogType('system')}
-                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                    logType === 'system' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  System Logs
-                </button>
+          {isSimpleMode ? (
+            <div className="card lg:col-span-2 overflow-hidden border-emerald-100 bg-white/50 backdrop-blur shadow-xl shadow-emerald-50/50">
+              <div className="flex flex-col items-center justify-center py-12 text-center space-y-6">
+                {(extracting || training) ? (
+                  <>
+                    <div className="relative">
+                      <div className="h-24 w-24 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-500 shadow-inner">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </div>
+                      <div className="absolute inset-0 h-24 w-24 rounded-full border-4 border-emerald-400 border-t-transparent animate-spin"></div>
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-800">
+                        {extracting ? 'Collecting Data...' : 'Learning from your data...'}
+                      </h3>
+                      <p className="mt-2 text-slate-500 max-w-md mx-auto">
+                        {extracting 
+                          ? "I'm visiting the website to find all the items you need. This will take just a moment."
+                          : "I'm studying the examples you provided to become better at recognizing them."}
+                      </p>
+                    </div>
+                    
+                    {/* Plain Language Status Display */}
+                    <div className="w-full max-w-md bg-emerald-50 rounded-2xl p-6 border border-emerald-100">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-bold text-emerald-700 uppercase tracking-widest">Assistant Status</span>
+                        <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      </div>
+                      <p className="text-lg font-medium text-emerald-800">
+                        {agentThoughts.length > 0 
+                          ? agentThoughts[agentThoughts.length - 1].message.length > 60
+                            ? agentThoughts[agentThoughts.length - 1].message.substring(0, 60) + "..."
+                            : agentThoughts[agentThoughts.length - 1].message
+                          : "Initializing..."}
+                      </p>
+                      <p className="mt-4 text-xs text-emerald-600 font-medium italic">
+                        {trainingProgress ? `Progress: ${trainingProgress.progress}% - ${trainingProgress.message}` : "Working on it..."}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleStopExtract}
+                      className="px-8 py-3 bg-white border-2 border-red-100 text-red-500 hover:bg-red-50 font-bold rounded-full transition-all flex items-center gap-2"
+                    >
+                      Cancel Process
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-20 w-20 rounded-3xl bg-slate-50 flex items-center justify-center text-slate-400">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-700">All set and ready</h3>
+                      <p className="mt-2 text-slate-500">Enter a website address or upload a file to get started.</p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {/* Left Side: Summary & Stats */}
-              <div className="md:col-span-1 space-y-4">
-                <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
-                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Status</p>
-                  <div className="flex items-center gap-2">
-                    <div className={`h-2.5 w-2.5 rounded-full ${extracting || training ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></div>
-                    <p className="font-semibold text-slate-800">{extracting ? 'Extracting...' : training ? 'Training...' : 'Standby'}</p>
-                  </div>
-                </div>
-                
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Log Entries</p>
-                  <p className="text-2xl font-bold text-slate-800">{logType === 'agent' ? agentThoughts.length : systemLogs.length}</p>
-                  <p className="text-xs text-slate-500 mt-1">Updated just now</p>
-                </div>
-
-                {extracting && (
-                  <button
-                    onClick={handleStopExtract}
-                    className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl border border-red-200 transition-all flex items-center justify-center gap-2"
-                  >
+          ) : (
+            <div className="card lg:col-span-2 overflow-hidden border-slate-200 shadow-lg">
+              <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
+                      <path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
                     </svg>
-                    Stop Agent
-                  </button>
-                )}
-                
-                {!extracting && agentThoughts.length > 0 && logType === 'agent' && (
-                  <button 
-                    onClick={() => setAgentThoughts([])}
-                    className="w-full py-2 text-slate-400 hover:text-slate-600 text-sm font-medium transition-all"
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-800">Execution Monitor</h3>
+                </div>
+                <div className="flex bg-slate-100 p-1 rounded-xl">
+                  <button
+                    onClick={() => setLogType('agent')}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      logType === 'agent' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    }`}
                   >
-                    Clear History
+                    Agent Thoughts
                   </button>
-                )}
+                  <button
+                    onClick={() => setLogType('system')}
+                    className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                      logType === 'system' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    System Logs
+                  </button>
+                </div>
               </div>
-
-              {/* Right Side: Log Feed */}
-              <div className="md:col-span-3">
-                <div className="bg-slate-950 rounded-2xl p-6 h-[450px] overflow-y-auto font-mono text-sm relative group shadow-inner border border-slate-800">
-                  {/* Decorative Elements */}
-                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 opacity-50"></div>
-                  
-                  {logType === 'agent' ? (
-                    agentThoughts.length === 0 && !extracting ? (
-                      <div className="h-full flex flex-col items-center justify-center text-slate-500 italic space-y-4">
-                        <div className="h-16 w-16 rounded-full bg-slate-900 flex items-center justify-center text-slate-700">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                          </svg>
-                        </div>
-                        <p>No agent activity yet. Start an extraction to see thoughts.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {agentThoughts.map((thought, i) => (
-                          <div key={i} className="flex gap-3 group animate-in fade-in slide-in-from-left-2 duration-300">
-                            <span className="text-slate-600 text-[10px] whitespace-nowrap pt-1">[{thought.timestamp}]</span>
-                            <div className="flex-1">
-                              <span className={`
-                                inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase mb-1 mr-2
-                                ${thought.type === 'thought' ? 'bg-emerald-500/10 text-emerald-400' : ''}
-                                ${thought.type === 'tool' ? 'bg-amber-500/10 text-amber-400' : ''}
-                                ${thought.type === 'status' ? 'bg-indigo-500/10 text-indigo-400' : ''}
-                              `}>
-                                {thought.type}
-                              </span>
-                              <div className={`
-                                ${thought.type === 'thought' ? 'text-emerald-50/90' : ''}
-                                ${thought.type === 'tool' ? 'text-amber-50/90 font-semibold' : ''}
-                                ${thought.type === 'status' ? 'text-indigo-100 font-bold' : ''}
-                                whitespace-pre-wrap leading-relaxed
-                              `}>
-                                {thought.message}
-                              </div>
-                              {thought.detail && (
-                                <div className="mt-1 p-2 bg-slate-900 rounded border border-slate-800 text-slate-400 text-xs overflow-x-auto">
-                                  {typeof thought.detail === 'string' ? thought.detail : JSON.stringify(thought.detail, null, 2)}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                        <div ref={thoughtsEndRef} />
-                        {extracting && (
-                          <div className="flex items-center text-emerald-400 mt-6 pt-4 border-t border-slate-900">
-                            <span className="relative flex h-2 w-2 mr-3">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                            <span className="text-xs font-bold uppercase tracking-widest">Agent is processing request...</span>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  ) : (
-                    <div className="space-y-1.5">
-                      {systemLogs.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-500 italic space-y-4">
-                          <p>Connecting to system log stream...</p>
-                        </div>
-                      ) : (
-                        systemLogs.map((log, i) => {
-                          const isError = log.includes('Status: 4') || log.includes('Status: 5') || log.includes('ERROR') || log.includes('Exception');
-                          return (
-                            <div key={i} className={`flex gap-3 py-0.5 border-l-2 pl-3 transition-colors ${isError ? 'border-red-500 bg-red-500/5' : 'border-slate-800 hover:bg-slate-900'}`}>
-                              <span className={`text-[11px] leading-relaxed ${isError ? 'text-red-400' : 'text-slate-400'}`}>
-                                {log}
-                              </span>
-                            </div>
-                          );
-                        })
-                      )}
-                      <div ref={thoughtsEndRef} />
+              
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {/* Left Side: Summary & Stats */}
+                <div className="md:col-span-1 space-y-4">
+                  <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
+                    <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Status</p>
+                    <div className="flex items-center gap-2">
+                      <div className={`h-2.5 w-2.5 rounded-full ${extracting || training ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></div>
+                      <p className="font-semibold text-slate-800">{extracting ? 'Extracting...' : training ? 'Training...' : 'Standby'}</p>
                     </div>
+                  </div>
+                  
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Log Entries</p>
+                    <p className="text-2xl font-bold text-slate-800">{logType === 'agent' ? agentThoughts.length : systemLogs.length}</p>
+                    <p className="text-xs text-slate-500 mt-1">Updated just now</p>
+                  </div>
+
+                  {extracting && (
+                    <button
+                      onClick={handleStopExtract}
+                      className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl border border-red-200 transition-all flex items-center justify-center gap-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
+                      </svg>
+                      Stop Agent
+                    </button>
+                  )}
+                  
+                  {!extracting && agentThoughts.length > 0 && logType === 'agent' && (
+                    <button 
+                      onClick={() => setAgentThoughts([])}
+                      className="w-full py-2 text-slate-400 hover:text-slate-600 text-sm font-medium transition-all"
+                    >
+                      Clear History
+                    </button>
                   )}
                 </div>
+
+                {/* Right Side: Log Feed */}
+                <div className="md:col-span-3">
+                  <div className="bg-slate-950 rounded-2xl p-6 h-[450px] overflow-y-auto font-mono text-sm relative group shadow-inner border border-slate-800">
+                    {/* Decorative Elements */}
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 opacity-50"></div>
+                    
+                    {logType === 'agent' ? (
+                      agentThoughts.length === 0 && !extracting ? (
+                        <div className="h-full flex flex-col items-center justify-center text-slate-500 italic space-y-4">
+                          <div className="h-16 w-16 rounded-full bg-slate-900 flex items-center justify-center text-slate-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                            </svg>
+                          </div>
+                          <p>No agent activity yet. Start an extraction to see thoughts.</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {agentThoughts.map((thought, i) => (
+                            <div key={i} className="flex gap-3 group animate-in fade-in slide-in-from-left-2 duration-300">
+                              <span className="text-slate-600 text-[10px] whitespace-nowrap pt-1">[{thought.timestamp}]</span>
+                              <div className="flex-1">
+                                <span className={`
+                                  inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase mb-1 mr-2
+                                  ${thought.type === 'thought' ? 'bg-emerald-500/10 text-emerald-400' : ''}
+                                  ${thought.type === 'tool' ? 'bg-amber-500/10 text-amber-400' : ''}
+                                  ${thought.type === 'status' ? 'bg-indigo-500/10 text-indigo-400' : ''}
+                                `}>
+                                  {thought.type}
+                                </span>
+                                <div className={`
+                                  ${thought.type === 'thought' ? 'text-emerald-50/90' : ''}
+                                  ${thought.type === 'tool' ? 'text-amber-50/90 font-semibold' : ''}
+                                  ${thought.type === 'status' ? 'text-indigo-100 font-bold' : ''}
+                                  whitespace-pre-wrap leading-relaxed
+                                `}>
+                                  {thought.message}
+                                </div>
+                                {thought.detail && (
+                                  <div className="mt-1 p-2 bg-slate-900 rounded border border-slate-800 text-slate-400 text-xs overflow-x-auto">
+                                    {typeof thought.detail === 'string' ? thought.detail : JSON.stringify(thought.detail, null, 2)}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          <div ref={thoughtsEndRef} />
+                          {extracting && (
+                            <div className="flex items-center text-emerald-400 mt-6 pt-4 border-t border-slate-900">
+                              <span className="relative flex h-2 w-2 mr-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                              </span>
+                              <span className="text-xs font-bold uppercase tracking-widest">Agent is processing request...</span>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    ) : (
+                      <div className="space-y-1.5">
+                        {systemLogs.length === 0 ? (
+                          <div className="h-full flex flex-col items-center justify-center text-slate-500 italic space-y-4">
+                            <p>Connecting to system log stream...</p>
+                          </div>
+                        ) : (
+                          systemLogs.map((log, i) => {
+                            const isError = log.includes('Status: 4') || log.includes('Status: 5') || log.includes('ERROR') || log.includes('Exception');
+                            return (
+                              <div key={i} className={`flex gap-3 py-0.5 border-l-2 pl-3 transition-colors ${isError ? 'border-red-500 bg-red-500/5' : 'border-slate-800 hover:bg-slate-900'}`}>
+                                <span className={`text-[11px] leading-relaxed ${isError ? 'text-red-400' : 'text-slate-400'}`}>
+                                  {log}
+                                </span>
+                              </div>
+                            );
+                          })
+                        )}
+                        <div ref={thoughtsEndRef} />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Train Model Card */}
-          <div className="card">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Train Label Classifier</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Train the classifier on the current dataset. The pipeline benchmarks multiple model combinations and keeps the best performer.
+          <div className={`card transition-all duration-500 ${isSimpleMode ? 'border-sky-100 shadow-xl shadow-sky-50/50' : ''}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${isSimpleMode ? 'bg-sky-100 text-sky-600' : 'bg-gray-100 text-gray-600'}`}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-gray-800">Train Label Classifier</h3>
+            </div>
+            
+            <p className="text-gray-600 text-sm mb-6">
+              {isSimpleMode 
+                ? "Click here to teach the system how to recognize your labels. I'll analyze the data you've collected and build a smart model for you." 
+                : "Train the classifier on the current dataset. The pipeline benchmarks multiple model combinations and keeps the best performer."}
             </p>
+
+            {isSimpleMode && (
+              <div className="mb-6 space-y-4">
+                <div className="flex items-start gap-4 p-4 bg-sky-50 rounded-2xl border border-sky-100">
+                  <div className="h-8 w-8 rounded-full bg-sky-200 flex-shrink-0 flex items-center justify-center text-sky-700 font-bold">1</div>
+                  <div>
+                    <p className="font-bold text-sky-900 text-sm">Review Examples</p>
+                    <p className="text-xs text-sky-700 mt-1">Make sure you have collected some items first using the "Extract" button.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4 p-4 bg-sky-50 rounded-2xl border border-sky-100 opacity-60">
+                  <div className="h-8 w-8 rounded-full bg-sky-200 flex-shrink-0 flex items-center justify-center text-sky-700 font-bold">2</div>
+                  <div>
+                    <p className="font-bold text-sky-900 text-sm">Start Learning</p>
+                    <p className="text-xs text-sky-700 mt-1">Click the button below to start the training process.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <button
               onClick={handleTrain}
               disabled={training || menuData.length === 0}
-              className="w-full btn-secondary disabled:opacity-50"
+              className={`w-full py-4 rounded-2xl font-bold text-lg transition-all shadow-lg active:scale-[0.98] disabled:opacity-50
+                ${isSimpleMode 
+                  ? 'bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-sky-200' 
+                  : 'bg-slate-800 text-white'}`}
             >
-              {training ? 'Training in progress...' : 'Train Model'}
+              {training ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {isSimpleMode ? 'Learning...' : 'Training in progress...'}
+                </span>
+              ) : (
+                isSimpleMode ? '🚀 Teach Assistant Now' : 'Train Model'
+              )}
             </button>
             {menuData.length === 0 && (
-              <p className="text-yellow-600 text-sm mt-2">Extract source records first before training</p>
+              <p className="text-amber-600 text-xs mt-3 flex items-center gap-2 bg-amber-50 p-2 rounded-lg border border-amber-100">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Extract source records first before training
+              </p>
             )}
             
             {/* Training Progress UI */}
             {training && trainingProgress && (
-              <div className="mt-4 space-y-4">
+              <div className="mt-6 space-y-4 animate-in fade-in zoom-in duration-300">
                 {/* Progress Bar */}
                 <div className="relative">
-                  <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="h-4 bg-gray-100 rounded-full overflow-hidden shadow-inner">
                     <div 
-                      className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500 ease-out"
+                      className={`h-full transition-all duration-500 ease-out ${isSimpleMode ? 'bg-gradient-to-r from-sky-400 to-indigo-500' : 'bg-green-500'}`}
                       style={{ width: `${trainingProgress.progress}%` }}
                     />
                   </div>
-                  <span className="absolute right-0 -top-6 text-sm font-medium text-gray-600">
+                  <span className="absolute right-0 -top-6 text-sm font-bold text-slate-600">
                     {trainingProgress.progress}%
                   </span>
                 </div>
                 
                 {/* Current Step */}
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <div className="flex items-center gap-3">
+                <div className={`rounded-2xl p-5 border transition-all ${isSimpleMode ? 'bg-white border-sky-100 shadow-sm' : 'bg-gray-50 border-gray-200'}`}>
+                  <div className="flex items-center gap-4">
                     <div className="relative">
-                      <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                        <span className="text-white font-bold">{trainingProgress.step}</span>
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg ${isSimpleMode ? 'bg-sky-500' : 'bg-green-500'}`}>
+                        {trainingProgress.step}
                       </div>
-                      <div className="absolute inset-0 w-10 h-10 bg-green-400 rounded-full animate-ping opacity-25" />
+                      <div className={`absolute inset-0 rounded-2xl animate-ping opacity-25 ${isSimpleMode ? 'bg-sky-400' : 'bg-green-400'}`} />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800">{trainingProgress.title}</h4>
-                      <p className="text-sm text-gray-600">{trainingProgress.message}</p>
+                      <h4 className="font-bold text-gray-800 text-lg">{trainingProgress.title}</h4>
+                      <p className="text-sm text-gray-500 font-medium">{trainingProgress.message}</p>
                     </div>
                   </div>
-                </div>
-                
-                {/* Step Timeline */}
-                <div className="flex items-center justify-between px-2">
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((stepNum) => {
-                    const isActive = trainingProgress.step === stepNum;
-                    const isComplete = trainingProgress.step > stepNum;
-                    return (
-                      <div key={stepNum} className="flex flex-col items-center">
-                        <div className={`
-                          w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300
-                          ${isComplete ? 'bg-green-500 text-white' : 
-                            isActive ? 'bg-green-500 text-white ring-4 ring-green-200' : 
-                            'bg-gray-200 text-gray-500'}
-                        `}>
-                          {isComplete ? '✓' : stepNum}
-                        </div>
-                      </div>
-                    );
-                  })}
                 </div>
               </div>
             )}
             
             {trainResult && !training && (
-              <div className={`mt-4 p-4 rounded-lg ${trainResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
-                <p className={trainResult.success ? 'text-green-800 font-medium' : 'text-red-800'}>
-                  {trainResult.success ? '✓' : '✗'} {trainResult.message}
-                </p>
+              <div className={`mt-6 p-5 rounded-2xl border animate-in slide-in-from-bottom-4 duration-500 ${trainResult.success ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'}`}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white ${trainResult.success ? 'bg-emerald-500' : 'bg-red-500'}`}>
+                    {trainResult.success ? '✓' : '✗'}
+                  </div>
+                  <p className={`font-bold text-lg ${trainResult.success ? 'text-emerald-800' : 'text-red-800'}`}>
+                    {trainResult.success ? (isSimpleMode ? 'Success! Model Ready' : 'Training Complete') : 'Error during training'}
+                  </p>
+                </div>
+                <p className={`text-sm mb-4 ${trainResult.success ? 'text-emerald-700' : 'text-red-700'}`}>{trainResult.message}</p>
+                
                 {trainResult.success && (
-                  <div className="text-green-700 text-sm mt-3 space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="bg-white rounded-lg p-2 border border-green-200">
-                        <p className="text-xs text-gray-500">Best Model</p>
-                        <p className="font-semibold">{trainResult.best_model}</p>
+                  <div className="text-emerald-700 text-sm space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-emerald-100 shadow-sm">
+                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Model Name</p>
+                        <p className="font-bold text-slate-800 truncate">{trainResult.best_model}</p>
                       </div>
-                      <div className="bg-white rounded-lg p-2 border border-green-200">
-                        <p className="text-xs text-gray-500">Accuracy</p>
-                        <p className="font-semibold">{(trainResult.accuracy * 100).toFixed(1)}%</p>
+                      <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-emerald-100 shadow-sm group relative" title="How often the system is correct">
+                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Accuracy ✨</p>
+                        <p className="font-bold text-slate-800">{(trainResult.accuracy * 100).toFixed(1)}%</p>
                       </div>
-                      <div className="bg-white rounded-lg p-2 border border-green-200">
-                        <p className="text-xs text-gray-500">F1-Score</p>
-                        <p className="font-semibold">{(trainResult.f1_score * 100).toFixed(1)}%</p>
+                      <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-emerald-100 shadow-sm group relative" title="A balance between finding all items and being correct">
+                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Smart Score 🧪</p>
+                        <p className="font-bold text-slate-800">{(trainResult.f1_score * 100).toFixed(1)}%</p>
                       </div>
-                      <div className="bg-white rounded-lg p-2 border border-green-200">
-                        <p className="text-xs text-gray-500">Labels</p>
-                        <p className="font-semibold">{trainResult.categories?.length || 0}</p>
+                      <div className="bg-white/80 backdrop-blur rounded-xl p-3 border border-emerald-100 shadow-sm">
+                        <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Total Labels</p>
+                        <p className="font-bold text-slate-800">{trainResult.categories?.length || 0}</p>
                       </div>
                     </div>
-                    {trainResult.total_models_tested && (
-                      <p className="text-xs text-gray-500 text-center mt-2">
-                        Tested {trainResult.total_models_tested} model configurations
-                      </p>
-                    )}
                   </div>
                 )}
               </div>
             )}
           </div>
-        </div>
 
         {/* Right Column */}
         <div className="space-y-6">
@@ -1220,6 +1382,7 @@ function VishvaPage() {
                         'bg-gray-50 hover:bg-gray-100'
                       }`}
                       onClick={() => setEditingPrediction(pred)}
+                      title={isSimpleMode ? `Confidence: ${(pred.confidence * 100).toFixed(1)}% - Click to correct if wrong` : ''}
                     >
                       <div>
                         <p className="font-medium text-gray-800">{pred.name}</p>
@@ -1239,9 +1402,11 @@ function VishvaPage() {
                         }`}>
                           {pred.predicted_category}
                         </span>
-                        <p className="text-gray-500 text-xs mt-1">
-                          {(pred.confidence * 100).toFixed(1)}% confidence
-                        </p>
+                        {!isSimpleMode && (
+                          <p className="text-gray-500 text-xs mt-1">
+                            {(pred.confidence * 100).toFixed(1)}% confidence
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1330,49 +1495,51 @@ function VishvaPage() {
           </div>
 
           {/* Menu Data Card */}
-          <div className="card">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">Current Dataset</h3>
-              <button 
-                onClick={loadMenuData}
-                disabled={loadingMenu}
-                className="text-sm text-green-600 hover:text-green-800"
-              >
-                {loadingMenu ? 'Loading...' : '↻ Refresh'}
-              </button>
-            </div>
-            
-            {menuData.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">
-                No records captured yet. Start with a source URL or batch file.
-              </p>
-            ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                <p className="text-gray-600 text-sm mb-2">{menuData.length} records</p>
-                {menuData.slice(0, 20).map((item, i) => (
-                  <div key={i} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-800">{item.name}</span>
-                      <span className="text-green-600">{item.price}</span>
-                    </div>
-                    {item.category && (
-                      <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded mt-1 inline-block">
-                        {item.category}
-                      </span>
-                    )}
-                    {item.description && (
-                      <p className="text-gray-500 text-sm mt-1 line-clamp-2">{item.description}</p>
-                    )}
-                  </div>
-                ))}
-                {menuData.length > 20 && (
-                  <p className="text-gray-500 text-center text-sm py-2">
-                    ... and {menuData.length - 20} more records
-                  </p>
-                )}
+          {!isSimpleMode && (
+            <div className="card">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">Current Dataset</h3>
+                <button 
+                  onClick={loadMenuData}
+                  disabled={loadingMenu}
+                  className="text-sm text-green-600 hover:text-green-800"
+                >
+                  {loadingMenu ? 'Loading...' : '↻ Refresh'}
+                </button>
               </div>
-            )}
-          </div>
+              
+              {menuData.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">
+                  No records captured yet. Start with a source URL or batch file.
+                </p>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  <p className="text-gray-600 text-sm mb-2">{menuData.length} records</p>
+                  {menuData.slice(0, 20).map((item, i) => (
+                    <div key={i} className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-800">{item.name}</span>
+                        <span className="text-green-600">{item.price}</span>
+                      </div>
+                      {item.category && (
+                        <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded mt-1 inline-block">
+                          {item.category}
+                        </span>
+                      )}
+                      {item.description && (
+                        <p className="text-gray-500 text-sm mt-1 line-clamp-2">{item.description}</p>
+                      )}
+                    </div>
+                  ))}
+                  {menuData.length > 20 && (
+                    <p className="text-gray-500 text-center text-sm py-2">
+                      ... and {menuData.length - 20} more records
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
       )}
