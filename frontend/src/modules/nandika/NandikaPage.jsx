@@ -258,6 +258,203 @@ function NandikaPage() {
     doc.save(filename);
   };
 
+  // Generate Business Summary PDF
+  const generateBusinessSummaryPDF = (summary, totalReviews, url) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let yPos = 20;
+
+    // Title
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("Business Intelligence Report", pageWidth / 2, yPos, {
+      align: "center",
+    });
+    yPos += 9;
+
+    // Subtitle
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.text(
+      "AI-Generated Insights from Customer Reviews",
+      pageWidth / 2,
+      yPos,
+      { align: "center" },
+    );
+    yPos += 8;
+
+    // Date
+    doc.setFontSize(9);
+    doc.setTextColor(120, 120, 120);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, pageWidth / 2, yPos, {
+      align: "center",
+    });
+    doc.setTextColor(0, 0, 0);
+    yPos += 12;
+
+    // Source info
+    if (url) {
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      const truncatedUrl = url.length > 90 ? url.substring(0, 90) + "..." : url;
+      doc.text(`Source: ${truncatedUrl}`, 20, yPos);
+      yPos += 5;
+    }
+    doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Total Reviews Analyzed: ${totalReviews}`, 20, yPos);
+    doc.setTextColor(0, 0, 0);
+    yPos += 12;
+
+    // Overall Score Box
+    const score = summary.overall_score || 0;
+    const scoreColor =
+      score >= 7 ? [34, 197, 94] : score >= 4 ? [234, 179, 8] : [239, 68, 68];
+
+    doc.setFillColor(...scoreColor);
+    doc.roundedRect(20, yPos, 35, 25, 3, 3, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "bold");
+    doc.text("OVERALL SCORE", 37.5, yPos + 6, { align: "center" });
+    doc.setFontSize(16);
+    doc.text(`${score}/10`, 37.5, yPos + 17, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+
+    // Verdict next to score
+    if (summary.overall_verdict) {
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("Verdict", 60, yPos + 6);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      const verdictLines = doc.splitTextToSize(
+        summary.overall_verdict,
+        pageWidth - 80,
+      );
+      verdictLines.forEach((line, idx) => {
+        doc.text(line, 60, yPos + 12 + idx * 4.5);
+      });
+    }
+    yPos += 32;
+
+    // Sentiment Insight section
+    if (summary.sentiment_insight) {
+      if (yPos > pageHeight - 40) {
+        doc.addPage();
+        yPos = 20;
+      }
+      doc.setFillColor(219, 234, 254);
+      doc.setDrawColor(147, 197, 253);
+      doc.roundedRect(20, yPos, pageWidth - 40, 7, 2, 2, "FD");
+      doc.setTextColor(30, 64, 175);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("Sentiment Distribution Insight", 24, yPos + 5);
+      yPos += 10;
+
+      doc.setTextColor(30, 58, 138);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      const insightLines = doc.splitTextToSize(
+        summary.sentiment_insight,
+        pageWidth - 50,
+      );
+      insightLines.forEach((line) => {
+        if (yPos > pageHeight - 15) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.text(line, 24, yPos);
+        yPos += 4.5;
+      });
+      doc.setTextColor(0, 0, 0);
+      yPos += 6;
+    }
+
+    // Helper to render Strengths / Weaknesses / Recommendations sections
+    const renderSection = (title, items, headerRgb, textRgb) => {
+      if (!items || items.length === 0) return;
+
+      // Page break check
+      if (yPos > pageHeight - 30) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      // Section header
+      doc.setFillColor(...headerRgb);
+      doc.rect(20, yPos, pageWidth - 40, 8, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11);
+      doc.setFont("helvetica", "bold");
+      doc.text(title, 25, yPos + 5.5);
+      doc.setTextColor(0, 0, 0);
+      yPos += 12;
+
+      items.forEach((item) => {
+        if (yPos > pageHeight - 25) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        // Item title
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...textRgb);
+        const titleText = `- ${item.title || "Untitled"}`;
+        doc.text(titleText, 24, yPos);
+        yPos += 5;
+
+        // Item description
+        if (item.description) {
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(9);
+          doc.setTextColor(60, 60, 60);
+          const descLines = doc.splitTextToSize(
+            item.description,
+            pageWidth - 55,
+          );
+          descLines.forEach((line) => {
+            if (yPos > pageHeight - 15) {
+              doc.addPage();
+              yPos = 20;
+            }
+            doc.text(line, 30, yPos);
+            yPos += 4.2;
+          });
+        }
+        yPos += 3;
+      });
+      doc.setTextColor(0, 0, 0);
+      yPos += 4;
+    };
+
+    renderSection("TOP STRENGTHS", summary.strengths, [34, 197, 94], [22, 101, 52]);
+    renderSection("TOP WEAKNESSES", summary.weaknesses, [239, 68, 68], [153, 27, 27]);
+    renderSection("RECOMMENDATIONS", summary.recommendations, [245, 158, 11], [146, 64, 14]);
+
+    // Footer
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text(
+        `Page ${i} of ${pageCount} | Business Intelligence Report - Multilingual Review Analyzer`,
+        pageWidth / 2,
+        pageHeight - 10,
+        { align: "center" },
+      );
+    }
+
+    const filename = `business_summary_${
+      new Date().toISOString().split("T")[0]
+    }.pdf`;
+    doc.save(filename);
+  };
+
   // Analyze single text
   const handleAnalyzeText = async () => {
     if (!manualText.trim()) {
@@ -1238,6 +1435,51 @@ function NandikaPage() {
             {/* Business Summary Report */}
             {businessSummary && (
               <div className="mt-6 space-y-5">
+                {/* Header with Download PDF button */}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                    <svg
+                      className="w-5 h-5 text-emerald-500"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    Business Intelligence Report
+                  </h3>
+                  <button
+                    onClick={() =>
+                      generateBusinessSummaryPDF(
+                        businessSummary,
+                        scraperResults?.total_scraped || 0,
+                        googleUrl,
+                      )
+                    }
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-medium rounded-lg hover:from-red-600 hover:to-pink-600 transition-all shadow-md"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    Download PDF
+                  </button>
+                </div>
+
                 {/* Overall Score */}
                 <div className="flex items-center gap-5 p-5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl">
                   <div className="flex-shrink-0">
