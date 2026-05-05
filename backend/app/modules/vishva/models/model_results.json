@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-05-04T23:41:28.005854",
+  "timestamp": "2026-05-05T09:24:11.003917",
   "best_model": {
     "vectorizer": "TF-IDF",
     "feature_selector": "Chi-Square",
@@ -8,20 +8,20 @@
     "f1_score": 0.42222222222222217
   },
   "categories": [
-    "Burgers",
+    "Hot Beverages",
+    "Side Dishes",
+    "Healthy Bowls",
+    "Soft Drinks",
+    "Kids Menu",
     "Juices & Shakes",
-    "Executive Lunch Set Menu",
-    "Mains",
+    "Salads & Soups",
     "Fried Meat And Seafood",
     "Desserts",
-    "Salads & Soups",
-    "Kids Menu",
-    "Hot Beverages",
     "Ice Cream",
-    "Side Dishes",
-    "Soft Drinks",
+    "Mains",
+    "Burgers",
     "Mocktails",
-    "Healthy Bowls"
+    "Executive Lunch Set Menu"
   ],
   "all_results": [
     {

@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 import re
 import sys
+import time
 
 try:
     from ollama import Client as OllamaClient
@@ -59,16 +60,22 @@ def _scroll_page(page, max_scrolls: int = 24, wait_ms: int = 900) -> None:
     except Exception:
         return
     stable_rounds = 0
-    for _ in range(max_scrolls):
+    print(f"[AGENT] Scrolling page to load dynamic content (max {max_scrolls} scrolls)...")
+    for i in range(max_scrolls):
         page.evaluate("() => window.scrollTo(0, document.body.scrollHeight)")
         page.wait_for_timeout(wait_ms)
         try:
             new_height = page.evaluate("() => document.body.scrollHeight")
         except Exception:
             break
+        
+        if (i + 1) % 5 == 0:
+            print(f"[AGENT] Scroll progress: {i + 1}/{max_scrolls}...")
+
         if new_height == last_height:
             stable_rounds += 1
             if stable_rounds >= 2:
+                print(f"[AGENT] Reached end of page after {i + 1} scrolls.")
                 break
         else:
             stable_rounds = 0
@@ -127,20 +134,26 @@ def _extract_with_local_llm(url: str, output_dir: str, headless: bool) -> dict:
     headless = False
 
     with sync_playwright() as p:
+        print("[AGENT] Launching browser...")
         browser = p.chromium.launch(headless=headless)
         page = browser.new_page()
+        print(f"[AGENT] Navigating to {url}...")
         page.goto(url, wait_until="load", timeout=60000)
         try:
+            print("[AGENT] Waiting for network to be idle...")
             page.wait_for_load_state("networkidle", timeout=15000)
         except Exception:
+            print("[AGENT] Network idle timeout, proceeding with current state.")
             pass
         _scroll_page(page)
         page.wait_for_timeout(1000)
+        print("[AGENT] Extracting page text and HTML...")
         try:
             body_text = page.inner_text("body")
         except Exception:
             body_text = ""
         html = page.content()
+        print("[AGENT] Browser task complete, closing browser.")
         browser.close()
 
     match_text = body_text or html or ""
@@ -149,6 +162,7 @@ def _extract_with_local_llm(url: str, output_dir: str, headless: bool) -> dict:
         text_input = html or text_input
     text_input = _trim_text_for_llm(text_input, max_chars=20000)
 
+    print(f"[AGENT] Analyzing page content (length: {len(text_input)} characters)...")
     prompt = (
         "Extract menu items from the page content below. "
         "Return ONLY a JSON array of objects with fields name, price, category.\n"
@@ -163,28 +177,34 @@ def _extract_with_local_llm(url: str, output_dir: str, headless: bool) -> dict:
 
     model = os.getenv("VISHVA_OLLAMA_MODEL", "qwen2.5:7b")
     host = os.getenv("OLLAMA_URL", "http://localhost:11434")
+    print(f"[AGENT] Sending extraction prompt to {model}...")
+    
     client = OllamaClient(host=host)
-    response = client.chat(
+    
+    # Use streaming to provide "thoughts" during extraction
+    stream = client.chat(
         model=model,
         messages=[{"role": "user", "content": prompt}],
-        options={"temperature": 0}
+        options={"temperature": 0},
+        stream=True
     )
 
+    print("[AGENT] Model is processing...")
     content = ""
-    if isinstance(response, dict):
-        content = (response.get("message") or {}).get("content", "")
-    else:
-        message = getattr(response, "message", None)
-        if message is not None:
-            if isinstance(message, str):
-                content = message
-            else:
-                content = getattr(message, "content", "") or ""
+    last_print_time = time.time()
+    
+    for chunk in stream:
+        chunk_content = chunk.get("message", {}).get("content", "")
+        content += chunk_content
+        
+        # Print progress every few seconds or if we see a new item start
+        if time.time() - last_print_time > 2 or '{"name":' in chunk_content:
+            items_found = content.count('{"name":')
+            if items_found > 0:
+                print(f"[AGENT] Found {items_found} items so far...")
+            last_print_time = time.time()
 
-    # Ensure content is a string
-    if not isinstance(content, str):
-        content = str(content)
-
+    print("[AGENT] LLM processing complete.")
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_filename = os.path.join(output_dir, f"raw_output_{timestamp}.txt")
@@ -194,6 +214,7 @@ def _extract_with_local_llm(url: str, output_dir: str, headless: bool) -> dict:
     data = _extract_json_array(content)
 
     if data is None or not isinstance(data, list):
+        print("[ERROR] Local model returned invalid JSON")
         return {
             "success": False,
             "file_path": output_filename,
@@ -201,6 +222,7 @@ def _extract_with_local_llm(url: str, output_dir: str, headless: bool) -> dict:
             "item_count": 0
         }
 
+    print(f"[AGENT] Verifying {len(data)} items against page text...")
     filtered, dropped = _filter_items(data, match_text)
     if not filtered:
         return {

@@ -8,6 +8,14 @@ from typing import Dict, List, Tuple
 import warnings
 warnings.filterwarnings('ignore')
 
+# Agent Integration for rebalancing
+try:
+    from langchain_ollama import ChatOllama
+    from langchain_core.messages import HumanMessage, SystemMessage
+except ImportError:
+    # Optional dependency
+    ChatOllama = None
+
 # ML Models
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegression
@@ -134,6 +142,110 @@ class MenuCategoryClassifier:
         print(f"   Categories: {', '.join(sorted(set(categories)))}")
         
         return texts, categories
+
+    def rebalance_singleton_categories(self, json_file: str) -> bool:
+        """
+        Identify categories with only 1 member and use LLM to re-categorize them.
+        This fixes the 'stratify' error in train_test_split.
+        """
+        if ChatOllama is None:
+            print("⚠️ langchain_ollama not installed. Cannot rebalance categories via agent.")
+            return False
+
+        if not os.path.exists(json_file):
+            return False
+
+        with open(json_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            
+        if not isinstance(data, list) or not data:
+            return False
+            
+        # Count categories
+        counts = {}
+        for item in data:
+            cat = item.get('category', '').strip()
+            if cat:
+                counts[cat] = counts.get(cat, 0) + 1
+        
+        singletons = [cat for cat, count in counts.items() if count < 2]
+        if not singletons:
+            return False
+            
+        print(f"⚠️ Found {len(singletons)} categories with only 1 member: {singletons}")
+        
+        # Valid target categories (those with > 1 member)
+        targets = [cat for cat, count in counts.items() if count >= 2]
+        if not targets:
+            # If all categories are singletons, we can't rebalance into existing ones.
+            # In this case, we might want to suggest a generic category or just fail.
+            print("❌ No valid target categories found for rebalancing (> 1 member).")
+            return False
+            
+        print(f"🤖 Using local agent to re-categorize {len(singletons)} items into {len(targets)} possible categories...")
+        
+        # Initialize LLM
+        try:
+            model = os.getenv('VISHVA_OLLAMA_MODEL', 'qwen2.5:7b')
+            base_url = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+            llm = ChatOllama(model=model, base_url=base_url, temperature=0)
+            
+            updated = False
+            for item in data:
+                old_cat = item.get('category', '').strip()
+                if old_cat in singletons:
+                    name = item.get('name', 'Unknown Item')
+                    
+                    prompt = f"""
+                    The menu item '{name}' is currently in the category '{old_cat}'.
+                    However, this category has too few items (only 1) for the machine learning model to be trained effectively.
+                    
+                    Please choose the MOST suitable category for this item from the following existing list:
+                    {targets}
+                    
+                    Rules:
+                    1. Choose the most relevant category from the list.
+                    2. Return ONLY the name of the chosen category, nothing else.
+                    3. Do not create a new category.
+                    """
+                    
+                    try:
+                        response = llm.invoke([HumanMessage(content=prompt)])
+                        new_cat = response.content.strip().strip("'").strip('"').strip('*').strip()
+                        
+                        # Sometimes LLM adds prefixes or suffixes
+                        if new_cat not in targets:
+                            # Try to find it in the response content
+                            for t in targets:
+                                if t.lower() in new_cat.lower():
+                                    new_cat = t
+                                    break
+                        
+                        if new_cat in targets:
+                            print(f"✅ Re-categorized '{name}': [{old_cat}] -> [{new_cat}]")
+                            item['category'] = new_cat
+                            updated = True
+                        else:
+                            # Fallback to the most populated target or first target
+                            fallback = targets[0]
+                            print(f"⚠️ Agent suggested '{new_cat}' but it's not in the list. Falling back to '{fallback}'.")
+                            item['category'] = fallback
+                            updated = True
+                    except Exception as inner_e:
+                        print(f"⚠️ Failed to re-categorize '{name}': {inner_e}")
+                        continue
+            
+            if updated:
+                with open(json_file, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                print(f"💾 Updated training data saved to {json_file}")
+                return True
+                
+        except Exception as e:
+            print(f"❌ Rebalancing process failed: {e}")
+            return False
+            
+        return False
     
     def apply_feature_selection(self, X_train, X_test, y_train, method: str, n_features: int = 500):
         """Apply feature selection method and return both transformed data and selector"""
@@ -434,6 +546,11 @@ def train_category_classifier(training_file: str, output_dir: str = "models") ->
                 "error": f"Only found {len(set(categories))} category"
             }
         
+        # Check for underpopulated classes (singletons) before training
+        if classifier.rebalance_singleton_categories(training_file):
+            print("🔄 Re-loading data after rebalancing...")
+            texts, categories = classifier.load_training_data(training_file)
+
         # Train all models
         training_results = classifier.train_and_evaluate(texts, categories)
         

@@ -221,6 +221,15 @@ export async function getApiInfo() {
   return apiRequest('/');
 }
 
+/**
+ * Get the latest API request logs from the backend
+ * @param {number} limit - Max number of log lines to retrieve
+ * @returns {Promise<{logs: string[]}>}
+ */
+export async function getLogs(limit = 100) {
+  return apiRequest(`/api/v1/logs?limit=${limit}`);
+}
+
 // ============================================
 // VISHVA MODULE API FUNCTIONS
 // ============================================

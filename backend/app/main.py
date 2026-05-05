@@ -112,6 +112,24 @@ async def health_check():
     return {"status": "healthy"}
 
 
+@app.get("/api/v1/logs")
+async def get_logs(limit: int = 100):
+    """Get the last N lines from the API request log."""
+    log_file = os.path.join(os.path.dirname(__file__), "logs", "api_requests.log")
+    if not os.path.exists(log_file):
+        return {"logs": []}
+    
+    try:
+        with open(log_file, "r", encoding="utf-8") as f:
+            # Read all lines and get the last 'limit' ones
+            lines = f.readlines()
+            last_lines = lines[-limit:] if len(lines) > limit else lines
+            # Strip newlines and return as a list
+            return {"logs": [line.strip() for line in last_lines]}
+    except Exception as e:
+        return {"logs": [], "error": str(e)}
+
+
 # Mount module routers with their prefixes
 # Each teammate works on their own router file
 app.include_router(vinushan_router, prefix="/api/v1/vinushan", tags=["Vinushan Module"])

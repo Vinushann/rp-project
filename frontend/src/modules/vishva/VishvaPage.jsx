@@ -41,6 +41,7 @@ import {
   updateConfidenceSettings,
   // Agent
   streamAgentChat,
+  getLogs,
 } from '../../lib/api';
 
 const MODULE_NAME = 'vishva';
@@ -112,6 +113,11 @@ function VishvaPage() {
     category_thresholds: {}
   });
   
+  // State for system logs
+  const [systemLogs, setSystemLogs] = useState([]);
+  const [logType, setLogType] = useState('agent'); // 'agent' or 'system'
+  const [pollingLogs, setPollingLogs] = useState(false);
+
   // State for errors
   const [error, setError] = useState(null);
 
@@ -126,6 +132,11 @@ function VishvaPage() {
   useEffect(() => {
     loadMenuData();
     loadModelStatus();
+    loadSystemLogs();
+    
+    // Poll for system logs every 5 seconds
+    const interval = setInterval(loadSystemLogs, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   // Load tab-specific data when tab changes
@@ -207,6 +218,17 @@ function VishvaPage() {
       if (feedbackResult.success) setFeedbackData(feedbackResult);
     } catch (err) {
       console.error('Failed to load settings:', err);
+    }
+  };
+
+  const loadSystemLogs = async () => {
+    try {
+      const result = await getLogs(50);
+      if (result.logs) {
+        setSystemLogs(result.logs);
+      }
+    } catch (err) {
+      console.error('Failed to load system logs:', err);
     }
   };
 
@@ -331,7 +353,11 @@ function VishvaPage() {
     setExtracting(true);
     setError(null);
     setExtractResult(null);
-    setAgentThoughts([]);
+    setAgentThoughts([{
+      type: 'status',
+      message: '🚀 Initializing agent and browser session...',
+      timestamp: new Date().toLocaleTimeString()
+    }]);
 
     const message = `Extract menu from ${extractUrl} and clean the data`;
 
@@ -822,54 +848,159 @@ function VishvaPage() {
             </div>
           </div>
 
-          {/* Agent Thoughts Panel */}
-          {(extracting || agentThoughts.length > 0) && (
-            <div className="card">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Execution Log</h3>
-                {!extracting && agentThoughts.length > 0 && (
+          {/* Execution & System Monitor */}
+          <div className="card lg:col-span-2 overflow-hidden border-slate-200 shadow-lg">
+            <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-slate-800">Execution Monitor</h3>
+              </div>
+              <div className="flex bg-slate-100 p-1 rounded-xl">
+                <button
+                  onClick={() => setLogType('agent')}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    logType === 'agent' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  Agent Thoughts
+                </button>
+                <button
+                  onClick={() => setLogType('system')}
+                  className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    logType === 'system' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  System Logs
+                </button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {/* Left Side: Summary & Stats */}
+              <div className="md:col-span-1 space-y-4">
+                <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100">
+                  <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">Status</p>
+                  <div className="flex items-center gap-2">
+                    <div className={`h-2.5 w-2.5 rounded-full ${extracting || training ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></div>
+                    <p className="font-semibold text-slate-800">{extracting ? 'Extracting...' : training ? 'Training...' : 'Standby'}</p>
+                  </div>
+                </div>
+                
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Log Entries</p>
+                  <p className="text-2xl font-bold text-slate-800">{logType === 'agent' ? agentThoughts.length : systemLogs.length}</p>
+                  <p className="text-xs text-slate-500 mt-1">Updated just now</p>
+                </div>
+
+                {extracting && (
+                  <button
+                    onClick={handleStopExtract}
+                    className="w-full py-3 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl border border-red-200 transition-all flex items-center justify-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-1-1H8z" clipRule="evenodd" />
+                    </svg>
+                    Stop Agent
+                  </button>
+                )}
+                
+                {!extracting && agentThoughts.length > 0 && logType === 'agent' && (
                   <button 
                     onClick={() => setAgentThoughts([])}
-                    className="text-sm text-gray-500 hover:text-gray-700"
+                    className="w-full py-2 text-slate-400 hover:text-slate-600 text-sm font-medium transition-all"
                   >
-                    Clear
+                    Clear History
                   </button>
                 )}
               </div>
-              
-              <div className="bg-gray-900 rounded-lg p-4 max-h-96 overflow-y-auto font-mono text-sm">
-                {agentThoughts.length === 0 ? (
-                  <div className="flex items-center text-green-400">
-                    <span className="animate-pulse mr-2">●</span>
-                    <span>Connecting to agent...</span>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {agentThoughts.map((thought, i) => (
-                      <div key={i} className={`
-                        ${thought.type === 'thought' ? 'text-green-400' : ''}
-                        ${thought.type === 'tool' ? 'text-yellow-400' : ''}
-                        ${thought.type === 'status' ? 'text-blue-400' : ''}
-                      `}>
-                        <span className="text-gray-500 text-xs">[{thought.timestamp}]</span>
-                        {' '}
-                        <span className={`${thought.type === 'status' || thought.type === 'tool' ? 'font-semibold' : ''} whitespace-pre-wrap`}>
-                          {thought.message}
-                        </span>
+
+              {/* Right Side: Log Feed */}
+              <div className="md:col-span-3">
+                <div className="bg-slate-950 rounded-2xl p-6 h-[450px] overflow-y-auto font-mono text-sm relative group shadow-inner border border-slate-800">
+                  {/* Decorative Elements */}
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 opacity-50"></div>
+                  
+                  {logType === 'agent' ? (
+                    agentThoughts.length === 0 && !extracting ? (
+                      <div className="h-full flex flex-col items-center justify-center text-slate-500 italic space-y-4">
+                        <div className="h-16 w-16 rounded-full bg-slate-900 flex items-center justify-center text-slate-700">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                          </svg>
+                        </div>
+                        <p>No agent activity yet. Start an extraction to see thoughts.</p>
                       </div>
-                    ))}
-                    <div ref={thoughtsEndRef} />
-                    {extracting && (
-                      <div className="flex items-center text-yellow-400 mt-2">
-                        <span className="animate-pulse mr-2">●</span>
-                        <span>Agent is working...</span>
+                    ) : (
+                      <div className="space-y-3">
+                        {agentThoughts.map((thought, i) => (
+                          <div key={i} className="flex gap-3 group animate-in fade-in slide-in-from-left-2 duration-300">
+                            <span className="text-slate-600 text-[10px] whitespace-nowrap pt-1">[{thought.timestamp}]</span>
+                            <div className="flex-1">
+                              <span className={`
+                                inline-block px-1.5 py-0.5 rounded text-[10px] font-bold uppercase mb-1 mr-2
+                                ${thought.type === 'thought' ? 'bg-emerald-500/10 text-emerald-400' : ''}
+                                ${thought.type === 'tool' ? 'bg-amber-500/10 text-amber-400' : ''}
+                                ${thought.type === 'status' ? 'bg-indigo-500/10 text-indigo-400' : ''}
+                              `}>
+                                {thought.type}
+                              </span>
+                              <div className={`
+                                ${thought.type === 'thought' ? 'text-emerald-50/90' : ''}
+                                ${thought.type === 'tool' ? 'text-amber-50/90 font-semibold' : ''}
+                                ${thought.type === 'status' ? 'text-indigo-100 font-bold' : ''}
+                                whitespace-pre-wrap leading-relaxed
+                              `}>
+                                {thought.message}
+                              </div>
+                              {thought.detail && (
+                                <div className="mt-1 p-2 bg-slate-900 rounded border border-slate-800 text-slate-400 text-xs overflow-x-auto">
+                                  {typeof thought.detail === 'string' ? thought.detail : JSON.stringify(thought.detail, null, 2)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                        <div ref={thoughtsEndRef} />
+                        {extracting && (
+                          <div className="flex items-center text-emerald-400 mt-6 pt-4 border-t border-slate-900">
+                            <span className="relative flex h-2 w-2 mr-3">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            <span className="text-xs font-bold uppercase tracking-widest">Agent is processing request...</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                )}
+                    )
+                  ) : (
+                    <div className="space-y-1.5">
+                      {systemLogs.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-slate-500 italic space-y-4">
+                          <p>Connecting to system log stream...</p>
+                        </div>
+                      ) : (
+                        systemLogs.map((log, i) => {
+                          const isError = log.includes('Status: 4') || log.includes('Status: 5') || log.includes('ERROR') || log.includes('Exception');
+                          return (
+                            <div key={i} className={`flex gap-3 py-0.5 border-l-2 pl-3 transition-colors ${isError ? 'border-red-500 bg-red-500/5' : 'border-slate-800 hover:bg-slate-900'}`}>
+                              <span className={`text-[11px] leading-relaxed ${isError ? 'text-red-400' : 'text-slate-400'}`}>
+                                {log}
+                              </span>
+                            </div>
+                          );
+                        })
+                      )}
+                      <div ref={thoughtsEndRef} />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Train Model Card */}
           <div className="card">

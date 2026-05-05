@@ -1,12 +1,35 @@
-Parse attempt failed at 2026-05-05 05:16:40.732723
-Error: Expecting ',' delimiter: line 1 column 24 (char 23)
+Parse attempt failed at 2026-05-05 08:55:49.069452
+Error: Expecting value: line 1 column 1 (char 0)
 
 ============================================================
 ORIGINAL CONTENT (first 2000 chars):
 ============================================================
-[{"name": "iPad Pro 13"", "price": "$1,299", "category": "Tablets"}, {"name": "Galaxy Tab S10 Ultra", "price": "$1,099", "category": "Tablets"}, {"name": "Surface Pro 11 Edition", "price": "$999$1,199", "category": "Tablets"}, {"name": "iPad Air 11"", "price": "$599", "category": "Tablets"}]
+Error at 2026-05-05 08:55:12.429928
+Type: NameError
+Details: name 'time' is not defined
+
+Full Traceback:
+Traceback (most recent call last):
+  File "C:\SLIIT\Y4S2\RP\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 273, in extract_menu_data
+    return _extract_with_local_llm(url, output_dir, headless)
+  File "C:\SLIIT\Y4S2\RP\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 193, in _extract_with_local_llm
+    last_print_time = time.time()
+                      ^^^^
+NameError: name 'time' is not defined. Did you forget to import 'time'?
+
 
 ============================================================
 CLEANED CONTENT (first 2000 chars):
 ============================================================
-[{"name": "iPad Pro 13"", "price": "$1,299", "category": "Tablets"}, {"name": "Galaxy Tab S10 Ultra", "price": "$1,099", "category": "Tablets"}, {"name": "Surface Pro 11 Edition", "price": "$999$1,199", "category": "Tablets"}, {"name": "iPad Air 11"", "price": "$599", "category": "Tablets"}]
+Error at 2026-05-05 08:55:12.429928
+Type: NameError
+Details: name 'time' is not defined
+
+Full Traceback:
+Traceback (most recent call last):
+  File "C:\SLIIT\Y4S2\RP\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 273, in extract_menu_data
+    return _extract_with_local_llm(url, output_dir, headless)
+  File "C:\SLIIT\Y4S2\RP\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 193, in _extract_with_local_llm
+    last_print_time = time.time()
+                      ^^^^
+NameError: name 'time' is not defined. Did you forget to import 'time'?

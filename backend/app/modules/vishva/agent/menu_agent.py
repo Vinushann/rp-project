@@ -25,6 +25,12 @@ You have these tools:
 6. get_model_status() — Check if a trained model exists and its metrics. No arguments.
 7. get_menu_data() — View current menu training data and statistics. No arguments.
 
+STRATEGY & TRANSPARENCY:
+- Always explain what you are about to do and why before calling a tool.
+- For extraction: Explain that you will first scrape the URL and then clean the data.
+- For training: Explain that you are checking the data quality before starting the training process.
+- Report progress clearly. If a tool takes time, don't worry, the system will show your intermediate thoughts.
+
 RULES:
 - NEVER make up or guess tool results. You MUST call the tool and use its actual output.
 - NEVER invent menu items, categories, prices, or any other data.
@@ -44,6 +50,55 @@ def _create_llm(model: str = "qwen2.5:7b", base_url: str = "http://localhost:114
         base_url=base_url,
         temperature=0,
     )
+
+
+import sys
+import io
+import asyncio
+import contextvars
+from contextlib import redirect_stdout
+
+# Context variable to store the log collector for the current task
+log_collector_var = contextvars.ContextVar("log_collector", default=None)
+
+class ThreadSafeStringList:
+    def __init__(self):
+        self.items = []
+        self.lock = asyncio.Lock()
+
+    async def append(self, item):
+        async with self.lock:
+            self.items.append(item)
+
+    async def pop_all(self):
+        async with self.lock:
+            res = self.items[:]
+            self.items = []
+            return res
+
+class LogInterceptor(io.TextIOBase):
+    def __init__(self, original_stdout):
+        self.original_stdout = original_stdout
+
+    def write(self, s):
+        self.original_stdout.write(s)
+        collector = log_collector_var.get()
+        if collector and s.strip() and ("[AGENT]" in s or "[BOT]" in s or "[ERROR]" in s):
+            try:
+                # Use call_soon_threadsafe if we might be in a different thread
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    loop.create_task(collector.append(s.strip()))
+            except:
+                pass
+        return len(s)
+
+    def flush(self):
+        self.original_stdout.flush()
+
+# Global interceptor
+_original_stdout = sys.stdout
+sys.stdout = LogInterceptor(_original_stdout)
 
 
 class MenuAgent:
@@ -94,48 +149,74 @@ class MenuAgent:
           - response: final agent reply
         """
         thought_buffer = []
+        log_collector = ThreadSafeStringList()
+        token = log_collector_var.set(log_collector)
 
-        async for event in self.graph.astream_events(
-            {"messages": [HumanMessage(content=user_message)]},
-            config={"configurable": {"thread_id": thread_id}},
-            version="v2",
-        ):
-            kind = event.get("event", "")
+        try:
+            async for event in self.graph.astream_events(
+                {"messages": [HumanMessage(content=user_message)]},
+                config={"configurable": {"thread_id": thread_id}},
+                version="v2",
+            ):
+                # Periodically flush logs as thoughts
+                logs = await log_collector.pop_all()
+                for log in logs:
+                    yield {"type": "thought", "content": f"\n{log}"}
 
-            if kind == "on_chat_model_stream":
-                chunk = event.get("data", {}).get("chunk")
-                if chunk and hasattr(chunk, "content") and chunk.content:
-                    thought_buffer.append(chunk.content)
-                    # Flush on sentence-ending punctuation or newlines
-                    buffered = "".join(thought_buffer)
-                    if buffered.rstrip().endswith((".", "!", "?", ":", "\n")) or len(buffered) > 120:
-                        yield {"type": "thought", "content": buffered}
+                kind = event.get("event", "")
+
+                if kind == "on_chat_model_stream":
+                    chunk = event.get("data", {}).get("chunk")
+                    if chunk and hasattr(chunk, "content") and chunk.content:
+                        thought_buffer.append(chunk.content)
+                        # Flush on sentence-ending punctuation or newlines
+                        buffered = "".join(thought_buffer)
+                        if buffered.rstrip().endswith((".", "!", "?", ":", "\n")) or len(buffered) > 120:
+                            yield {"type": "thought", "content": buffered}
+                            thought_buffer = []
+
+                elif kind == "on_chat_model_end":
+                    # Flush remaining thought buffer when the LLM finishes
+                    if thought_buffer:
+                        yield {"type": "thought", "content": "".join(thought_buffer)}
                         thought_buffer = []
 
-            elif kind == "on_chat_model_end":
-                # Flush remaining thought buffer when the LLM finishes
-                if thought_buffer:
-                    yield {"type": "thought", "content": "".join(thought_buffer)}
-                    thought_buffer = []
+                elif kind == "on_tool_start":
+                    # Flush any buffered thought before tool events
+                    if thought_buffer:
+                        yield {"type": "thought", "content": "".join(thought_buffer)}
+                        thought_buffer = []
+                    
+                    tool_name = event.get("name", "")
+                    yield {
+                        "type": "tool_start",
+                        "tool": tool_name,
+                        "input": str(event.get("data", {}).get("input", ""))[:500],
+                    }
 
-            elif kind == "on_tool_start":
-                # Flush any buffered thought before tool events
-                if thought_buffer:
-                    yield {"type": "thought", "content": "".join(thought_buffer)}
-                    thought_buffer = []
-                yield {
-                    "type": "tool_start",
-                    "tool": event.get("name", ""),
-                    "input": str(event.get("data", {}).get("input", ""))[:500],
-                }
+                elif kind == "on_tool_end":
+                    # Final log flush after tool finishes
+                    logs = await log_collector.pop_all()
+                    for log in logs:
+                        yield {"type": "thought", "content": f"\n{log}"}
+                        
+                    output = event.get("data", {}).get("output", "")
+                    yield {
+                        "type": "tool_result",
+                        "tool": event.get("name", ""),
+                        "result": str(output)[:1000],
+                    }
 
-            elif kind == "on_tool_end":
-                output = event.get("data", {}).get("output", "")
-                yield {
-                    "type": "tool_result",
-                    "tool": event.get("name", ""),
-                    "result": str(output)[:1000],
-                }
+            # Final flushes
+            logs = await log_collector.pop_all()
+            for log in logs:
+                yield {"type": "thought", "content": f"\n{log}"}
+        finally:
+            log_collector_var.reset(token)
+
+        if thought_buffer:
+            yield {"type": "thought", "content": "".join(thought_buffer)}
+        yield {"type": "done"}
 
         # Flush any remaining buffer
         if thought_buffer:
