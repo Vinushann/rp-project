@@ -60,6 +60,7 @@ class ChatResponse(BaseModel):
     reasoning_steps: List[AgentStep] = Field(default_factory=list)
     routing_reasoning: Optional[str] = None
     charts: List[ChartData] = Field(default_factory=list, description="Generated charts/visualizations")
+    rag_used: bool = False
 
 
 class StreamEvent(BaseModel):

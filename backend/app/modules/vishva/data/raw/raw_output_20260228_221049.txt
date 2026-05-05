@@ -1,0 +1,627 @@
+[
+  {
+    \"name\": \"Greek Salad\",
+    \"price\": \"RS 1,850\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Hawaiian Chicken Salad\",
+    \"price\": \"RS 1,950\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Caesar Salad - Prawns/Chicken/Lobster\",
+    \"price\": \"RS 2,100\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Beef Bone Marrow Soup\",
+    \"price\": \"RS 1,850\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Chicken Noodle Soup\",
+    \"price\": \"RS 1,750\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Vegetable Egg Drop Soup\",
+    \"price\": \"RS 1,550\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Seafood Bouillabaisse\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Fish Ceviche\",
+    \"price\": \"RS 1,600\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Pepper Mutton Broth\",
+    \"price\": \"RS 2,650\",
+    \"category\": \"Salads & Soups\"
+  },
+  {
+    \"name\": \"Crispy Whole Tilapia Fish & Chips\",
+    \"price\": \"Per 100g RS 490\",
+    \"category\": \"Tilapiya Fish\"
+  },
+  {
+    \"name\": \"Lemon Garlic Marinated Baked Whole Tilapia Fish\",
+    \"price\": \"Per 100g RS 540\",
+    \"category\": \"Tilapiya Fish\"
+  },
+  {
+    \"name\": \"Green Herb Marinated Kochchi Baked Whole Tilapia Fish\",
+    \"price\": \"Per 100g RS 540\",
+    \"category\": \"Tilapiya Fish\"
+  },
+  {
+    \"name\": \"Tilapiya Fish Curry (Regular)\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Tilapiya Fish\"
+  },
+  {
+    \"name\": \"Tilapiya Fish Curry (Large)\",
+    \"price\": \"RS 3,350\",
+    \"category\": \"Tilapiya Fish\"
+  },
+  {
+    \"name\": \"Grilled Greek Chicken (Regular)\",
+    \"price\": \"RS 2,700\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Grilled Greek Chicken (Large)\",
+    \"price\": \"RS 3,100\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Grilled Chicken - Garlic Sausages (Regular)\",
+    \"price\": \"RS 2,450\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Grilled Chicken - Garlic Sausages (Large)\",
+    \"price\": \"RS 2,850\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Grilled Beef Fillet (Large)\",
+    \"price\": \"RS 4,950\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Teriyaki Beef (Regular)\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Teriyaki Beef (Large)\",
+    \"price\": \"RS 3,850\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Herb Marinated Pork Leg Steak (Large)\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Grilled Pork Sausages (Regular)\",
+    \"price\": \"RS 2,850\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Grilled Pork Sausages (Large)\",
+    \"price\": \"RS 3,350\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Teriyaki Pork Belly (Regular)\",
+    \"price\": \"RS 2,750\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Teriyaki Pork Belly (Large)\",
+    \"price\": \"RS 3,550\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Crispy Pork Knuckle\",
+    \"price\": \"1KG RS 7,500\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Lemon Marinated Fish (Tuna)\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Lemon Marinated Fish (Thalapath)\",
+    \"price\": \"RS 3,100\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Grilled Tiger Prawns (Large)\",
+    \"price\": \"RS 5,100\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Spicy Thai Grill Calamari (Regular)\",
+    \"price\": \"RS 2,350\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Spicy Thai Grill Calamari (Large)\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"On The Grill\"
+  },
+  {
+    \"name\": \"Grilled Giant Prawn (Scampi)\",
+    \"price\": \"Per 100g RS 950\",
+    \"category\": \"Seafood Specials\"
+  },
+  {
+    \"name\": \"Battered Prawns (Large)\",
+    \"price\": \"RS 3,200\",
+    \"category\": \"Seafood Specials\"
+  },
+  {
+    \"name\": \"Garlic Butter Crab\",
+    \"price\": \"800g RS 4,500\",
+    \"category\": \"Seafood Specials\"
+  },
+  {
+    \"name\": \"Chilli Crab\",
+    \"price\": \"800g RS 4,200\",
+    \"category\": \"Seafood Specials\"
+  },
+  {
+    \"name\": \"Murex Mussel (Shell-less)\",
+    \"price\": \"500g RS 4,950\",
+    \"category\": \"Seafood Specials\"
+  },
+  {
+    \"name\": \"Baby Octopus\",
+    \"price\": \"500g RS 3,400\",
+    \"category\": \"Seafood Specials\"
+  },
+  {
+    \"name\": \"Fried Pork (Large)\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Fried Meat And Seafood\"
+  },
+  {
+    \"name\": \"Fried Kochchi Beef (Large)\",
+    \"price\": \"RS 2,700\",
+    \"category\": \"Fried Meat And Seafood\"
+  },
+  {
+    \"name\": \"Fried Chicken (Large)\",
+    \"price\": \"RS 2,700\",
+    \"category\": \"Fried Meat And Seafood\"
+  },
+  {
+    \"name\": \"Crispy Chicken (Large)\",
+    \"price\": \"RS 2,800\",
+    \"category\": \"Fried Meat And Seafood\"
+  },
+  {
+    \"name\": \"Karaage Chicken (Large)\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Fried Meat And Seafood\"
+  },
+  {
+    \"name\": \"Crispy Fried Calamari (Large)\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Fried Meat And Seafood\"
+  },
+  {
+    \"name\": \"Hot Butter Calamari (Large)\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Fried Meat And Seafood\"
+  },
+  {
+    \"name\": \"Creamy Butter Calamari (Large)\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Fried Meat And Seafood\"
+  },
+  {
+    \"name\": \"Black Pork Curry + Roast Paan/Pol Rotti\",
+    \"price\": \"RS 3,100\",
+    \"category\": \"Island Delights\"
+  },
+  {
+    \"name\": \"Black Chicken Curry + Roast Paan/Pol Rotti\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Island Delights\"
+  },
+  {
+    \"name\": \"Black Turkey Curry + Roast Paan/Pol Rotti\",
+    \"price\": \"RS 3,250\",
+    \"category\": \"Island Delights\"
+  },
+  {
+    \"name\": \"Red Beef Curry + Roast Paan/Pol Rotti\",
+    \"price\": \"RS 3,300\",
+    \"category\": \"Island Delights\"
+  },
+  {
+    \"name\": \"Red Mutton Curry + Roast Paan/Pol Rotti\",
+    \"price\": \"RS 4,100\",
+    \"category\": \"Island Delights\"
+  },
+  {
+    \"name\": \"Chicken Stew + Roast Paan/Pol Rotti\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Island Delights\"
+  },
+  {
+    \"name\": \"Pork Stew + Roast Paan/Pol Rotti\",
+    \"price\": \"RS 3,100\",
+    \"category\": \"Island Delights\"
+  },
+  {
+    \"name\": \"Beef Stew + Roast Paan/Pol Rotti\",
+    \"price\": \"RS 3,350\",
+    \"category\": \"Island Delights\"
+  },
+  {
+    \"name\": \"Spaghetti Aglio e Olio (Regular)\",
+    \"price\": \"RS 1,650\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Spaghetti Aglio e Olio (Large)\",
+    \"price\": \"RS 2,650\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Mix Spaghetti or Penne Pasta (Regular)\",
+    \"price\": \"RS 2,350\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Mix Spaghetti or Penne Pasta (Large)\",
+    \"price\": \"RS 3,250\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Creamy Seafood Spaghetti or Penne Pasta (Regular)\",
+    \"price\": \"RS 2,450\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Creamy Seafood Spaghetti or Penne Pasta (Large)\",
+    \"price\": \"RS 3,450\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Mix Meat Mongolian Noodles (Regular)\",
+    \"price\": \"RS 2,700\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Mix Meat Mongolian Noodles (Large)\",
+    \"price\": \"RS 3,100\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Mix Seafood Mongolian Noodles (Regular)\",
+    \"price\": \"RS 2,150\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Mix Seafood Mongolian Noodles (Large)\",
+    \"price\": \"RS 3,150\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Chicken Mongolian Noodles (Regular)\",
+    \"price\": \"RS 1,850\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Chicken Mongolian Noodles (Large)\",
+    \"price\": \"RS 2,850\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Pork Mongolian Noodles (Regular)\",
+    \"price\": \"RS 1,950\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Pork Mongolian Noodles (Large)\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Beef Mongolian Noodles (Regular)\",
+    \"price\": \"RS 2,100\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Beef Mongolian Noodles (Large)\",
+    \"price\": \"RS 3,100\",
+    \"category\": \"Pasta & Noodles\"
+  },
+  {
+    \"name\": \"Mix Meat Mongolian Rice (Regular)\",
+    \"price\": \"RS 1,950\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Mix Meat Mongolian Rice (Large)\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Mix Seafood Mongolian Rice (Regular)\",
+    \"price\": \"RS 2,100\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Mix Seafood Mongolian Rice (Large)\",
+    \"price\": \"RS 3,150\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Chicken Mongolian Rice\",
+    \"price\": \"RS 2,000\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Pork Mongolian Rice (Regular)\",
+    \"price\": \"RS 1,950\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Pork Mongolian Rice (Large)\",
+    \"price\": \"RS 2,950\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Beef Mongolian Rice (Regular)\",
+    \"price\": \"RS 2,150\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Beef Mongolian Rice (Large)\",
+    \"price\": \"RS 3,150\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Egg Mongolian Rice (Regular)\",
+    \"price\": \"RS 1,550\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Egg Mongolian Rice (Large)\",
+    \"price\": \"RS 2,150\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Vegetable Mongolian Rice (Regular)\",
+    \"price\": \"RS 1,350\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Vegetable Mongolian Rice (Large)\",
+    \"price\": \"RS 1,950\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Mexican Rice\",
+    \"price\": \"Price Unavailable\",
+    \"category\": \"Rice\"
+  },
+  {
+    \"name\": \"Tilapiya Bento Box - Chicken\",
+    \"price\": \"RS 1,650\",
+    \"category\": \"Bento Box\"
+  },
+  {
+    \"name\": \"Tilapiya Bento Box - Mutton\",
+    \"price\": \"RS 2,000\",
+    \"category\": \"Bento Box\"
+  },
+  {
+    \"name\": \"Tilapiya Bento Box - Beef\",
+    \"price\": \"RS 1,750\",
+    \"category\": \"Bento Box\"
+  },
+  {
+    \"name\": \"Tilapiya Bento Box - Prawn\",
+    \"price\": \"RS 1,850\",
+    \"category\": \"Bento Box\"
+  },
+  {
+    \"name\": \"Tilapiya Bento Box - Fish\",
+    \"price\": \"RS 1,650\",
+    \"category\": \"Bento Box\"
+  },
+  {
+    \"name\": \"Chicken Bowl\",
+    \"price\": \"RS 1,550\",
+    \"category\": \"Brunch Bowls\"
+  },
+  {
+    \"name\": \"Tuna Bowl\",
+    \"price\": \"RS 1,650\",
+    \"category\": \"Brunch Bowls\"
+  },
+  {
+    \"name\": \"Pork Bowl\",
+    \"price\": \"RS 1,650\",
+    \"category\": \"Brunch Bowls\"
+  },
+  {
+    \"name\": \"Beef Bowl\",
+    \"price\": \"RS 1,750\",
+    \"category\": \"Brunch Bowls\"
+  },
+  {
+    \"name\": \"Prawn Bowl\",
+    \"price\": \"RS 1,750\",
+    \"category\": \"Brunch Bowls\"
+  },
+  {
+    \"name\": \"Crab Bowl\",
+    \"price\": \"RS 1,850\",
+    \"category\": \"Brunch Bowls\"
+  },
+  {
+    \"name\": \"Sri Lankan Omelette\",
+    \"price\": \"RS 950\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"Mixed Cheese Omelette\",
+    \"price\": \"RS 1,950\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"Crab Omelette\",
+    \"price\": \"RS 2,250\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"French Fries (Regular)\",
+    \"price\": \"RS 950\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"French Fries (Large)\",
+    \"price\": \"RS 1,950\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"Home-made Potato Wedges (Regular)\",
+    \"price\": \"RS 950\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"Home-made Potato Wedges (Large)\",
+    \"price\": \"RS 1,950\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"Sauteed Garlic Button Mushroom\",
+    \"price\": \"RS 750\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"Garlic Rice\",
+    \"price\": \"RS 590\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"Coconut Rice\",
+    \"price\": \"RS 490\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"Pol Rotti\",
+    \"price\": \"RS 490\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"Steamed Basmati Rice\",
+    \"price\": \"RS 430\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"Garlic Bread\",
+    \"price\": \"RS 490\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"Roasted Paan\",
+    \"price\": \"RS 430\",
+    \"category\": \"Side Dishes\"
+  },
+  {
+    \"name\": \"Vegetable Spring Rolls + Fruit Salsa\",
+    \"price\": \"RS 950\",
+    \"category\": \"Kids Menu\"
+  },
+  {
+    \"name\": \"Crispy Chicken Nuggets + Potato Wedges\",
+    \"price\": \"RS 950\",
+    \"category\": \"Kids Menu\"
+  },
+  {
+    \"name\": \"Grilled White Fish Fillet + Avacado Rice\",
+    \"price\": \"RS 950\",
+    \"category\": \"Kids Menu\"
+  },
+  {
+    \"name\": \"Cheese and Tomato Sandwich + Fries\",
+    \"price\": \"RS 950\",
+    \"category\": \"Kids Menu\"
+  },
+  {
+    \"name\": \"Spaghetti Beef Bolognese\",
+    \"price\": \"RS 950\",
+    \"category\": \"Kids Menu\"
+  },
+  {
+    \"name\": \"Chocolate Mousse Platter\",
+    \"price\": \"RS 975\",
+    \"category\": \"Desserts\"
+  },
+  {
+    \"name\": \"Coffee Caramel Platter\",
+    \"price\": \"RS 900\",
+    \"category\": \"Desserts\"
+  },
+  {
+    \"name\": \"Passion Fruit Mousse Platter\",
+    \"price\": \"RS 975\",
+    \"category\": \"Desserts\"
+  },
+  {
+    \"name\": \"Strawberry Pudding\",
+    \"price\": \"RS 975\",
+    \"category\": \"Desserts\"
+  },
+  {
+    \"name\": \"Crème Brûlée\",
+    \"price\": \"RS 950\",
+    \"category\": \"Desserts\"
+  },
+  {
+    \"name\": \"Fried Ice Cream\",
+    \"price\": \"RS 850\",
+    \"category\": \"Desserts\"
+  },
+  {
+    \"name\": \"French Vanilla Ice Cream\",
+    \"price\": \"RS 750\",
+    \"category\": \"Ice Cream\"
+  },
+  {
+    \"name\": \"Rocky Road Ice Cream\",
+    \"price\": \"RS 850\",
+    \"category\": \"Ice Cream\"
+  },
+  {
+    \"name\": \"Choc Choc Chip Ice Cream\",
+    \"price\": \"RS 850\",
+    \"category\": \"Ice Cream\"
+  },
+  {
+    \"name\": \"Very Berry Ice Cream\",
+    \"price\": \"RS 890\",
+    \"category\": \"Ice Cream\"
+  },
+  {
+    \"name\": \"Cookie Cream Ice Cream\",
+    \"price\": \"RS 890\",
+    \"category\": \"Ice Cream\"
+  }
+]

@@ -57,6 +57,28 @@ class DynamicCrewBuilder:
         self.category_pie_chart = CategoryPieChartTool()
         self.weather_impact_chart = WeatherImpactChartTool()
         self.holiday_impact_chart = HolidayImpactChartTool()
+        
+        # RAG context (injected before crew execution)
+        self._rag_context: str = ""
+        self._rag_citations: list = []
+        self._rag_sources: list = []
+
+    def set_rag_context(self, context: str, citations: list = None, sources: list = None):
+        """Set RAG-retrieved context to be injected into agent prompts."""
+        self._rag_context = context or ""
+        self._rag_citations = citations or []
+        self._rag_sources = sources or []
+
+    def _rag_backstory_supplement(self) -> str:
+        """Return RAG context formatted as backstory supplement for agents."""
+        if not self._rag_context:
+            return ""
+        return (
+            "\n\nYou have access to the following domain knowledge retrieved from the knowledge base. "
+            "Use this context to ground your analysis in domain expertise. When you use information "
+            "from this context, mention the source.\n\n"
+            f"{self._rag_context}"
+        )
 
     def _create_historical_agent(self) -> Agent:
         return Agent(
@@ -86,10 +108,12 @@ class DynamicCrewBuilder:
         )
 
     def _create_holiday_agent(self) -> Agent:
+        backstory = "Expert in Sri Lankan holidays and their impact on coffee shop sales."
+        backstory += self._rag_backstory_supplement()
         return Agent(
             role="Holiday context analyst",
             goal="Analyze how holidays and festivals affect sales",
-            backstory="Expert in Sri Lankan holidays and their impact on coffee shop sales.",
+            backstory=backstory,
             verbose=False,
             tools=[self.holiday_tool],
             llm=self.llm,
@@ -98,10 +122,12 @@ class DynamicCrewBuilder:
         )
 
     def _create_weather_agent(self) -> Agent:
+        backstory = "Specialist in understanding how rain and temperature affect hot/cold drink sales."
+        backstory += self._rag_backstory_supplement()
         return Agent(
             role="Weather impact analyst",
             goal="Analyze weather effects on product demand",
-            backstory="Specialist in understanding how rain and temperature affect hot/cold drink sales.",
+            backstory=backstory,
             verbose=False,
             tools=[self.weather_tool],
             llm=self.llm,
@@ -110,10 +136,12 @@ class DynamicCrewBuilder:
         )
 
     def _create_strategy_agent(self) -> Agent:
+        backstory = "Senior business strategist who combines insights into practical plans."
+        backstory += self._rag_backstory_supplement()
         return Agent(
             role="Strategic advisor",
             goal="Synthesize all findings into actionable recommendations",
-            backstory="Senior business strategist who combines insights into practical plans.",
+            backstory=backstory,
             verbose=False,
             llm=self.llm,
             max_iter=2,
@@ -122,10 +150,12 @@ class DynamicCrewBuilder:
 
     def _create_answering_agent(self) -> Agent:
         """Creates an agent that directly answers the manager's question."""
+        backstory = "Expert at synthesizing data analysis into clear, direct answers."
+        backstory += self._rag_backstory_supplement()
         return Agent(
             role="Direct question answerer",
             goal="Answer the manager's specific question clearly and concisely",
-            backstory="Expert at synthesizing data analysis into clear, direct answers.",
+            backstory=backstory,
             verbose=False,
             llm=self.llm,
             max_iter=2,
@@ -214,6 +244,14 @@ class DynamicCrewBuilder:
         )
 
     def _create_strategy_task(self, inputs: dict, context_tasks: List[Task]) -> Task:
+        rag_instruction = ""
+        if self._rag_context:
+            rag_instruction = """
+            
+            IMPORTANT: When your recommendations are informed by domain knowledge,
+            cite the source in brackets, e.g. [Product Catalog] or [Weather Impact Guide].
+            Include a "Sources" section at the end listing all knowledge base documents referenced."""
+        
         return Task(
             description=f"""Manager asked: "{inputs.get('user_question', '')}"
             
@@ -225,7 +263,7 @@ class DynamicCrewBuilder:
             - Inventory
             - Risks
             
-            End with a summary table of key metrics.""",
+            End with a summary table of key metrics.{rag_instruction}""",
             expected_output="Markdown plan with bullet points and summary table",
             agent=self._create_strategy_agent(),
             context=context_tasks,
@@ -234,6 +272,13 @@ class DynamicCrewBuilder:
 
     def _create_direct_answer_task(self, inputs: dict, context_tasks: List[Task]) -> Task:
         """Creates a task that directly answers the question without full strategy."""
+        rag_instruction = ""
+        if self._rag_context:
+            rag_instruction = """
+            
+            When your answer uses domain knowledge, cite the source in brackets,
+            e.g. [Product Catalog] or [Operations Guide]."""
+        
         return Task(
             description=f"""The manager asked: "{inputs.get('user_question', '')}"
             
@@ -242,7 +287,7 @@ class DynamicCrewBuilder:
             Do NOT provide a full business plan unless asked.
             Be concise and answer exactly what was asked.
             Use bullet points for clarity.
-            Include specific numbers and data from the analysis.""",
+            Include specific numbers and data from the analysis.{rag_instruction}""",
             expected_output="Direct, focused answer to the manager's specific question",
             agent=self._create_answering_agent(),
             context=context_tasks,

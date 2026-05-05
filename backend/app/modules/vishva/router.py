@@ -98,6 +98,7 @@ class ModelStatus(BaseModel):
     accuracy: Optional[float] = None
     f1_score: Optional[float] = None
     categories: Optional[List[str]] = None
+    trained_at: Optional[str] = None
 
 
 # ============================================
@@ -207,16 +208,32 @@ async def extract_menu(request: ExtractRequest):
         output_dir = os.path.join(MODULE_DIR, "data/raw")
         
         # Write a temporary extraction script
+        backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(MODULE_DIR)))
+        # Pass URL safely via environment variable to avoid code injection
+        import tempfile
+        env_for_extract = os.environ.copy()
+        env_for_extract['_EXTRACT_URL'] = request.url
+        env_for_extract['_EXTRACT_OUTPUT_DIR'] = output_dir
+        
         script_content = f'''
 import sys
 import os
-sys.path.insert(0, r"{os.path.dirname(os.path.dirname(os.path.dirname(MODULE_DIR)))}")
-os.chdir(r"{os.path.dirname(os.path.dirname(os.path.dirname(MODULE_DIR)))}")
+
+# Set up paths first
+backend_dir = r"{backend_dir}"
+sys.path.insert(0, backend_dir)
+os.chdir(backend_dir)
+
+# Load environment variables before any imports
+from dotenv import load_dotenv
+load_dotenv(os.path.join(backend_dir, ".env"))
 
 from app.modules.vishva.tools import extract_menu_data
 import json
 
-result = extract_menu_data(r"{request.url}", r"{output_dir}")
+url = os.environ["_EXTRACT_URL"]
+output_dir = os.environ["_EXTRACT_OUTPUT_DIR"]
+result = extract_menu_data(url, output_dir)
 print("__RESULT_JSON__")
 print(json.dumps(result))
 '''
@@ -224,14 +241,26 @@ print(json.dumps(result))
         with open(extract_script, 'w') as f:
             f.write(script_content)
         
-        # Run in subprocess (this works like your standalone script)
-        python_exe = sys.executable
+        # Use current Python executable (from the active venv)
+        venv_python = sys.executable
+        
+        env = env_for_extract
+        # Remove conda paths that might interfere
+        if 'PYTHONPATH' in env:
+            del env['PYTHONPATH']
+        # Also remove conda from PATH to avoid conflicts
+        if 'PATH' in env:
+            paths = env['PATH'].split(os.pathsep)
+            paths = [p for p in paths if 'conda' not in p.lower() and 'anaconda' not in p.lower()]
+            env['PATH'] = os.pathsep.join(paths)
+        
         result = subprocess.run(
-            [python_exe, extract_script],
+            [venv_python, extract_script],
             capture_output=True,
             text=True,
-            cwd=os.path.dirname(os.path.dirname(os.path.dirname(MODULE_DIR))),
-            timeout=300  # 5 minute timeout
+            cwd=backend_dir,
+            timeout=300,  # 5 minute timeout
+            env=env
         )
         
         # Clean up temp script
@@ -415,7 +444,8 @@ async def train_model_stream():
         await asyncio.sleep(4)
         
         best_model = result['best_model']
-        yield f"data: {json.dumps({'type': 'substep', 'message': f'Best model: {best_model["name"]} with {best_model["accuracy"]*100:.1f}% accuracy', 'progress': 90})}\n\n"
+        best_model_message = f"Best model: {best_model['name']} with {best_model['accuracy']*100:.1f}% accuracy"
+        yield f"data: {json.dumps({'type': 'substep', 'message': best_model_message, 'progress': 90})}\n\n"
         await asyncio.sleep(2)
         
         # Step 8: Saving Model
@@ -914,6 +944,7 @@ async def extract_menu_stream(url: str):
         output_queue = queue.Queue()
         process = None
         reader_thread = None
+        last_keepalive = time.time()
         
         try:
             from app.modules.vishva.tools import clean_json_data
@@ -960,7 +991,9 @@ os.chdir(r"{backend_dir}")
 from app.modules.vishva.tools.extract_tool import extract_menu_data
 import json
 
-result = extract_menu_data(r"{url}", r"{output_dir}")
+url = os.environ["_EXTRACT_URL"]
+output_dir = os.environ["_EXTRACT_OUTPUT_DIR"]
+result = extract_menu_data(url, output_dir)
 print("__RESULT_JSON__")
 print(json.dumps(result))
 '''
@@ -975,6 +1008,13 @@ print(json.dumps(result))
             python_exe = sys.executable
             env = os.environ.copy()
             env['PYTHONUNBUFFERED'] = '1'
+            env['_EXTRACT_URL'] = url
+            env['_EXTRACT_OUTPUT_DIR'] = output_dir
+            
+            # On Windows, use CREATE_NO_WINDOW to prevent console window issues
+            creation_flags = 0
+            if sys.platform == 'win32':
+                creation_flags = subprocess.CREATE_NO_WINDOW
             
             process = subprocess.Popen(
                 [python_exe, '-u', extract_script],
@@ -982,7 +1022,8 @@ print(json.dumps(result))
                 stderr=subprocess.STDOUT,
                 bufsize=0,
                 cwd=backend_dir,
-                env=env
+                env=env,
+                creationflags=creation_flags
             )
             
             # Track the process globally so it can be stopped
@@ -1034,6 +1075,12 @@ print(json.dumps(result))
                         yield f"data: {json.dumps({'type': 'thought', 'message': line})}\n\n"
                         
                 except queue.Empty:
+                    # Send keepalive comment to prevent proxy/browser from closing the SSE connection
+                    now = time.time()
+                    if now - last_keepalive >= 5:
+                        yield ": keepalive\n\n"
+                        last_keepalive = now
+                    
                     # Timeout - check if process has ended
                     if process.poll() is not None:
                         # Drain remaining items from queue
@@ -1721,3 +1768,16 @@ async def update_confidence_settings(settings: ConfidenceSettings):
         return {"success": True, "message": "Settings saved"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================
+# AGENTIC AI SUB-ROUTER
+# ============================================
+# Mount the agent endpoints under /agent prefix
+# e.g. /api/v1/vishva/agent/chat, /api/v1/vishva/agent/chat-stream
+try:
+    from app.modules.vishva.agent import agent_router
+    router.include_router(agent_router, prefix="/agent", tags=["vishva-agent"])
+except ImportError:
+    # Agent dependencies not installed — skip silently, existing endpoints still work
+    pass

@@ -230,7 +230,13 @@ class MenuCategoryClassifier:
                         
                         if isinstance(model_clone, MultinomialNB):
                             X_train_final, scaler = self.ensure_non_negative(X_train_selected)
-                            X_test_final, _ = self.ensure_non_negative(X_test_selected)
+                            if scaler is not None:
+                                # Transform test data using the scaler fitted on training data
+                                if hasattr(X_test_selected, 'toarray'):
+                                    X_test_final = scaler.transform(X_test_selected.toarray())
+                                else:
+                                    X_test_final = scaler.transform(X_test_selected)
+                            # else: X_test_final already set above (no scaling needed)
                         
                         # Train
                         model_clone.fit(X_train_final, y_train)

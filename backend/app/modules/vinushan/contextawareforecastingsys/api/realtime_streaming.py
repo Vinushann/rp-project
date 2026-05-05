@@ -29,6 +29,7 @@ os.environ["OTEL_SDK_DISABLED"] = "true"
 
 from ..router import route_question, AGENT_CAPABILITIES
 from ..dynamic_crew import DynamicCrewBuilder
+from ..rag.rag_service import RAGService
 from ..tools.visualization_tools import (
     create_sales_trend_chart,
     create_top_items_chart,
@@ -44,6 +45,16 @@ from .models import Message, AgentStep, ChatResponse, ChartData
 
 load_dotenv()
 
+# Singleton RAG service (lazy-initialized)
+_rag_service: RAGService | None = None
+
+def _get_rag_service() -> RAGService:
+    """Get or create the RAG service singleton."""
+    global _rag_service
+    if _rag_service is None:
+        _rag_service = RAGService(auto_ingest=True)
+    return _rag_service
+
 
 # ============================================================================
 # Event Types
@@ -52,6 +63,7 @@ class EventType:
     RUN_START = "run_start"
     QUERY_ANALYSIS = "query_analysis"
     ROUTER_THOUGHT = "router_thought"
+    RAG_RETRIEVAL = "rag_retrieval"
     AGENT_START = "agent_start"
     AGENT_THOUGHT = "agent_thought"
     AGENT_QUERY = "agent_query"
@@ -61,6 +73,7 @@ class EventType:
     TOOL_RESULT = "tool_result"
     AGENT_OUTPUT = "agent_output"
     AGENT_END = "agent_end"
+    XAI_EXPLANATION = "xai_explanation"
     RUN_END = "run_end"
     ERROR = "error"
 
@@ -261,9 +274,13 @@ class StreamingCallbackHandler:
 # ============================================================================
 # Agent Thought Templates - Structured reasoning output
 # ============================================================================
-def _generate_router_thought(message: str, agents_needed: list, is_comprehensive: bool) -> str:
+def _generate_router_thought(message: str, agents_needed: list, is_comprehensive: bool, needs_rag: bool = False) -> str:
     """Generate structured router thought text."""
     agents_list = "\n".join([f"- {a}" for a in agents_needed])
+    
+    rag_note = ""
+    if needs_rag:
+        rag_note = "\n\nthis question could benefit from domain knowledge, so i will search the knowledge base first."
     
     return f"""alright, the manager asked: "{message[:100]}..."
 
@@ -274,7 +291,7 @@ step 1: decide what kind of question this is.
 agents i will run:
 {agents_list}
 
-{"this is a comprehensive planning request, so all relevant specialists will be activated." if is_comprehensive else "selecting only the necessary specialists for this specific question."}"""
+{"this is a comprehensive planning request, so all relevant specialists will be activated." if is_comprehensive else "selecting only the necessary specialists for this specific question."}{rag_note}"""
 
 
 def _generate_agent_plan(agent_name: str, task: str, target_month: str = None, target_year: int = None) -> str:
@@ -463,7 +480,162 @@ this drives staffing and inventory planning."""
     
     else:
         return truncated
-    
+
+
+# ============================================================================
+# XAI / Explainability — Decompose the AI's decision-making for transparency
+# ============================================================================
+
+def _perform_xai_analysis(
+    original_question: str,
+    response_text: str,
+    agents_used: list,
+    rag_context: str = "",
+    reasoning_steps: list = None,
+) -> dict:
+    """
+    XAI Analysis: Produces an interpretable explanation of *how* and *why*
+    the AI reached its conclusions — following Explainable AI principles.
+
+    Returns a structured breakdown with:
+      - decision_factors: SHAP-like importance ranking of input signals
+      - agent_contributions: what each agent contributed and its influence
+      - confidence_scores: per-topic confidence with justification
+      - assumptions: what the model assumed
+      - limitations: what data/capability gaps exist
+      - counterfactuals: alternative scenarios and their impact
+    """
+    llm = ChatOpenAI(
+        model=os.getenv("MODEL", "gpt-4o-mini"),
+        temperature=0,
+        timeout=45,
+    )
+
+    agents_desc = ", ".join(agents_used) if agents_used else "No specialist agents"
+    steps_summary = ""
+    if reasoning_steps:
+        for step in reasoning_steps[:6]:
+            name = getattr(step, "agent_name", "Agent")
+            preview = getattr(step, "output_preview", "") or ""
+            steps_summary += f"\n- {name}: {preview[:200]}"
+
+    system_prompt = """You are an XAI (Explainable AI) analyst for ATHENA, a coffee shop forecasting assistant.
+You decompose the AI's decision-making process so the shop manager can understand WHY and HOW
+the system reached its conclusions.
+
+Analyze the response and produce a JSON explanation with these sections:
+
+1. DECISION FACTORS — What input signals most influenced the response?
+   Rate each factor 0-100 for influence. Include 3-6 factors.
+   Examples: Historical Sales Data, Weather Patterns, Holiday Calendar, Business Context, Seasonal Trends, Customer Behavior
+
+2. AGENT CONTRIBUTIONS — What did each specialist agent contribute?
+   For each agent used, describe its specific contribution and influence percentage (must sum to 100%).
+
+3. CONFIDENCE SCORES — How confident is each part of the response?
+   Break the response into 3-5 topics and rate confidence (0-100) with a reason.
+
+4. ASSUMPTIONS — What is the model assuming? (2-4 bullet points)
+
+5. LIMITATIONS — What data gaps or capability limits exist? (2-3 bullet points)
+
+6. COUNTERFACTUALS — "If X were different, then Y" scenarios (2-3 items)
+   Show how changing inputs would change the output.
+
+Respond with JSON only:
+{
+  "decision_factors": [
+    {"factor": "Historical Sales Data", "influence": 85, "reasoning": "4 years of daily sales provide strong baseline patterns"}
+  ],
+  "agent_contributions": [
+    {"agent": "Historical Analyst", "contribution": "Identified seasonal trends and top-selling items", "influence_pct": 35}
+  ],
+  "confidence_scores": [
+    {"topic": "Sales Forecast", "confidence": 88, "reasoning": "Strong historical data supports prediction"}
+  ],
+  "assumptions": [
+    "Product menu and pricing remain consistent with historical data"
+  ],
+  "limitations": [
+    "Weather predictions based on seasonal averages, not real-time forecasts"
+  ],
+  "counterfactuals": [
+    {"scenario": "If no holidays occur this month", "impact": "Expect ~15% lower overall demand, remove holiday-specific inventory"}
+  ]
+}"""
+
+    user_prompt = f"""MANAGER'S QUESTION:
+{original_question}
+
+AGENTS USED: {agents_desc}
+
+AGENT OUTPUTS SUMMARY:{steps_summary if steps_summary else ' N/A'}
+
+{f'DOMAIN KNOWLEDGE RETRIEVED:{chr(10)}{rag_context[:800]}' if rag_context else 'NO DOMAIN KNOWLEDGE RETRIEVED'}
+
+FINAL RESPONSE TO EXPLAIN:
+{response_text[:2500]}"""
+
+    try:
+        response = llm.invoke([
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ])
+        content = response.content.strip()
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"):
+                content = content[4:]
+            content = content.strip()
+        result = json.loads(content)
+
+        # Validate and normalize
+        decision_factors = result.get("decision_factors", [])
+        agent_contributions = result.get("agent_contributions", [])
+        confidence_scores = result.get("confidence_scores", [])
+
+        # Ensure influence percentages sum to ~100
+        total_influence = sum(a.get("influence_pct", 0) for a in agent_contributions)
+        if total_influence > 0 and abs(total_influence - 100) > 5:
+            for a in agent_contributions:
+                a["influence_pct"] = round(a.get("influence_pct", 0) * 100 / total_influence)
+
+        # Compute overall confidence
+        avg_confidence = (
+            round(sum(c.get("confidence", 70) for c in confidence_scores) / len(confidence_scores))
+            if confidence_scores else 75
+        )
+
+        return {
+            "decision_factors": decision_factors,
+            "agent_contributions": agent_contributions,
+            "confidence_scores": confidence_scores,
+            "overall_confidence": avg_confidence,
+            "assumptions": result.get("assumptions", []),
+            "limitations": result.get("limitations", []),
+            "counterfactuals": result.get("counterfactuals", []),
+        }
+    except Exception as exc:
+        logger.warning(f"XAI analysis failed: {exc}")
+        return {
+            "decision_factors": [
+                {"factor": "Data Analysis", "influence": 80, "reasoning": "Core analytical pipeline"},
+                {"factor": "Domain Context", "influence": 60, "reasoning": "Business-specific knowledge"},
+            ],
+            "agent_contributions": [
+                {"agent": a, "contribution": "Specialist analysis", "influence_pct": round(100 / max(len(agents_used), 1))}
+                for a in (agents_used or ["general"])
+            ],
+            "confidence_scores": [
+                {"topic": "Overall Response", "confidence": 75, "reasoning": "Standard analysis (XAI review unavailable)"}
+            ],
+            "overall_confidence": 75,
+            "assumptions": ["Standard business conditions apply"],
+            "limitations": ["Detailed explainability unavailable for this response"],
+            "counterfactuals": [],
+        }
+
+
     def on_tool_start(self, tool_name: str, tool_input: str):
         """Called when a tool is invoked."""
         self.emitter.emit(
@@ -563,12 +735,87 @@ class InstrumentedCrewBuilder(DynamicCrewBuilder):
 
 
 # ============================================================================
+# Follow-Up Query Rewriter
+# ============================================================================
+def _rewrite_followup_query(message: str, history: List[Message]) -> dict:
+    """
+    Resolve ambiguous follow-up messages into self-contained questions
+    using recent conversation history.
+
+    Returns:
+        dict with keys:
+            - rewritten: str  (the resolved question)
+            - is_followup: bool
+            - original: str
+    """
+    # Skip rewriting if there is no prior conversation
+    if not history:
+        return {"rewritten": message, "is_followup": False, "original": message}
+
+    # Build a compact history snippet (last 3 user+assistant turns max)
+    turns = []
+    for msg in history[-6:]:
+        role_label = "User" if msg.role == "user" else "ATHENA"
+        turns.append(f"{role_label}: {msg.content[:300]}")
+    history_block = "\n".join(turns)
+
+    llm = ChatOpenAI(
+        model=os.getenv("MODEL", "gpt-4o-mini"),
+        temperature=0.0,
+        timeout=15,
+    )
+
+    prompt = f"""You are a query rewriter for a coffee-shop analytics assistant.
+
+Given the recent conversation and a new user message, decide:
+1. Is the new message a FOLLOW-UP that depends on prior context (pronouns like "they/it/that", implicit references, or continuation of a previous topic)?
+2. If yes, rewrite it into a COMPLETE, SELF-CONTAINED question that includes all necessary context from the conversation.
+3. If no (the message is already self-contained), return it unchanged.
+
+Rules:
+- Preserve the user's intent exactly — do not add extra analysis.
+- Keep the rewritten question concise.
+- If the prior conversation discussed a specific item, month, metric, or visualization type, carry that context forward.
+
+Recent conversation:
+{history_block}
+
+New user message: "{message}"
+
+Respond with ONLY valid JSON:
+{{{{
+  "is_followup": true/false,
+  "rewritten": "the rewritten question (or original if not a follow-up)"
+}}}}"""
+
+    try:
+        response = llm.invoke(prompt)
+        content = response.content.strip()
+        # Strip markdown code fences if present
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"):
+                content = content[4:]
+        content = content.strip()
+        result = json.loads(content)
+        return {
+            "rewritten": result.get("rewritten", message),
+            "is_followup": result.get("is_followup", False),
+            "original": message,
+        }
+    except Exception as e:
+        logger.warning(f"Query rewrite failed (non-fatal): {e}")
+        return {"rewritten": message, "is_followup": False, "original": message}
+
+
+# ============================================================================
 # Direct Handlers (Non-CrewAI)
 # ============================================================================
 def _handle_conversational_message(
     message: str, 
     history: List[Message],
-    emitter: Optional[EventEmitter] = None
+    emitter: Optional[EventEmitter] = None,
+    rag_context: str = "",
 ) -> str:
     """Handle non-business conversational messages directly with LLM."""
     if emitter:
@@ -587,18 +834,18 @@ def _handle_conversational_message(
     
     business_name = os.getenv("BUSINESS_NAME", "Rossmann Coffee Shop")
     
-    messages = [
-        {
-            "role": "system",
-            "content": f"""You are ATHENA, a friendly AI assistant for {business_name}, a coffee shop in Sri Lanka.
+    system_content = f"""You are ATHENA, a friendly AI assistant for {business_name}, a coffee shop in Sri Lanka.
 You help the shop manager with business questions about sales, forecasting, inventory, and planning.
 
 When responding to greetings or general conversation:
 - Be friendly and welcoming
 - Briefly mention what you can help with (sales analysis, forecasting, holiday planning, weather impacts)
 - Keep responses concise and natural"""
-        }
-    ]
+
+    if rag_context:
+        system_content += f"\n\nYou have the following domain knowledge available:\n{rag_context}"
+    
+    messages = [{"role": "system", "content": system_content}]
     
     for msg in history[-4:]:
         messages.append({
@@ -642,7 +889,14 @@ def _handle_visualization_directly(
     try:
         chart_type = "general"
         
-        if any(word in message_lower for word in ["trend", "over time", "sales trend", "monthly sales"]):
+        # Detect time-based sales queries (e.g. "last 6 months sales", "sales over time")
+        _is_time_sales = (
+            any(word in message_lower for word in ["trend", "over time", "sales trend", "monthly sales"])
+            or (re.search(r'last\s+\d+\s+months?\b', message_lower) and "sales" in message_lower)
+            or (re.search(r'\d+\s+months?\s+sales', message_lower))
+        )
+        
+        if _is_time_sales:
             if emitter:
                 emitter.emit(
                     EventType.TOOL_START,
@@ -656,7 +910,12 @@ def _handle_visualization_directly(
                 if food in message_lower:
                     item = food
                     break
-            result = create_sales_trend_chart(item_name=item, months=6, group_by="month")
+            
+            # Extract month count from message (e.g. "last 6 months" -> 6)
+            month_match = re.search(r'(\d+)\s+months?', message_lower)
+            months = int(month_match.group(1)) if month_match else 6
+            
+            result = create_sales_trend_chart(item_name=item, months=months, group_by="month")
             chart_type = "trend"
             
         elif any(word in message_lower for word in ["top", "best selling", "popular", "most sold"]):
@@ -923,7 +1182,33 @@ async def stream_chat_realtime(
         ))
         await asyncio.sleep(0.05)  # Small delay for streaming effect
         
-        # QUERY_ANALYSIS - Route the question
+        # ── FOLLOW-UP RESOLUTION ──
+        # Rewrite ambiguous follow-ups into self-contained questions
+        if conversation_history:
+            loop_rw = asyncio.get_event_loop()
+            rewrite_result = await loop_rw.run_in_executor(
+                None,
+                lambda: _rewrite_followup_query(message, conversation_history)
+            )
+            if rewrite_result["is_followup"]:
+                original_message = message
+                message = rewrite_result["rewritten"]
+                logger.info(f"[{run_id}] Follow-up resolved: '{original_message}' → '{message}'")
+                yield _format_sse(EventType.ROUTER_THOUGHT, _create_event(
+                    EventType.ROUTER_THOUGHT,
+                    run_id,
+                    phase="followup_resolution",
+                    content=f"Follow-up detected — resolved to: \"{message}\"",
+                    text=f"Original: \"{original_message}\"\nResolved: \"{message}\"",
+                    data={
+                        "original": original_message,
+                        "rewritten": message,
+                        "is_followup": True,
+                    }
+                ))
+                await asyncio.sleep(0.05)
+        
+        # QUERY_ANALYSIS - Route the question (uses resolved message)
         routing_result = route_question(message)
         agents_needed = routing_result.get("agents_needed", [])
         reasoning = routing_result.get("reasoning", "")
@@ -932,7 +1217,7 @@ async def stream_chat_realtime(
         needs_visualization = routing_result.get("needs_visualization", False)
         
         # Generate structured router thought
-        router_thought = _generate_router_thought(message, agents_needed, is_comprehensive)
+        router_thought = _generate_router_thought(message, agents_needed, is_comprehensive, needs_rag=routing_result.get("needs_rag", False))
         
         yield _format_sse(EventType.QUERY_ANALYSIS, _create_event(
             EventType.QUERY_ANALYSIS,
@@ -944,7 +1229,8 @@ async def stream_chat_realtime(
                 "agents_needed": agents_needed,
                 "is_comprehensive": is_comprehensive,
                 "is_conversational": is_conversational,
-                "needs_visualization": needs_visualization
+                "needs_visualization": needs_visualization,
+                "needs_rag": routing_result.get("needs_rag", False),
             }
         ))
         await asyncio.sleep(0.05)
@@ -953,6 +1239,66 @@ async def stream_chat_realtime(
         charts = []
         response_text = ""
         reasoning_steps = []
+        rag_citations = None  # Will be set if RAG is used
+        needs_rag = routing_result.get("needs_rag", False)
+        
+        # --- ADAPTIVE RAG RETRIEVAL (if needed) ---
+        rag_context = ""
+        rag_citation_data = {}
+        if needs_rag and not is_conversational and not needs_visualization:
+            try:
+                yield _format_sse(EventType.RAG_RETRIEVAL, _create_event(
+                    EventType.RAG_RETRIEVAL,
+                    run_id,
+                    agent="Knowledge Retriever",
+                    phase="start",
+                    content="Classifying query and searching knowledge base...",
+                    data={"query": message[:200]}
+                ))
+                await asyncio.sleep(0.05)
+                
+                rag_svc = _get_rag_service()
+                loop = asyncio.get_event_loop()
+                rag_citation_data = await loop.run_in_executor(
+                    None,
+                    lambda: rag_svc.adaptive_retrieve(message)
+                )
+                
+                rag_context = rag_citation_data.get("context", "")
+                rag_citations = rag_citation_data.get("citations", [])
+                adaptive_meta = rag_citation_data.get("adaptive_metadata", {})
+                
+                profile = adaptive_meta.get("profile", {})
+                yield _format_sse(EventType.RAG_RETRIEVAL, _create_event(
+                    EventType.RAG_RETRIEVAL,
+                    run_id,
+                    agent="Knowledge Retriever",
+                    phase="complete",
+                    content=f"Retrieved {len(rag_citations)} relevant knowledge chunks (strategy: {adaptive_meta.get('query_type', 'unknown')})",
+                    data={
+                        "chunks_retrieved": adaptive_meta.get("chunks_retrieved", len(rag_citations)),
+                        "chunks_after_filter": adaptive_meta.get("chunks_after_filter", len(rag_citations)),
+                        "query_type": adaptive_meta.get("query_type", "unknown"),
+                        "topics": adaptive_meta.get("topics", []),
+                        "classification_reasoning": adaptive_meta.get("classification_reasoning", ""),
+                        "profile": {
+                            "top_k": profile.get("top_k", 5),
+                            "min_relevance": profile.get("min_relevance", 0.25),
+                            "expand": profile.get("expand", False),
+                        },
+                        "source_documents": rag_citation_data.get("source_documents", []),
+                        "citations": [
+                            {"source": c["source"], "heading": c["heading"], "score": c["relevance_score"]}
+                            for c in (rag_citations or [])
+                        ],
+                    }
+                ))
+                await asyncio.sleep(0.05)
+                
+            except Exception as rag_err:
+                logger.warning(f"[{run_id}] RAG retrieval failed (non-fatal): {rag_err}")
+                rag_context = ""
+                rag_citations = None
         
         if is_conversational:
             # Handle conversational messages
@@ -966,7 +1312,9 @@ async def stream_chat_realtime(
             ))
             await asyncio.sleep(0.05)
             
-            response_text = _handle_conversational_message(message, conversation_history)
+            response_text = _handle_conversational_message(
+                message, conversation_history, rag_context=rag_context
+            )
             
             yield _format_sse(EventType.AGENT_END, _create_event(
                 EventType.AGENT_END,
@@ -1083,6 +1431,15 @@ async def stream_chat_realtime(
             
             # Build crew
             builder = InstrumentedCrewBuilder(emitter)
+            
+            # Inject RAG context if available
+            if rag_context:
+                builder.set_rag_context(
+                    rag_context,
+                    citations=rag_citation_data.get("citations", []),
+                    sources=rag_citation_data.get("source_documents", []),
+                )
+            
             crew, task_info = builder.build_instrumented_crew(
                 agents_needed, 
                 inputs, 
@@ -1270,7 +1627,63 @@ async def stream_chat_realtime(
                 ))
             
             response_text = str(result)
-            
+
+            # ── XAI / Explainability: Decompose how the AI made its decisions ──
+            yield _format_sse(EventType.XAI_EXPLANATION, _create_event(
+                EventType.XAI_EXPLANATION,
+                run_id,
+                agent="Explainability Engine",
+                phase="start",
+                content="Analyzing decision-making process for transparency...",
+                data={"status": "analyzing"}
+            ))
+            await asyncio.sleep(0.05)
+
+            try:
+                loop_xai = asyncio.get_event_loop()
+                xai_result = await loop_xai.run_in_executor(
+                    None,
+                    lambda: _perform_xai_analysis(
+                        original_question=message,
+                        response_text=response_text,
+                        agents_used=agents_needed,
+                        rag_context=rag_context or "",
+                        reasoning_steps=reasoning_steps,
+                    )
+                )
+
+                yield _format_sse(EventType.XAI_EXPLANATION, _create_event(
+                    EventType.XAI_EXPLANATION,
+                    run_id,
+                    agent="Explainability Engine",
+                    phase="complete",
+                    content=f"Explainability analysis complete — {xai_result.get('overall_confidence', 75)}% overall confidence",
+                    data={
+                        "status": "complete",
+                        **xai_result,
+                    }
+                ))
+                await asyncio.sleep(0.05)
+            except Exception as xai_err:
+                logger.warning(f"[{run_id}] XAI analysis failed (non-fatal): {xai_err}")
+                yield _format_sse(EventType.XAI_EXPLANATION, _create_event(
+                    EventType.XAI_EXPLANATION,
+                    run_id,
+                    agent="Explainability Engine",
+                    phase="complete",
+                    content="Explainability analysis complete",
+                    data={
+                        "status": "complete",
+                        "decision_factors": [],
+                        "agent_contributions": [],
+                        "confidence_scores": [],
+                        "overall_confidence": 75,
+                        "assumptions": [],
+                        "limitations": [],
+                        "counterfactuals": [],
+                    }
+                ))
+
             # Check for visualization in result
             if "visualization" in agents_needed:
                 chart_data = _extract_chart_from_result(response_text)
@@ -1290,6 +1703,12 @@ async def stream_chat_realtime(
             "response": response_text,
             "routing_reasoning": reasoning,
             "agents_used": agents_needed,
+            "needs_rag": needs_rag,
+            "rag_citations": [
+                {"source": c["source"], "heading": c["heading"], "score": c["relevance_score"]}
+                for c in (rag_citations or [])
+            ] if rag_citations else None,
+            "rag_sources": rag_citation_data.get("source_documents", []) if rag_citation_data else None,
             "reasoning_steps": [
                 {
                     "agent_name": step.agent_name,

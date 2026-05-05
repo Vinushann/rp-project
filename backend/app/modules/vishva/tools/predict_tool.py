@@ -262,6 +262,7 @@ def predict_categories(
         
         return {
             "success": True,
+            "message": f"Predicted categories for {len(predictions)} items",
             "predictions": predictions,
             "statistics": {
                 "total_items": len(predictions),

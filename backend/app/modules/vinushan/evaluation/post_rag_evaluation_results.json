@@ -1,0 +1,636 @@
+{
+  "metadata": {
+    "timestamp": "2026-03-07T21:33:30.975665",
+    "endpoint": "http://127.0.0.1:8000/api/v1/vinushan/chat",
+    "total_questions": 25,
+    "system_version": "post-rag",
+    "evaluation_type": "rag-targeted",
+    "rag_enabled": true
+  },
+  "results": [
+    {
+      "id": 1,
+      "category": "domain_knowledge",
+      "difficulty": "medium",
+      "question": "What are the best practices for staffing a coffee shop during peak hours?",
+      "why_rag_needed": "No tool provides general coffee shop operational knowledge",
+      "success": true,
+      "latency_seconds": 39.57,
+      "agents_used": [
+        "forecasting",
+        "strategy"
+      ],
+      "rag_used": true,
+      "answer_length": 3636,
+      "answer_preview": "## Comprehensive Action Plan for Staffing a Coffee Shop During Peak Hours\n\n### Demand Outlook\n- **Total Expected Quantity for April 2026**: 150.08 units.\n- **Busiest Predicted Days**: \n  1. April 27, 2026\n  2. April 28, 2026\n  3. April 6, 2026\n  4. April 20, 2026\n  5. April 21, 2026\n- **Confidence Intervals**: \n  - April 27, 2026: yhat = 8.06 (0 to 21.76)\n  - April 28, 2026: yhat = 7.94 (0 to 22.09)\n- **Model Metrics**: \n  - Mean Absolute Error (MAE): 7.94\n  - Mean Absolute Percentage Error (MAPE): 73.04\n  - Root Mean Square Error (RMSE): 15.58\n\n### Promotions\n- **Morning Rush Loyalty Program*",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a detailed and structured plan that addresses staffing, promotions, and inventory management during peak hours, demonstrating deep domain knowledge and offering actionable insights."
+      }
+    },
+    {
+      "id": 2,
+      "category": "domain_knowledge",
+      "difficulty": "medium",
+      "question": "How should I optimize my menu pricing to maximize revenue during slow days?",
+      "why_rag_needed": "Tools show data but don't provide pricing strategy principles",
+      "success": true,
+      "latency_seconds": 43.86,
+      "agents_used": [
+        "historical",
+        "strategy"
+      ],
+      "rag_used": true,
+      "answer_length": 3292,
+      "answer_preview": "# Action Plan to Optimize Menu Pricing for Slow Days\n\n## Demand Outlook\n- **Identify Slow Days**: Analyze historical sales data to pinpoint days with lower foot traffic and sales.\n- **Targeted Menu Adjustments**: Focus on promoting items that have historically performed well during slow periods, such as comfort foods and beverages that align with seasonal trends [4].\n- **Weather Considerations**: Implement strategies based on weather forecasts, such as promoting delivery services and comfort menu items on rainy days [2].\n\n## Promotions\n- **Combo Deals**: Introduce combo pricing for popular ite",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a detailed, actionable plan with specific strategies and metrics tailored to optimizing menu pricing during slow days, demonstrating strong domain expertise."
+      }
+    },
+    {
+      "id": 3,
+      "category": "domain_knowledge",
+      "difficulty": "medium",
+      "question": "What inventory management strategies work best for perishable coffee shop items?",
+      "why_rag_needed": "No tool covers inventory management best practices",
+      "success": true,
+      "latency_seconds": 52.68,
+      "agents_used": [
+        "historical",
+        "strategy"
+      ],
+      "rag_used": true,
+      "answer_length": 3302,
+      "answer_preview": "# Comprehensive Action Plan for Perishable Coffee Shop Items\n\n## Demand Outlook\n- **Forecasting**: Utilize ATHENA's forecasting system to predict demand accurately. This will help in adjusting preparation quantities and minimizing waste [4].\n- **Top Items**: Focus on high-demand items such as:\n  - **Herb Drink 9**: Avg. Daily Qty: 2.91\n  - **Veggie Roll**: Avg. Daily Qty: 2.56\n  - **Spicy Burger**: Avg. Daily Qty: 2.5\n- **Falling Items**: Monitor items like **Veggie Chicken** and **Sweet Burger 22** which have shown a decline in sales. Consider promotional strategies or menu adjustments to boo",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a comprehensive and detailed action plan tailored specifically for managing perishable items in a coffee shop, demonstrating deep domain knowledge and offering actionable strategies."
+      }
+    },
+    {
+      "id": 4,
+      "category": "domain_knowledge",
+      "difficulty": "complex",
+      "question": "What are effective promotional strategies for increasing foot traffic during monsoon season?",
+      "why_rag_needed": "Weather tool shows impact data but not promotional strategies",
+      "success": true,
+      "latency_seconds": 47.19,
+      "agents_used": [
+        "strategy",
+        "weather"
+      ],
+      "rag_used": true,
+      "answer_length": 3529,
+      "answer_preview": "### Demand Outlook\n- **Foot Traffic Decrease**: Anticipate a 10-15% drop in foot traffic during the monsoon season (May\u2013September) due to heavy rainfall [Weather Impact Guide].\n- **Delivery Demand Increase**: Expect a 20-30% increase in delivery orders as customers prefer to stay indoors during rainy weather [Weather Impact Guide].\n- **Product Preferences**: Hot beverages and comfort food sales are projected to rise by 15-25%, while cold beverages may see a decline of 10-15% [Weather Impact Guide].\n\n### Promotions\n- **\"Rainy Day Comfort\" Bundle**: Offer a discount on a hot drink and warm pastr",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a thorough and detailed action plan with specific promotional strategies tailored to the monsoon season, demonstrating deep domain knowledge and offering actionable insights."
+      }
+    },
+    {
+      "id": 5,
+      "category": "product_knowledge",
+      "difficulty": "simple",
+      "question": "What product categories do we sell and which category generates the highest revenue?",
+      "why_rag_needed": "No tool exposes product category taxonomy or relationships",
+      "success": true,
+      "latency_seconds": 35.24,
+      "agents_used": [
+        "historical"
+      ],
+      "rag_used": false,
+      "answer_length": 886,
+      "answer_preview": "- **Product Categories Sold**: \n  - Crispy Pasta\n  - Spicy Burger\n  - Veggie Roll\n  - Deluxe Pizza\n  - Herb Drink\n  - Veggie Chicken\n  - Sweet Burger\n  - Crispy Sandwich\n  - Veggie Sandwich\n  - Veggie Pasta\n  - Deluxe Roll\n\n- **Category Generating Highest Revenue**: \n  - **Spicy Burger** \n    - Monthly Quantity Sold: 195\n    - Average Ticket: $1,708.47\n    - Estimated Monthly Revenue: $333,155.65 (195 * $1,708.47)\n\n- **Other Notable Revenue Generating Products**:\n  - **Deluxe Pizza**\n    - Monthly Quantity Sold: 188\n    - Average Ticket: $1,797.43\n    - Estimated Monthly Revenue: $337,000.84 (",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a comprehensive breakdown of product categories and detailed revenue insights, demonstrating strong domain knowledge and actionable information."
+      }
+    },
+    {
+      "id": 6,
+      "category": "product_knowledge",
+      "difficulty": "medium",
+      "question": "Which of our products are typically bought together as complementary items?",
+      "why_rag_needed": "No market basket analysis or product pairing tool exists",
+      "success": true,
+      "latency_seconds": 26.75,
+      "agents_used": [
+        "historical"
+      ],
+      "rag_used": true,
+      "answer_length": 632,
+      "answer_preview": "The following products are typically bought together as complementary items:\n\n- **Hot Coffee + Croissant/Muffin**: 35% of morning orders include both.\n- **Burger + Cold Beverage**: Popular lunch combo, especially during hot weather.\n- **Pizza + Smoothie**: Growing trend among younger customers.\n- **Dessert + Hot Chocolate**: Evening indulgence combo, popular on weekends.\n- **Pasta + Fresh Juice**: Healthy lunch option, popular with office workers.\n\nThese pairings can enhance customer satisfaction and increase average order value through strategic upselling and combo pricing [Product Catalog > ",
+      "judge": {
+        "relevance": 5,
+        "depth": 4,
+        "domain_knowledge": 4,
+        "specificity": 4,
+        "actionability": 5,
+        "overall": 4,
+        "justification": "The answer provides relevant product pairings with specific percentages and trends, offering actionable insights for upselling strategies."
+      }
+    },
+    {
+      "id": 7,
+      "category": "product_knowledge",
+      "difficulty": "complex",
+      "question": "How should I adjust hot versus cold drink offerings based on seasonal temperature changes in Negombo?",
+      "why_rag_needed": "Weather tool shows correlations but no product strategy knowledge",
+      "success": true,
+      "latency_seconds": 40.7,
+      "agents_used": [
+        "weather"
+      ],
+      "rag_used": true,
+      "answer_length": 2879,
+      "answer_preview": "### Demand Outlook\n- **Cold Beverages**: Expect a significant increase in demand for cold beverages (iced coffee, smoothies) as temperatures rise above 30\u00b0C, with sales projected to increase by 20-30% during this period [2][4]. \n- **Hot Beverages**: Anticipate a decrease in hot beverage sales by 10-15% due to warmer temperatures [5]. However, hot beverages remain popular during the morning and evening hours.\n\n### Promotions  \n- **Cold Drink Specials**: Launch promotions for cold beverages, particularly iced coffee and smoothies, to attract customers during the warmer parts of the day (11 AM - ",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a comprehensive strategy for adjusting drink offerings based on seasonal temperature changes, demonstrating deep domain knowledge and offering specific, actionable insights."
+      }
+    },
+    {
+      "id": 8,
+      "category": "system_knowledge",
+      "difficulty": "medium",
+      "question": "How does ATHENA's forecasting system work and what factors does it consider?",
+      "why_rag_needed": "System docs exist but aren't accessible to agents",
+      "success": true,
+      "latency_seconds": 28.41,
+      "agents_used": [
+        "forecasting"
+      ],
+      "rag_used": true,
+      "answer_length": 1681,
+      "answer_preview": "ATHENA's forecasting system operates using a multi-agent architecture that considers various factors to predict sales demand effectively. Here\u2019s how it works and the factors it considers:\n\n- **Forecasting Model**: Utilizes the trained Prophet model to predict future demand based on historical sales data.\n- **Data Sources**:\n  - **Historical Sales Data**: Analyzes past sales trends, including top sellers and seasonal patterns.\n  - **Weather Data**: Correlates weather conditions (temperature, rainfall) with product-level sales changes.\n  - **Holiday Calendar**: Considers the impact of Sri Lankan",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a detailed explanation of ATHENA's forecasting system, including specific factors considered, metrics used, and actionable recommendations for managing demand."
+      }
+    },
+    {
+      "id": 9,
+      "category": "system_knowledge",
+      "difficulty": "simple",
+      "question": "What AI agents are available in this system and what can each one do?",
+      "why_rag_needed": "Agent capabilities documented but not retrievable by the system itself",
+      "success": true,
+      "latency_seconds": 11.23,
+      "agents_used": [
+        "historical",
+        "forecasting",
+        "holiday",
+        "weather",
+        "strategy",
+        "visualization"
+      ],
+      "rag_used": false,
+      "answer_length": 862,
+      "answer_preview": "```json { \"agents\": [ { \"name\": \"Sales Trend Chart Tool\", \"description\": \"Generates a line chart showing sales trends over time.\" }, { \"name\": \"Top Items Chart Tool\", \"description\": \"Generates a bar chart showing the top selling items.\" }, { \"name\": \"Daily Pattern Chart Tool\", \"description\": \"Generates a chart showing sales patterns by day of the week.\" }, { \"name\": \"Year Comparison Chart Tool\", \"description\": \"Generates a chart comparing sales between two years.\" }, { \"name\": \"Category Distribution Chart Tool\", \"description\": \"Generates a pie chart showing sales distribution by product catego",
+      "judge": {
+        "relevance": 5,
+        "depth": 4,
+        "domain_knowledge": 4,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a comprehensive list of AI agents with specific descriptions of their capabilities, allowing users to understand and utilize them effectively."
+      }
+    },
+    {
+      "id": 10,
+      "category": "system_knowledge",
+      "difficulty": "simple",
+      "question": "What types of charts and visualizations can the system generate for me?",
+      "why_rag_needed": "Visualization tool docs exist but system can't self-describe capabilities",
+      "success": true,
+      "latency_seconds": 2.84,
+      "agents_used": [
+        "visualization"
+      ],
+      "rag_used": false,
+      "answer_length": 287,
+      "answer_preview": "**Sales Trend Analysis for All Items**\n\n- **Total Units Sold:** 4,696 units over 6 months\n- **Average per month:** 671 units\n- **Trend Direction:** downward \ud83d\udcc9\n- **Peak Sales:** April 2025\n\nThe trend line shows the overall sales direction, helping you identify growth or decline patterns.",
+      "judge": {
+        "relevance": 3,
+        "depth": 2,
+        "domain_knowledge": 2,
+        "specificity": 2,
+        "actionability": 3,
+        "overall": 2,
+        "justification": "The answer provides some sales data but fails to address the specific types of charts and visualizations the system can generate."
+      }
+    },
+    {
+      "id": 11,
+      "category": "methodology",
+      "difficulty": "medium",
+      "question": "Why does the Prophet model predict certain days as busier than others? What components drive this?",
+      "why_rag_needed": "Prophet methodology documented in YAML/docs but not exposed to agents",
+      "success": true,
+      "latency_seconds": 62.53,
+      "agents_used": [
+        "forecasting",
+        "historical"
+      ],
+      "rag_used": true,
+      "answer_length": 1208,
+      "answer_preview": "The Prophet model predicts certain days as busier than others based on several key components:\n\n- **Historical Sales Data**: The model analyzes past sales patterns to identify peak days, such as weekends and holidays, which consistently show increased demand.\n- **Seasonality**:\n  - **Weekly Seasonality**: Weekends typically see 20\u201330% higher foot traffic than weekdays, with Saturday being the busiest day [4].\n  - **Yearly Seasonality**: Specific months, like December, show peaks due to holiday traffic, while monsoon months may see dips [1].\n- **Holiday Effects**: Pre-holiday periods (1\u20132 days ",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer comprehensively addresses the question with detailed insights into the components driving the Prophet model's predictions, demonstrating strong domain knowledge and providing actionable information for operational planning."
+      }
+    },
+    {
+      "id": 12,
+      "category": "methodology",
+      "difficulty": "medium",
+      "question": "How are holiday impacts on sales calculated and what data sources are used?",
+      "why_rag_needed": "Holiday tool returns numbers but doesn't explain methodology",
+      "success": true,
+      "latency_seconds": 29.92,
+      "agents_used": [
+        "holiday"
+      ],
+      "rag_used": true,
+      "answer_length": 1509,
+      "answer_preview": "- **Holiday Impact Calculation**:\n  - Sales impacts are assessed based on historical data and patterns observed around specific holidays.\n  - Pre-holiday periods typically show a sales increase of 15\u201325% as customers stock up on items [1].\n  - Each holiday has a unique effect on sales, which can be positive or negative, depending on the holiday's nature and customer behavior.\n\n- **Data Sources Used**:\n  - **Historical Sales Data**: Retrieved using the ItemHistoryTool to analyze sales trends and patterns for specific holidays.\n  - **Forecasting Tools**: The ForecastingTool and TimeSeriesForecas",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a comprehensive explanation of how holiday impacts on sales are calculated, detailing specific data sources and actionable insights for various holidays."
+      }
+    },
+    {
+      "id": 13,
+      "category": "methodology",
+      "difficulty": "simple",
+      "question": "What is the accuracy of the forecasting model and how was it validated?",
+      "why_rag_needed": "Model metrics exist in docs/training but aren't exposed via tools",
+      "success": true,
+      "latency_seconds": 22.62,
+      "agents_used": [
+        "forecasting"
+      ],
+      "rag_used": true,
+      "answer_length": 856,
+      "answer_preview": "- **Model Accuracy**:\n  - Mean Absolute Error (MAE): 7.94\n  - Root Mean Square Error (RMSE): 15.58\n  - Mean Absolute Percentage Error (MAPE): 73.04%\n\n- **Validation Method**:\n  - The model was validated using historical sales data from January 2020 to September 2025, comparing predicted values against actual sales to calculate the above metrics.\n\n- **Performance Improvement**:\n  - The model shows a 64% improvement over baseline forecasting methods, indicating enhanced accuracy in demand predictions [1]. \n\n- **Confidence Intervals**:\n  - Predictions include confidence intervals, providing a ran",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 4,
+        "overall": 5,
+        "justification": "The answer provides comprehensive metrics and validation methods, demonstrating deep domain knowledge and actionable insights for understanding model performance."
+      }
+    },
+    {
+      "id": 14,
+      "category": "cross_domain",
+      "difficulty": "complex",
+      "question": "Given that Vesak is approaching and it's the start of monsoon season, what specific products should I stock more of and what promotions would work?",
+      "why_rag_needed": "Requires synthesizing domain expertise with contextual data",
+      "success": true,
+      "latency_seconds": 70.71,
+      "agents_used": [
+        "holiday",
+        "weather",
+        "strategy"
+      ],
+      "rag_used": true,
+      "answer_length": 3523,
+      "answer_preview": "# Comprehensive Action Plan for Vesak and Monsoon Season\n\n## Demand Outlook\n- **Monsoon Season (May\u2013September)**:\n  - Anticipate a **10-15% drop in foot traffic** due to rain [Weather Impact Guide].\n  - Expect a **20-30% increase in delivery orders** as customers prefer to stay indoors [Weather Impact Guide].\n  - **Hot beverages** sales are projected to increase by **15-25%**, while cold beverages may drop by **10-15%** [Weather Impact Guide].\n\n- **Vesak Holiday (May)**:\n  - Pre-Vesak (2-3 days before): Increased demand for light foods and special Vesak-themed beverages [Holiday Impact Guide].",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a comprehensive and detailed action plan tailored to the specific context of Vesak and the monsoon season, demonstrating deep domain knowledge and offering actionable insights."
+      }
+    },
+    {
+      "id": 15,
+      "category": "cross_domain",
+      "difficulty": "complex",
+      "question": "How do Sri Lankan cultural events like Sinhala and Tamil New Year specifically impact customer buying behavior at our coffee shop?",
+      "why_rag_needed": "Holiday tool shows generic impact numbers but no cultural context",
+      "success": true,
+      "latency_seconds": 20.98,
+      "agents_used": [
+        "holiday"
+      ],
+      "rag_used": true,
+      "answer_length": 957,
+      "answer_preview": "- **Pre-New Year Phase (April 10\u201312)**: \n  - Customer buying behavior shows a **1.41% increase** in sales as people prepare for celebrations. \n  - Action: Stock up on inventory and highlight best-selling items to meet the increased demand.\n\n- **New Year Days (April 13\u201314)**: \n  - Many shops close, but those that remain open experience **30\u201350% higher traffic** from travelers and tourists. This indicates a significant spike in customer visits and potential sales.\n\n- **Post-New Year Phase (April 15\u201317)**: \n  - Gradual return to normal sales, with some leftover festive demand. This suggests that ",
+      "judge": {
+        "relevance": 5,
+        "depth": 4,
+        "domain_knowledge": 4,
+        "specificity": 4,
+        "actionability": 5,
+        "overall": 4,
+        "justification": "The answer effectively addresses the question with relevant data and actionable insights, though it could benefit from deeper cultural context regarding customer motivations."
+      }
+    },
+    {
+      "id": 16,
+      "category": "cross_domain",
+      "difficulty": "complex",
+      "question": "What lessons from our past December holiday sales should inform our strategy for this upcoming December?",
+      "why_rag_needed": "Tools show raw data but don't store strategic learnings or insights",
+      "success": true,
+      "latency_seconds": 38.51,
+      "agents_used": [
+        "historical",
+        "strategy"
+      ],
+      "rag_used": true,
+      "answer_length": 3412,
+      "answer_preview": "# December Holiday Sales Strategy Action Plan\n\n## Demand Outlook\n- **Sales Trends**: Historically, December shows increased sales due to holiday shopping and festivities. Expect a 15-25% increase in sales during the pre-holiday period (1-2 days before) and sustained demand through the holiday week [2].\n- **Foot Traffic**: Anticipate fluctuations in foot traffic; some holidays may increase it while others may reduce it. Long weekends will create the strongest sales periods [2].\n- **Product Focus**: Emphasize seasonal menu items such as holiday drinks and festive desserts, as well as gift sets a",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a detailed and strategic action plan based on past sales insights, demonstrating deep domain knowledge and offering specific, actionable recommendations for the upcoming December holiday sales."
+      }
+    },
+    {
+      "id": 17,
+      "category": "explanatory",
+      "difficulty": "complex",
+      "question": "Why did sales drop last rainy season and what could we have done differently?",
+      "why_rag_needed": "Weather tool shows correlation but not causal reasoning or strategy",
+      "success": true,
+      "latency_seconds": 55.13,
+      "agents_used": [
+        "historical",
+        "weather",
+        "strategy"
+      ],
+      "rag_used": true,
+      "answer_length": 3441,
+      "answer_preview": "### Demand Outlook\n- **Foot Traffic Decrease**: During the monsoon season (May\u2013September), foot traffic typically drops by 10\u201315% due to adverse weather conditions [Weather Impact Guide].\n- **Delivery Demand Increase**: Conversely, delivery orders increase by 20\u201330% as customers prefer to stay indoors [Weather Impact Guide].\n- **Hot Beverage Sales**: Sales of hot beverages rise by 15\u201325%, while cold beverage sales drop by 10\u201315% during this period [Weather Impact Guide].\n\n### Promotions\n- **Delivery Promotions**: Implement promotions on delivery platforms when rain is forecasted, such as free ",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a thorough analysis of the sales drop during the rainy season, backed by specific data and actionable strategies tailored to the coffee shop industry."
+      }
+    },
+    {
+      "id": 18,
+      "category": "explanatory",
+      "difficulty": "complex",
+      "question": "Explain the relationship between discount rates and customer purchase behavior in our historical data",
+      "why_rag_needed": "Discount data exists but no analytical framework for interpretation",
+      "success": true,
+      "latency_seconds": 29.3,
+      "agents_used": [
+        "historical"
+      ],
+      "rag_used": false,
+      "answer_length": 1117,
+      "answer_preview": "- **Discount Rate Impact**: Higher discount rates generally correlate with increased customer purchase behavior, as evidenced by the data.\n  \n- **Top Items**:\n  - **Spicy Burger**: Avg. Discount: 15% \u2192 Avg. Daily Qty: 2.5\n  - **Deluxe Pizza**: Avg. Discount: 13.4% \u2192 Avg. Daily Qty: 2.44\n  - **Veggie Roll**: Avg. Discount: 11.9% \u2192 Avg. Daily Qty: 2.56\n  - **Crispy Pasta 12**: Avg. Discount: 9.6% \u2192 Avg. Daily Qty: 2.25\n  - **Herb Drink 9**: Avg. Discount: 10.2% \u2192 Avg. Daily Qty: 2.91\n\n- **Falling Items**: Items with no recent sales (e.g., Veggie Chicken, Sweet Burger 22) indicate a lack of custo",
+      "judge": {
+        "relevance": 5,
+        "depth": 4,
+        "domain_knowledge": 4,
+        "specificity": 4,
+        "actionability": 4,
+        "overall": 4,
+        "justification": "The answer effectively addresses the relationship between discount rates and purchase behavior with specific examples and actionable insights, though it could benefit from deeper analysis of the underlying factors influencing these trends."
+      }
+    },
+    {
+      "id": 19,
+      "category": "operational",
+      "difficulty": "medium",
+      "question": "What is the optimal order type split between delivery, takeaway, and dine-in for maximizing revenue?",
+      "why_rag_needed": "Order type data exists in CSV but no tool analyzes it",
+      "success": true,
+      "latency_seconds": 31.51,
+      "agents_used": [
+        "historical",
+        "strategy"
+      ],
+      "rag_used": true,
+      "answer_length": 2970,
+      "answer_preview": "# Optimal Order Type Split Action Plan\n\n## Demand Outlook\n- **Delivery**: Higher average ticket value than dine-in orders, making it a lucrative option. Anticipate spikes during rainy weather, necessitating extra packaging and ingredients [1].\n- **Takeaway**: Dominates morning hours, appealing to office workers and commuters. Speed is critical, with a target of under 3 minutes per order [2].\n- **Dine-In**: Customers tend to spend more time and often add desserts or second beverages, particularly during weekend afternoons [3]. \n\n### Recommended Order Type Split\n- **Delivery**: 40%\n- **Takeaway*",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a detailed, actionable plan with specific recommendations and insights tailored to maximizing revenue across different order types, demonstrating strong domain expertise."
+      }
+    },
+    {
+      "id": 20,
+      "category": "operational",
+      "difficulty": "medium",
+      "question": "What time of day generates the most orders and how should staffing be adjusted accordingly?",
+      "why_rag_needed": "Order time data exists but no tool provides time-of-day analysis",
+      "success": true,
+      "latency_seconds": 46.65,
+      "agents_used": [
+        "historical",
+        "forecasting"
+      ],
+      "rag_used": true,
+      "answer_length": 483,
+      "answer_preview": "- **Peak Order Times**: The busiest times of day are expected to be between **10 AM - 12 PM** and **5 PM - 7 PM**.  \n- **Staffing Recommendations**:  \n  - Increase staff by **2** during these peak hours on the busiest days (April 27 and 28) to effectively manage the increased demand.  \n- **Inventory Focus**: Ensure adequate stock of top items like **Spicy Burger** and **Veggie Roll**, which are anticipated to see higher demand during these periods.  \n(Source: [Operations Guide])",
+      "judge": {
+        "relevance": 5,
+        "depth": 4,
+        "domain_knowledge": 4,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides specific peak times, actionable staffing recommendations, and inventory focus, demonstrating strong relevance and domain knowledge."
+      }
+    },
+    {
+      "id": 21,
+      "category": "comparative",
+      "difficulty": "medium",
+      "question": "How does our weekend performance differ from weekdays and what strategies should we use for each?",
+      "why_rag_needed": "Weekend flag exists in data but no strategic framework is available",
+      "success": true,
+      "latency_seconds": 28.42,
+      "agents_used": [
+        "historical",
+        "strategy"
+      ],
+      "rag_used": true,
+      "answer_length": 3741,
+      "answer_preview": "# Weekend vs Weekday Performance Analysis and Action Plan\n\n## Demand Outlook\n- **Weekends**: Expect 20-30% higher foot traffic compared to weekdays, with Saturday being the busiest day. Sunday afternoons see increased dine-in traffic as families visit [Operations Guide].\n- **Weekdays**: Mornings are dominated by takeaway and delivery orders from office workers, indicating a need for quick service and convenience.\n\n## Promotions\n- **Weekend Promotions**:\n  - Launch holiday-specific menu items 3-5 days before major holidays to attract weekend diners [Holiday Impact Guide].\n  - Offer combo deals ",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a thorough analysis of weekend versus weekday performance, detailed strategies for promotions, staffing, and inventory management, demonstrating deep industry knowledge and offering actionable insights."
+      }
+    },
+    {
+      "id": 22,
+      "category": "comparative",
+      "difficulty": "complex",
+      "question": "Compare our sales performance during Poya days versus regular days and explain what drives the difference",
+      "why_rag_needed": "Holiday tool shows impact but doesn't provide deep causal analysis",
+      "success": true,
+      "latency_seconds": 36.31,
+      "agents_used": [
+        "holiday",
+        "historical"
+      ],
+      "rag_used": true,
+      "answer_length": 1086,
+      "answer_preview": "- **Sales Performance Comparison:**\n  - **Poya Days:**\n    - Increase in cafe traffic by **10\u201320%** as people seek alcohol-free venues [1].\n    - Dine-in traffic significantly increases as families and groups visit cafes.\n    - Pre-Poya (1 day before): Slight increase in takeaway orders.\n    - Post-Poya (1 day after): Traffic returns to normal levels.\n\n  - **Regular Days:**\n    - Sales are stable with no significant spikes or drops.\n    - Typical daily sales do not benefit from the cultural significance of Poya days.\n\n- **Drivers of Difference:**\n  - **Cultural Significance:** Poya days are re",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 4,
+        "overall": 5,
+        "justification": "The answer provides a comprehensive analysis of sales performance differences, backed by cultural insights and specific drivers, making it highly relevant and actionable."
+      }
+    },
+    {
+      "id": 23,
+      "category": "predictive_reasoning",
+      "difficulty": "complex",
+      "question": "If we introduce a new hot beverage during the cool season, what should we expect in terms of demand based on our historical patterns?",
+      "why_rag_needed": "No tool handles hypothetical new product scenarios with domain reasoning",
+      "success": true,
+      "latency_seconds": 48.11,
+      "agents_used": [
+        "historical",
+        "forecasting"
+      ],
+      "rag_used": false,
+      "answer_length": 780,
+      "answer_preview": "- Based on historical patterns, introducing a new hot beverage during the cool season is expected to generate significant demand.\n- The average daily quantity sold for existing hot beverages (e.g., Herb Drink 9) is approximately **2.91** units.\n- Monthly demand for hot beverages can be projected around **154** units, based on current sales data.\n- Given the confidence intervals for demand forecasting, we can expect daily sales to range from **0 to 22.27** units.\n- To meet this expected demand, it is recommended to ensure adequate inventory of the new hot beverage and increase staffing on the b",
+      "judge": {
+        "relevance": 5,
+        "depth": 4,
+        "domain_knowledge": 4,
+        "specificity": 4,
+        "actionability": 5,
+        "overall": 4,
+        "justification": "The answer effectively addresses the question with relevant historical data and actionable recommendations, though it could benefit from deeper insights into customer preferences or specific marketing strategies."
+      }
+    },
+    {
+      "id": 24,
+      "category": "predictive_reasoning",
+      "difficulty": "complex",
+      "question": "What would happen to our overall revenue if we removed the bottom 5 performing items from the menu?",
+      "why_rag_needed": "Tools can identify bottom items but can't reason about removal impact",
+      "success": true,
+      "latency_seconds": 17.44,
+      "agents_used": [
+        "historical"
+      ],
+      "rag_used": false,
+      "answer_length": 624,
+      "answer_preview": "- **Total Monthly Revenue from Bottom 5 Performing Items**: \n  - Veggie Chicken: 0 qty * avg_ticket (not applicable)\n  - Sweet Burger 22: 0 qty * avg_ticket (not applicable)\n  - Spicy Burger 9: 0 qty * avg_ticket (not applicable)\n  - Crispy Sandwich 22: 0 qty * avg_ticket (not applicable)\n  - Veggie Roll 9: 0 qty * avg_ticket (not applicable)\n\n- **Total Revenue Loss**: \n  - Since all bottom 5 items have a latest quantity of 0, removing them will not impact overall revenue.\n\n- **Conclusion**: \n  - Removing the bottom 5 performing items will result in no change to overall revenue, as they curren",
+      "judge": {
+        "relevance": 5,
+        "depth": 3,
+        "domain_knowledge": 3,
+        "specificity": 4,
+        "actionability": 4,
+        "overall": 4,
+        "justification": "The answer directly addresses the question and provides a clear conclusion based on the data, but lacks deeper insights into potential impacts on customer perception or menu optimization strategies."
+      }
+    },
+    {
+      "id": 25,
+      "category": "contextual_advice",
+      "difficulty": "complex",
+      "question": "As a new coffee shop owner in Negombo, what are the top 5 things I should know about running my business based on the data patterns you've seen?",
+      "why_rag_needed": "Requires synthesizing data insights with business advisory knowledge",
+      "success": true,
+      "latency_seconds": 102.71,
+      "agents_used": [
+        "historical",
+        "forecasting",
+        "holiday",
+        "weather",
+        "strategy"
+      ],
+      "rag_used": true,
+      "answer_length": 3476,
+      "answer_preview": "# Comprehensive Action Plan for Coffee Shop in Negombo\n\n## Demand Outlook\n- **Busiest Days**: Prepare for increased demand on April 27 and 28, 2026, with expected quantities of 8.06 and 7.94 respectively. Ensure adequate staffing and inventory for these days.\n- **Weather Considerations**: Anticipate minimal impact from rain on food sales (decrease of 2.1%) and a slight decrease of 1.54% on other categories. Hot drinks see higher sales in cooler temperatures (avg. 2.62 units), while cold drinks increase slightly in warmer weather. Maintain a balanced inventory of both hot and cold beverages [We",
+      "judge": {
+        "relevance": 5,
+        "depth": 5,
+        "domain_knowledge": 5,
+        "specificity": 5,
+        "actionability": 5,
+        "overall": 5,
+        "justification": "The answer provides a detailed and actionable plan tailored to the specific context of running a coffee shop in Negombo, demonstrating deep industry knowledge and addressing various operational aspects."
+      }
+    }
+  ]
+}

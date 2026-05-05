@@ -1,0 +1,142 @@
+[
+  {
+    "id": 1,
+    "category": "historical",
+    "question": "What were the top selling items last March?",
+    "expected_agents": ["historical"],
+    "difficulty": "simple"
+  },
+  {
+    "id": 2,
+    "category": "historical",
+    "question": "Which items have been declining in sales over the past 6 months?",
+    "expected_agents": ["historical"],
+    "difficulty": "simple"
+  },
+  {
+    "id": 3,
+    "category": "historical",
+    "question": "Show me the discount patterns from last December",
+    "expected_agents": ["historical"],
+    "difficulty": "simple"
+  },
+  {
+    "id": 4,
+    "category": "forecasting",
+    "question": "How much will I sell next month?",
+    "expected_agents": ["forecasting"],
+    "difficulty": "simple"
+  },
+  {
+    "id": 5,
+    "category": "forecasting",
+    "question": "What are the predicted busiest days in the next 2 weeks?",
+    "expected_agents": ["forecasting"],
+    "difficulty": "simple"
+  },
+  {
+    "id": 6,
+    "category": "forecasting",
+    "question": "Forecast daily demand for July 2025",
+    "expected_agents": ["forecasting"],
+    "difficulty": "medium"
+  },
+  {
+    "id": 7,
+    "category": "holiday",
+    "question": "How do Poya days affect my sales?",
+    "expected_agents": ["holiday"],
+    "difficulty": "simple"
+  },
+  {
+    "id": 8,
+    "category": "holiday",
+    "question": "What impact do holidays have on coffee shop sales in April?",
+    "expected_agents": ["holiday"],
+    "difficulty": "simple"
+  },
+  {
+    "id": 9,
+    "category": "weather",
+    "question": "How does rainy weather affect my sales?",
+    "expected_agents": ["weather"],
+    "difficulty": "simple"
+  },
+  {
+    "id": 10,
+    "category": "weather",
+    "question": "What happens to cold drink sales when temperature rises?",
+    "expected_agents": ["weather"],
+    "difficulty": "simple"
+  },
+  {
+    "id": 11,
+    "category": "strategy",
+    "question": "What should I do to prepare my coffee shop for the monsoon season?",
+    "expected_agents": ["strategy"],
+    "difficulty": "medium"
+  },
+  {
+    "id": 12,
+    "category": "strategy",
+    "question": "Give me a comprehensive business plan for next month",
+    "expected_agents": ["strategy"],
+    "difficulty": "complex"
+  },
+  {
+    "id": 13,
+    "category": "visualization",
+    "question": "Show me a chart of sales trends over the last 6 months",
+    "expected_agents": ["visualization"],
+    "difficulty": "simple"
+  },
+  {
+    "id": 14,
+    "category": "visualization",
+    "question": "Create a bar chart of top 10 selling items this year",
+    "expected_agents": ["visualization"],
+    "difficulty": "simple"
+  },
+  {
+    "id": 15,
+    "category": "multi_agent",
+    "question": "Forecast next month's sales and tell me how holidays will affect them",
+    "expected_agents": ["forecasting", "holiday"],
+    "difficulty": "medium"
+  },
+  {
+    "id": 16,
+    "category": "multi_agent",
+    "question": "Based on historical data and weather patterns, what should I stock more of next month?",
+    "expected_agents": ["historical", "weather", "strategy"],
+    "difficulty": "complex"
+  },
+  {
+    "id": 17,
+    "category": "multi_agent",
+    "question": "Compare last year's December performance with this year's forecast and recommend a strategy",
+    "expected_agents": ["historical", "forecasting", "strategy"],
+    "difficulty": "complex"
+  },
+  {
+    "id": 18,
+    "category": "what_if",
+    "question": "What if there is heavy rain next week, how will it affect demand?",
+    "expected_agents": ["forecasting", "weather"],
+    "difficulty": "medium"
+  },
+  {
+    "id": 19,
+    "category": "what_if",
+    "question": "If there's a holiday next Monday, what should I expect for sales?",
+    "expected_agents": ["forecasting", "holiday"],
+    "difficulty": "medium"
+  },
+  {
+    "id": 20,
+    "category": "conversational",
+    "question": "Hello, what can you help me with?",
+    "expected_agents": [],
+    "difficulty": "simple"
+  }
+]

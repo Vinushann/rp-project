@@ -113,6 +113,7 @@ export async function streamVinushanChat(message, conversationHistory = [], call
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let currentEvent = null;
   
   while (true) {
     const { done, value } = await reader.read();
@@ -124,8 +125,6 @@ export async function streamVinushanChat(message, conversationHistory = [], call
     // Process complete SSE messages
     const lines = buffer.split('\n');
     buffer = lines.pop() || ''; // Keep incomplete line in buffer
-    
-    let currentEvent = null;
     
     for (const line of lines) {
       if (line.startsWith('event: ')) {
@@ -140,6 +139,9 @@ export async function streamVinushanChat(message, conversationHistory = [], call
               break;
             case 'query_analysis':
               callbacks.onQueryAnalysis?.(data);
+              break;
+            case 'rag_retrieval':
+              callbacks.onRagRetrieval?.(data);
               break;
             case 'agent_start':
               callbacks.onAgentStart?.(data);
@@ -170,6 +172,9 @@ export async function streamVinushanChat(message, conversationHistory = [], call
               break;
             case 'agent_end':
               callbacks.onAgentEnd?.(data);
+              break;
+            case 'xai_explanation':
+              callbacks.onXaiExplanation?.(data);
               break;
             case 'run_end':
               callbacks.onRunEnd?.(data);
@@ -655,4 +660,84 @@ export async function updateConfidenceSettings(settings) {
     method: 'POST',
     body: JSON.stringify(settings),
   });
+}
+
+
+// ============================================
+// VISHVA AGENT API (Agentic AI)
+// ============================================
+
+/**
+ * Ping the agent subsystem
+ */
+export async function pingAgent() {
+  return apiRequest('/api/v1/vishva/agent/ping');
+}
+
+/**
+ * Send a message to the Menu Intelligence Agent.
+ * The agent autonomously decides which tools to use.
+ * @param {string} message - Natural language message
+ * @param {string} sessionId - Session identifier for conversation continuity
+ * @returns {Promise<{reply: string, tools_used: string[], steps: object[]}>}
+ */
+export async function sendAgentMessage(message, sessionId = 'default') {
+  return apiRequest('/api/v1/vishva/agent/chat', {
+    method: 'POST',
+    body: JSON.stringify({ message, session_id: sessionId }),
+  });
+}
+
+/**
+ * Stream the agent's reasoning and tool usage in real-time via SSE.
+ * @param {string} message - Natural language message
+ * @param {object} callbacks - { onThought, onToolStart, onToolResult, onDone, onError }
+ * @param {string} sessionId - Session identifier
+ * @param {AbortSignal} signal - Optional abort signal to cancel the stream
+ */
+export function streamAgentChat(message, callbacks = {}, sessionId = 'default', signal = null) {
+  const params = new URLSearchParams({ message, session_id: sessionId });
+  const url = `${API_BASE_URL}/api/v1/vishva/agent/chat-stream?${params}`;
+
+  const eventSource = new EventSource(url);
+
+  eventSource.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data);
+
+      switch (data.type) {
+        case 'thought':
+          callbacks.onThought?.(data.content);
+          break;
+        case 'tool_start':
+          callbacks.onToolStart?.(data.tool, data.input);
+          break;
+        case 'tool_result':
+          callbacks.onToolResult?.(data.tool, data.result);
+          break;
+        case 'done':
+          callbacks.onDone?.();
+          eventSource.close();
+          break;
+        case 'error':
+          callbacks.onError?.(data.message);
+          eventSource.close();
+          break;
+      }
+    } catch {
+      // ignore parse errors on keepalive comments
+    }
+  };
+
+  eventSource.onerror = () => {
+    callbacks.onError?.('Connection lost');
+    eventSource.close();
+  };
+
+  // Support aborting via signal
+  if (signal) {
+    signal.addEventListener('abort', () => eventSource.close());
+  }
+
+  return eventSource;
 }

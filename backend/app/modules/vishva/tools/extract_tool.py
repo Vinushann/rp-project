@@ -1,25 +1,28 @@
 from dotenv import load_dotenv
-from browser_use import Agent, ChatBrowserUse
+from browser_use import Agent
+from browser_use.browser.profile import BrowserProfile
+from browser_use.llm.browser_use.chat import ChatBrowserUse
+import asyncio
 import json
 from datetime import datetime
 import os
+import sys
 
-# Load .env from both the backend root and the module directory
+# Load .env from the backend root directory (single source of truth)
 backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 load_dotenv(os.path.join(backend_dir, '.env'))
 
-# Also try module-level .env as fallback
-module_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-load_dotenv(os.path.join(module_dir, '.env'))
 
-
-def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
+def extract_menu_data(url: str, output_dir: str = "data/raw", headless: bool = False) -> dict:
     """
-    Tool to extract menu data from a website.
+    Tool to extract menu data from a website (synchronous version).
+    NOTE: Only works when called from a standalone script (not inside an existing event loop).
+    For use inside FastAPI/uvicorn, use extract_menu_data_async instead.
     
     Args:
         url: The URL to scrape
         output_dir: Directory to save raw output
+        headless: Whether to run the browser in headless mode. False = visible browser window.
         
     Returns:
         dict with keys: success, file_path, message, item_count
@@ -64,7 +67,8 @@ def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
         Include ALL items in the JSON array.
         Your entire response should be valid JSON that starts with [ and ends with ].
         """,
-        llm=ChatBrowserUse(),
+        llm=ChatBrowserUse(api_key=os.getenv("BROWSER_USE_API_KEY")),
+        browser_profile=BrowserProfile(headless=headless),
     )
     
     try:
@@ -116,6 +120,13 @@ def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
             print("[OK] Used string conversion (fallback)")
         
         if text_output:
+            # Ensure text_output is a string (agent may return non-serializable objects like ActionResult)
+            if not isinstance(text_output, str):
+                try:
+                    text_output = json.dumps(text_output, ensure_ascii=False, indent=2, default=str)
+                except (TypeError, ValueError):
+                    text_output = str(text_output)
+
             # Generate timestamp and filename
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             output_filename = os.path.join(output_dir, f"raw_output_{timestamp}.txt")
@@ -171,3 +182,27 @@ def extract_menu_data(url: str, output_dir: str = "data/raw") -> dict:
             "message": error_msg,
             "item_count": 0
         }
+
+
+async def extract_menu_data_async(url: str, output_dir: str = "data/raw", headless: bool = False) -> dict:
+    """
+    Async version of extract_menu_data. Safe to call from within an existing event loop
+    (e.g. FastAPI/uvicorn). Runs the browser agent in a separate thread with its own
+    ProactorEventLoop to avoid Windows subprocess issues.
+    
+    Args:
+        url: The URL to scrape
+        output_dir: Directory to save raw output
+        headless: Whether to run the browser in headless mode. False = visible browser window.
+        
+    Returns:
+        dict with keys: success, file_path, message, item_count
+    """
+    def _run_in_thread():
+        # On Windows, ensure the thread uses ProactorEventLoop for subprocess support
+        if sys.platform == 'win32':
+            asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        return extract_menu_data(url, output_dir=output_dir, headless=headless)
+    
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _run_in_thread)

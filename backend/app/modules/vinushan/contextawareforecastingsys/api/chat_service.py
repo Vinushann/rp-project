@@ -11,8 +11,23 @@ from calendar import month_name
 from datetime import datetime
 from typing import List, Optional, Tuple
 
+import logging
+
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
+
+from ..rag.rag_service import RAGService
+
+logger = logging.getLogger(__name__)
+
+_rag_service: RAGService | None = None
+
+def _get_rag_service() -> RAGService:
+    """Get or create the RAG service singleton."""
+    global _rag_service
+    if _rag_service is None:
+        _rag_service = RAGService(auto_ingest=True)
+    return _rag_service
 
 # Disable CrewAI telemetry prompts before importing
 os.environ["CREWAI_TELEMETRY_OPT_OUT"] = "true"
@@ -357,8 +372,26 @@ Current question: {message}"""
         "user_question": enhanced_question,
     }
     
+    # Step 6b: Adaptive RAG retrieval (if the router says domain knowledge is needed)
+    needs_rag = routing_result.get("needs_rag", False)
+    rag_context = ""
+    rag_citation_data = {}
+    if needs_rag:
+        try:
+            rag_svc = _get_rag_service()
+            rag_citation_data = rag_svc.adaptive_retrieve(message)
+            rag_context = rag_citation_data.get("context", "")
+        except Exception as rag_err:
+            logger.warning(f"RAG retrieval failed (non-fatal): {rag_err}")
+
     # Step 7: Build and run the dynamic crew
     builder = DynamicCrewBuilder()
+    if rag_context:
+        builder.set_rag_context(
+            rag_context,
+            citations=rag_citation_data.get("citations", []),
+            sources=rag_citation_data.get("source_documents", []),
+        )
     crew = builder.build_crew(
         agents_needed=agents_needed,
         inputs=inputs,
@@ -388,5 +421,6 @@ Current question: {message}"""
         agents_used=agents_needed,
         reasoning_steps=reasoning_steps,
         routing_reasoning=routing_result.get("reasoning"),
-        charts=charts
+        charts=charts,
+        rag_used=bool(rag_context),
     )

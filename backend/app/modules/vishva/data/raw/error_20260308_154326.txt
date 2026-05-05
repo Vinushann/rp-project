@@ -1,0 +1,122 @@
+Error at 2026-03-08 15:43:26.572119
+Type: NotImplementedError
+Details: 
+
+Full Traceback:
+Traceback (most recent call last):
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 76, in extract_menu_data
+    result = agent.run_sync()
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\agent\service.py", line 4013, in run_sync
+    return asyncio.run(self.run(max_steps=max_steps, on_step_start=on_step_start, on_step_end=on_step_end))
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ASUS\anaconda3\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "C:\Users\ASUS\anaconda3\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\ASUS\anaconda3\Lib\asyncio\base_events.py", line 725, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\lmnr\opentelemetry_lib\decorators\__init__.py", line 266, in wrap
+    return await fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\utils.py", line 384, in wrapper
+    result = await func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\agent\service.py", line 2624, in run
+    raise e
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\agent\service.py", line 2527, in run
+    await self.browser_session.start()
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\observability.py", line 73, in async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\browser\session.py", line 675, in start
+    await start_event.event_result(raise_if_any=True, raise_if_none=False)
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\bubus\models.py", line 574, in event_result
+    valid_results = await self.event_results_filtered(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        timeout=timeout, include=include, raise_if_any=raise_if_any, raise_if_none=raise_if_none
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\bubus\models.py", line 516, in event_results_filtered
+    raise original_error
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\bubus\models.py", line 490, in event_results_filtered
+    await event_result
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\bubus\models.py", line 889, in wait_for_handler_to_complete_and_return_result
+    raise self.error if isinstance(self.error, BaseException) else Exception(self.error)  # pyright: ignore[reportUnnecessaryIsInstance]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\bubus\service.py", line 1070, in _execute_handlers
+    await self.execute_handler(event, handler, timeout=timeout)
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\bubus\service.py", line 1128, in execute_handler
+    result_value: Any = await asyncio.wait_for(handler_task, timeout=event_result.timeout)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ASUS\anaconda3\Lib\asyncio\tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\browser\watchdog_base.py", line 153, in unique_handler
+    result = await actual_handler(event)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\observability.py", line 73, in async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\browser\session.py", line 762, in on_BrowserStartEvent
+    BrowserLaunchResult, await launch_event.event_result(raise_if_none=True, raise_if_any=True)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\bubus\models.py", line 574, in event_result
+    valid_results = await self.event_results_filtered(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        timeout=timeout, include=include, raise_if_any=raise_if_any, raise_if_none=raise_if_none
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\bubus\models.py", line 516, in event_results_filtered
+    raise original_error
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\bubus\models.py", line 490, in event_results_filtered
+    await event_result
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\bubus\models.py", line 889, in wait_for_handler_to_complete_and_return_result
+    raise self.error if isinstance(self.error, BaseException) else Exception(self.error)  # pyright: ignore[reportUnnecessaryIsInstance]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\bubus\service.py", line 1070, in _execute_handlers
+    await self.execute_handler(event, handler, timeout=timeout)
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\bubus\service.py", line 1128, in execute_handler
+    result_value: Any = await asyncio.wait_for(handler_task, timeout=event_result.timeout)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ASUS\anaconda3\Lib\asyncio\tasks.py", line 507, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\browser\watchdog_base.py", line 153, in unique_handler
+    result = await actual_handler(event)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\observability.py", line 73, in async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\browser\watchdogs\local_browser_watchdog.py", line 56, in on_BrowserLaunchEvent
+    process, cdp_url = await self._launch_browser()
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\observability.py", line 73, in async_wrapper
+    return await func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\browser_use\browser\watchdogs\local_browser_watchdog.py", line 146, in _launch_browser
+    subprocess = await asyncio.create_subprocess_exec(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Users\ASUS\anaconda3\Lib\asyncio\subprocess.py", line 224, in create_subprocess_exec
+    transport, protocol = await loop.subprocess_exec(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        stderr=stderr, **kwds)
+        ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ASUS\anaconda3\Lib\asyncio\base_events.py", line 1802, in subprocess_exec
+    transport = await self._make_subprocess_transport(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        protocol, popen_args, False, stdin, stdout, stderr,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        bufsize, **kwargs)
+        ^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ASUS\anaconda3\Lib\asyncio\base_events.py", line 539, in _make_subprocess_transport
+    raise NotImplementedError
+NotImplementedError

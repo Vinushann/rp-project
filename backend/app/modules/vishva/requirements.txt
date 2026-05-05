@@ -8,3 +8,8 @@ numpy
 joblib
 nltk
 scipy
+
+# Agentic AI dependencies
+langchain-core
+langchain-ollama
+langgraph
