@@ -183,41 +183,55 @@ async def analyze_text(request: TextRequest):
 async def analyze_reviews(request: ScrapeRequest):
     """
     Scrape and analyze reviews from Google Maps.
+    Uses undetected-chromedriver for reliable extraction.
     """
     if "google" not in request.url or "maps" not in request.url:
         raise HTTPException(status_code=400, detail="Invalid URL. Please provide a valid Google Maps link.")
     
     try:
         from app.modules.nandika.scraper import scrape_google_reviews
-        
-        # Run blocking scraper in thread pool to avoid blocking the event loop
-        loop = asyncio.get_event_loop()
-        raw_reviews = await loop.run_in_executor(
-            _executor, 
-            scrape_google_reviews, 
-            request.url, 
-            request.limit
-        )
-        
-        if not raw_reviews:
-            return {"message": "No reviews found.", "data": [], "total_scraped": 0, "statistics": {}}
-        
-        ai_engine = get_ai_engine()
-        analyzed_results = []
-        
-        for review_text in raw_reviews:
-            result = ai_engine.predict(review_text)
-            analyzed_results.append(result)
 
+        loop = asyncio.get_event_loop()
+        scrape_result = await loop.run_in_executor(
+            _executor,
+            scrape_google_reviews,
+            request.url,
+            request.limit,
+        )
+
+        raw_reviews = scrape_result.get("reviews", [])
+        is_demo = scrape_result.get("is_demo", False)
+        note = scrape_result.get("note", "")
+
+        if not raw_reviews:
+            return {
+                "message": "No reviews found for this location.",
+                "data": [],
+                "total_scraped": 0,
+                "statistics": {},
+                "is_demo": False,
+                "note": note or "The scraper completed but found no reviews at this URL.",
+            }
+
+        ai_engine = get_ai_engine()
+        analyzed_results = [ai_engine.predict(text) for text in raw_reviews]
         summary = calculate_statistics(analyzed_results)
 
         return {
             "mode": "scraper",
             "total_scraped": len(analyzed_results),
-            "statistics": summary
+            "statistics": summary,
+            "is_demo": False,
+            "note": note,
         }
+    except RuntimeError as e:
+        # Scraper raised a specific error (no reviews found, page issues, etc.)
+        print(f"Scraper RuntimeError: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
-        print(f"Error in analyze_reviews: {e}")
+        print(f"Unexpected error in analyze_reviews: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Scraping failed: {str(e)}")
 
 

@@ -58,6 +58,14 @@ coverage/
 backend/app/modules/nandika/my_sentiment_model_Roberta_1/
 backend/app/modules/nandika/my_sentiment_model/
 
+# Chrome profile created by the scraper (auto-recreated, never commit)
+**/.chrome_profile/
+
+# Scraper debug files
+backend/app/modules/nandika/debug_screenshot.png
+debug_wildish.png
+debug_scroll.png
+
 node_modules/
 __pycache__/
 .env.example
