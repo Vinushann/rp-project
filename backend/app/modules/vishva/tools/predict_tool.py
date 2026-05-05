@@ -162,37 +162,6 @@ def predict_single_item(item: Dict, components: Dict) -> Dict:
     agent_prediction = None
     agent_confidence = None
 
-    # --- HYBRID FALLBACK: Use LLM if confidence is low (< 0.6) ---
-    if ml_confidence < 0.6 and OllamaClient is not None:
-        print(f"    Low confidence ({ml_confidence:.2f}) for '{name}'. Using LLM fallback...")
-        try:
-            model_name = os.getenv('VISHVA_OLLAMA_MODEL', 'qwen2.5:7b')
-            host = os.getenv('OLLAMA_URL', 'http://localhost:11434')
-            client = OllamaClient(host=host)
-            
-            categories = list(all_probs.keys())
-            prompt = (
-                f"Categorize the menu item '{name}' ({item.get('description', '')}) "
-                f"into one of these categories: {categories}.\n"
-                "Return ONLY the category name."
-            )
-            
-            response = client.chat(model=model_name, messages=[{'role': 'user', 'content': prompt}])
-            llm_category = response['message']['content'].strip().strip("'").strip('"')
-            
-            # Verify LLM returned a valid category
-            for cat in categories:
-                if cat.lower() in llm_category.lower():
-                    print(f"  LLM corrected '{name}': {ml_prediction} -> {cat}")
-                    agent_prediction = cat
-                    agent_confidence = 0.95
-                    # Update final prediction for backward compatibility
-                    prediction = agent_prediction
-                    confidence = agent_confidence
-                    break
-        except Exception as e:
-            print(f"  LLM fallback failed: {e}")
-
     return {
         'name': name,
         'price': price,

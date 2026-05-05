@@ -36,16 +36,12 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
     print(f"File loaded ({len(content)} characters)")
     
     # Step 1: Normalize mixed quote escaping issues
-    # The browser agent sometimes produces inconsistent escaping where some
-    # fields have \" and others have unescaped "
     if r'\"' in content:
         print("    Detected escaped quotes, normalizing...")
-        # Handle double-escaped quotes first: \\\"   PLACEHOLDER (these are literal quotes in values like inch marks)
-        content = content.replace('\\\\\\"', '<<INCH_QUOTE>>')
-        # Now unescape structural quotes: \"   "
-        content = content.replace(r'\"', '"')
-        # Restore literal quotes as empty string (remove inch symbols that break JSON)
-        content = content.replace('<<INCH_QUOTE>>', '')
+        # Handle double-escaped quotes first: \\\"
+        content = content.replace('\\\\\\"', '<<TRIPLE_QUOTE>>')
+        content = content.replace('\\"', '"')
+        content = content.replace('<<TRIPLE_QUOTE>>', '"')
     
     # Handle escaped newlines and other sequences
     if r'\n' in content:
@@ -53,29 +49,46 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
         content = content.replace(r'\n', '\n')
         content = content.replace(r'\/', '/')
         content = content.replace(r'\t', '\t')
-    
-    # Step 1.5: Fix unescaped quotes inside JSON string values
-    # e.g. "name": "MacBook Pro 16" M4 Max"   "name": "MacBook Pro 16 M4 Max"
-    # This happens when product names contain inch symbols (") or similar
-    def fix_unescaped_quotes_in_values(text):
-        """Remove stray quotes inside JSON string values that break parsing."""
-        lines = text.split('\n')
-        fixed_lines = []
-        for line in lines:
-            # Match lines like:  "key": "value with unescaped " quotes"
-            m = re.match(r'^(\s*"[^"]+"\s*:\s*")(.*)(",?\s*}?,?\s*)$', line)
-            if m:
-                prefix, value, suffix = m.group(1), m.group(2), m.group(3)
-                # Remove any unescaped quotes within the value itself
-                value = value.replace('"', '')
-                fixed_lines.append(prefix + value + suffix)
-            else:
-                fixed_lines.append(line)
-        return '\n'.join(fixed_lines)
-    
-    content = fix_unescaped_quotes_in_values(content)
 
-    # Step 2: Try to parse as JSON directly
+    # Step 2: Advanced JSON repair logic
+    def repair_json_content(text):
+        """Robust cleaning for common LLM JSON errors."""
+        
+        # A) Fix unescaped quotes inside JSON string values
+        # This matches "key": "value with "quotes" inside"
+        # It's better than the line-by-line version as it handles minified JSON
+        def quote_fixer(match):
+            prefix = match.group(1)
+            value = match.group(2)
+            suffix = match.group(3)
+            # Remove quotes from the value itself
+            clean_value = value.replace('"', '')
+            return prefix + clean_value + suffix
+            
+        # Match "key": "value" pattern globally
+        text = re.sub(r'("[^"]+"\s*:\s*")(.*?)("\s*[,}\]])', quote_fixer, text, flags=re.DOTALL)
+        
+        # B) Remove trailing commas in arrays/objects
+        text = re.sub(r',\s*([\]}])', r'\1', text)
+        
+        # C) Fix truncated JSON (CRITICAL for long extractions)
+        if text.strip().startswith('['):
+            # If it ends abruptly, try to close it
+            text = text.strip()
+            if not text.endswith(']'):
+                print("    Detected truncated JSON array, attempting to repair...")
+                # Find the last complete object "}"
+                last_brace = text.rfind('}')
+                if last_brace != -1:
+                    # Keep everything up to the last complete object and close the array
+                    text = text[:last_brace + 1] + "\n]"
+                    print(f"    Repaired JSON by closing at last complete item.")
+        
+        return text
+
+    content = repair_json_content(content)
+
+    # Step 3: Try to parse as JSON directly
     data = None
     parse_method = None
     
@@ -86,57 +99,64 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
     except json.JSONDecodeError as e:
         print(f"    Direct parsing failed: {str(e)[:100]}")
     
-    # Step 3: Try to extract JSON from markdown code blocks
+    # Step 4: Try to extract JSON from markdown code blocks
     if not data:
         print("    Trying markdown extraction...")
         json_match = re.search(r'```json\s*([\s\S]*?)\s*```', content)
+        if not json_match:
+            json_match = re.search(r'```\s*([\s\S]*?)\s*```', content)
+            
         if json_match:
             try:
-                extracted = json_match.group(1)
+                extracted = repair_json_content(json_match.group(1))
                 data = json.loads(extracted)
                 parse_method = "markdown"
                 print("Extracted JSON from markdown code block")
             except json.JSONDecodeError as e:
                 print(f"    Markdown extraction failed: {str(e)[:100]}")
     
-    # Step 4: Try to find JSON array anywhere in the text
+    # Step 5: Try to find JSON array anywhere in the text
     if not data:
         print("    Trying array extraction...")
-        json_array_match = re.search(r'\[\s*\{[\s\S]*\}\s*\]', content, re.DOTALL)
+        # Use DOTALL to match across lines
+        json_array_match = re.search(r'\[\s*\{.*\}\s*\]', content, re.DOTALL)
+        if not json_array_match:
+            # If truncated, it might not have the closing ]
+            json_array_match = re.search(r'\[\s*\{.*', content, re.DOTALL)
+            
         if json_array_match:
             try:
-                extracted = json_array_match.group(0)
+                extracted = repair_json_content(json_array_match.group(0))
                 data = json.loads(extracted)
                 parse_method = "array_extraction"
                 print("Extracted JSON array from text")
             except json.JSONDecodeError as e:
                 print(f"    Array extraction failed: {str(e)[:100]}")
     
-    # Step 5: Try to clean common JSON formatting issues
+    # Step 6: Last resort - extremely aggressive cleaning
     if not data:
-        print("    Attempting to fix common JSON issues...")
+        print("    Attempting last-resort cleaning...")
         
-        cleaned_content = content
+        # Find first [ and last ]
+        first_bracket = content.find('[')
+        last_bracket = content.rfind(']')
         
-        # Remove any text before the first [
-        first_bracket = cleaned_content.find('[')
         if first_bracket != -1:
-            cleaned_content = cleaned_content[first_bracket:]
-        
-        # Remove any text after the last ]
-        last_bracket = cleaned_content.rfind(']')
-        if last_bracket != -1:
-            cleaned_content = cleaned_content[:last_bracket + 1]
-        
-        # Remove any leading/trailing whitespace
-        cleaned_content = cleaned_content.strip()
-        
-        try:
-            data = json.loads(cleaned_content)
-            parse_method = "cleaned"
-            print("JSON parsed after cleaning")
-        except json.JSONDecodeError as e:
-            print(f"  All parsing attempts failed: {str(e)[:100]}")
+            if last_bracket > first_bracket:
+                cleaned_content = content[first_bracket:last_bracket + 1]
+            else:
+                # Truncated but starts with [
+                cleaned_content = content[first_bracket:]
+                last_brace = cleaned_content.rfind('}')
+                if last_brace != -1:
+                    cleaned_content = cleaned_content[:last_brace + 1] + "]"
+            
+            try:
+                data = json.loads(cleaned_content)
+                parse_method = "last_resort"
+                print("JSON parsed after aggressive cleaning")
+            except json.JSONDecodeError as e:
+                print(f"  All parsing attempts failed: {str(e)[:100]}")
             
             # Save debug file with both original and cleaned content
             debug_file = os.path.join(output_dir, "debug_failed_parse.txt")
@@ -154,7 +174,8 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
             
             return {
                 "success": False,
-                "file_path": debug_file,
+                "file_path": input_file,
+                "debug_file": debug_file,
                 "message": f"Failed to parse JSON: {str(e)[:100]}",
                 "item_count": 0
             }

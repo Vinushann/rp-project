@@ -158,6 +158,75 @@ def get_menu_data() -> str:
     })
 
 
+@tool
+def read_raw_file(file_path: str) -> str:
+    """Read the content of a raw extraction file or debug file.
+    Use this when clean_extracted_data fails and you need to see the raw content to understand why.
+    Returns the first 2000 characters of the file content."""
+    if not os.path.exists(file_path):
+        return json.dumps({"success": False, "message": f"File not found: {file_path}"})
+    
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = f.read(2000)
+        return json.dumps({"success": True, "content": content})
+    except Exception as e:
+        return json.dumps({"success": False, "message": str(e)})
+
+
+@tool
+async def solve_cleaning_issue(broken_content: str, error_message: str) -> str:
+    """Dynamically solve a cleaning issue by using the LLM to fix malformed JSON or text.
+    Input: the broken/raw content string and the error message from the cleaner.
+    Returns a JSON string with the fixed data or error message."""
+    from langchain_ollama import ChatOllama
+    from langchain_core.messages import HumanMessage, SystemMessage
+    
+    model_name = os.getenv("VISHVA_OLLAMA_MODEL", "qwen2.5:7b")
+    base_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
+    llm = ChatOllama(model=model_name, base_url=base_url, temperature=0)
+    
+    prompt = f"""
+    The following menu data extraction resulted in a JSON parsing error: {error_message}
+    
+    RAW CONTENT:
+    {broken_content}
+    
+    TASK:
+    1. Fix the formatting issues (unescaped quotes, broken structure, etc.).
+    2. Extract the menu items as a valid JSON list.
+    3. Each item MUST have: "name", "price", "category", and "description".
+    4. Return ONLY the JSON list.
+    """
+    
+    try:
+        response = await llm.ainvoke([HumanMessage(content=prompt)])
+        content = response.content.strip()
+        
+        # Extract JSON from markdown if needed
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0].strip()
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0].strip()
+            
+        # Validate it is valid JSON
+        data = json.loads(content)
+        
+        # Save the fixed data to the main menu file
+        main_filename = os.path.join(OUTPUT_DIR, "menu_data.json")
+        with open(main_filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+            
+        return json.dumps({
+            "success": True, 
+            "message": "Successfully fixed and saved the data using LLM",
+            "item_count": len(data),
+            "file_path": main_filename
+        })
+    except Exception as e:
+        return json.dumps({"success": False, "message": f"LLM could not fix the data: {str(e)}"})
+
+
 # Registry of all tools for the agent
 ALL_TOOLS = [
     extract_menu,
@@ -167,4 +236,6 @@ ALL_TOOLS = [
     predict_multiple_items,
     get_model_status,
     get_menu_data,
+    read_raw_file,
+    solve_cleaning_issue,
 ]

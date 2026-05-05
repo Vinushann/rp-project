@@ -17,7 +17,7 @@ ENDPOINTS:
 - GET  /model-status   - Get model training status/info
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Query
+from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File, Query, Form
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
@@ -177,6 +177,16 @@ class ConfidenceSettings(BaseModel):
 
 
 # ============================================
+# CLASSIFICATION ANALYSIS SCHEMAS
+# ============================================
+
+class ClassificationAnalysisRequest(BaseModel):
+    """Parameters for classification analysis"""
+    mode: str = "static" # "static" or "index"
+    qty_threshold: float = 3000
+    profit_threshold: float = 60
+
+# ============================================
 # ENDPOINTS
 # ============================================
 
@@ -201,6 +211,31 @@ async def chat(request: ChatRequest):
         session_id=request.session_id,
         module=MODULE_NAME
     )
+
+
+@router.get("/latest-raw")
+async def get_latest_raw():
+    """
+    Find the most recently created raw extraction file.
+    Useful for re-syncing the frontend if session state is lost.
+    """
+    raw_dir = os.path.join(MODULE_DIR, "data/raw")
+    if not os.path.exists(raw_dir):
+        return {"success": False, "message": "Raw data directory not found"}
+    
+    files = [f for f in os.listdir(raw_dir) if f.endswith(".txt") and "raw_output" in f]
+    if not files:
+        return {"success": False, "message": "No raw extraction files found"}
+    
+    # Sort by creation time (using filename timestamp is more reliable if available)
+    files.sort(reverse=True) # Assuming raw_output_YYYYMMDD_HHMMSS.txt format
+    
+    latest_file = os.path.join(raw_dir, files[0])
+    return {
+        "success": True, 
+        "file_path": latest_file,
+        "filename": files[0]
+    }
 
 
 @router.post("/extract", response_model=ExtractResponse)
@@ -683,15 +718,17 @@ async def export_predictions(
         elif format.lower() == "csv":
             output = io.StringIO()
             if predictions:
-                fieldnames = ['name', 'price', 'predicted_category', 'confidence']
+                # User requested only category (name included for reference)
+                fieldnames = ['name', 'predicted_category']
                 writer = csv.DictWriter(output, fieldnames=fieldnames)
-                writer.writeheader()
+                
+                # Write user-friendly headers
+                writer.writerow({'name': 'Item Name', 'predicted_category': 'Category'})
+                
                 for pred in predictions:
                     writer.writerow({
                         'name': pred.get('name', ''),
-                        'price': pred.get('price', ''),
-                        'predicted_category': pred.get('predicted_category', ''),
-                        'confidence': f"{pred.get('confidence', 0) * 100:.1f}%"
+                        'predicted_category': pred.get('predicted_category', '')
                     })
             
             output.seek(0)
@@ -759,6 +796,71 @@ async def export_predictions(
             
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/classification-pre-analyze")
+async def classification_pre_analyze(
+    file: UploadFile = File(...)
+):
+    """
+    Extract column names from an uploaded file for mapping.
+    """
+    try:
+        import pandas as pd
+        import io
+        content = await file.read()
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(io.BytesIO(content))
+        elif file.filename.endswith(('.xlsx', '.xls')):
+            df = pd.read_excel(io.BytesIO(content))
+        else:
+             raise HTTPException(status_code=400, detail="Unsupported file format. Please upload CSV or Excel.")
+        
+        return {"success": True, "columns": df.columns.tolist()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/classification-analysis")
+async def classification_analysis(
+    file: UploadFile = File(...),
+    mode: str = Query("static"),
+    qty_threshold: float = Query(3000),
+    profit_threshold: float = Query(60),
+    column_mapping: Optional[str] = Form(None)
+):
+    """
+    Process menu engineering classification from an uploaded file.
+    """
+    try:
+        from app.modules.vishva.tools.classification_tool import process_menu_classification
+        import json
+        
+        content = await file.read()
+        
+        mapping = None
+        if column_mapping:
+            try:
+                mapping = json.loads(column_mapping)
+            except:
+                pass
+        
+        result = process_menu_classification(
+            file_content=content,
+            filename=file.filename,
+            mode=mode,
+            qty_threshold=qty_threshold,
+            profit_threshold=profit_threshold,
+            column_mapping=mapping
+        )
+        
+        if not result["success"]:
+            raise HTTPException(status_code=400, detail=result["message"])
+            
+        return result
+        
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

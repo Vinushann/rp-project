@@ -235,6 +235,13 @@ export async function getLogs(limit = 100) {
 // ============================================
 
 /**
+ * Get the latest raw extraction file path
+ */
+export async function getLatestRawFile() {
+  return apiRequest('/api/v1/vishva/latest-raw');
+}
+
+/**
  * Extract menu data from a URL
  * @param {string} url - The restaurant menu URL to scrape
  * @returns {Promise<{success: boolean, message: string, item_count: number}>}
@@ -357,6 +364,64 @@ export async function exportPredictions(predictions, format) {
   }
 }
 
+/**
+ * Extract column names from a menu engineering file for mapping
+ * @param {File} file - CSV or Excel file
+ * @returns {Promise<{success: boolean, columns: string[]}>}
+ */
+export async function preAnalyzeClassification(file) {
+  const url = `${API_BASE_URL}/api/v1/vishva/classification-pre-analyze`;
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * Analyze menu classification (Menu Engineering) from an uploaded file
+ * @param {File} file - CSV or Excel file
+ * @param {string} mode - 'static' or 'index'
+ * @param {number} qtyThreshold - Quantity threshold for static mode
+ * @param {number} profitThreshold - Profit threshold for static mode
+ * @param {Object} columnMapping - Optional mapping of standard fields to file columns
+ */
+export async function analyzeClassification(file, mode = 'static', qtyThreshold = 3000, profitThreshold = 60, columnMapping = null) {
+  const params = new URLSearchParams({
+    mode,
+    qty_threshold: qtyThreshold,
+    profit_threshold: profitThreshold
+  });
+  const url = `${API_BASE_URL}/api/v1/vishva/classification-analysis?${params}`;
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  if (columnMapping) {
+    formData.append('column_mapping', JSON.stringify(columnMapping));
+  }
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+  
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+    throw new Error(error.detail || `HTTP error! status: ${response.status}`);
+  }
+  
+  return response.json();
+}
+
 // ============================================
 // ATHENA EMAIL SETTINGS API
 // ============================================
@@ -476,6 +541,7 @@ export default {
   trainModel,
   predictCategories,
   predictFromFile,
+  analyzeClassification,
   exportPredictions,
   getMenuData,
   getModelStatus,

@@ -11,11 +11,18 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { 
+  ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, 
+  Tooltip as ReChartsTooltip, Legend, ResponsiveContainer, 
+  PieChart, Pie, Cell, BarChart, Bar, LabelList
+} from 'recharts';
 import PingButton from '../../components/PingButton';
 import { 
   trainModel, 
   predictCategories,
   predictFromFile,
+  analyzeClassification,
+  preAnalyzeClassification,
   exportPredictions,
   getMenuData, 
   getModelStatus,
@@ -42,6 +49,7 @@ import {
   // Agent
   streamAgentChat,
   getLogs,
+  getLatestRawFile,
 } from '../../lib/api';
 
 const MODULE_NAME = 'vishva';
@@ -92,6 +100,8 @@ function VishvaPage() {
   const [mergeSource, setMergeSource] = useState([]);
   const [mergeTarget, setMergeTarget] = useState('');
   const [showMergeModal, setShowMergeModal] = useState(false);
+  const [rawFilePath, setRawFilePath] = useState('');
+  const [cleaning, setCleaning] = useState(false);
   
   // State for Model Performance
   const [modelPerformance, setModelPerformance] = useState(null);
@@ -117,6 +127,29 @@ function VishvaPage() {
   const [systemLogs, setSystemLogs] = useState([]);
   const [logType, setLogType] = useState('agent'); // 'agent' or 'system'
   const [pollingLogs, setPollingLogs] = useState(false);
+
+  // State for Menu Engineering (Classification)
+  const [classificationFile, setClassificationFile] = useState(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [classificationData, setClassificationData] = useState(null);
+  const [classificationParams, setClassificationParams] = useState({
+    mode: 'static',
+    qty_threshold: 3000,
+    profit_threshold: 60
+  });
+  const [selectedQuadrant, setSelectedQuadrant] = useState(null);
+
+  // State for Column Mapping
+  const [fileColumns, setFileColumns] = useState([]);
+  const [showMapping, setShowMapping] = useState(false);
+  const [columnMapping, setColumnMapping] = useState({
+    item_name: '',
+    qty: '',
+    margin: '',
+    price: '',
+    profit: '',
+    category: ''
+  });
 
   // State for errors
   const [error, setError] = useState(null);
@@ -148,6 +181,12 @@ function VishvaPage() {
   useEffect(() => {
     loadMenuData();
     loadModelStatus();
+    // Try to restore latest raw file path for cleaning
+    getLatestRawFile()
+      .then(res => {
+        if (res.success) setRawFilePath(res.file_path);
+      })
+      .catch(() => {});
     loadSystemLogs();
     
     // Poll for system logs every 5 seconds
@@ -375,7 +414,7 @@ function VishvaPage() {
       timestamp: new Date().toLocaleTimeString()
     }]);
 
-    const message = `Extract menu from ${extractUrl} and clean the data`;
+    const message = `Extract menu from ${extractUrl}. Do NOT clean the data yet.`;
 
     const es = streamAgentChat(message, {
       onThought: (text) => {
@@ -414,7 +453,19 @@ function VishvaPage() {
           else if (parsed.accuracy) summary = `✅ ${tool}: accuracy ${(parsed.accuracy * 100).toFixed(1)}%`;
           else if (parsed.model_exists === false) summary = `⚠️ ${tool}: No model found`;
           else if (parsed.total_items) summary = `✅ ${tool}: ${parsed.total_items} items in data`;
-        } catch { /* keep default summary */ }
+          
+          if (tool === 'extract_menu' && parsed.file_path) {
+            setRawFilePath(parsed.file_path);
+          }
+        } catch {
+          // If JSON parse fails, try to extract file_path using regex as fallback
+          if (tool === 'extract_menu') {
+            const match = result.match(/"file_path":\s*"([^"]+)"/);
+            if (match && match[1]) {
+              setRawFilePath(match[1]);
+            }
+          }
+        }
         setAgentThoughts(prev => [...prev, {
           type: 'status',
           message: summary,
@@ -431,6 +482,77 @@ function VishvaPage() {
       onError: (err) => {
         setError(err);
         setExtracting(false);
+        eventSourceRef.current = null;
+      },
+    }, 'default', null, { llm: 'ollama' });
+
+    eventSourceRef.current = es;
+  };
+  
+  const handleClean = async () => {
+    if (!rawFilePath) {
+      setError('No raw data to clean. Run extraction first.');
+      return;
+    }
+
+    setCleaning(true);
+    setError(null);
+    setAgentThoughts(prev => [...prev, {
+      type: 'status',
+      message: '🧹 Starting data cleaning and normalization...',
+      timestamp: new Date().toLocaleTimeString()
+    }]);
+
+    const message = `Clean the extracted data at ${rawFilePath}. If cleaning fails, show me the raw content and solve the issue dynamically.`;
+
+    const es = streamAgentChat(message, {
+      onThought: (text) => {
+        setAgentThoughts(prev => {
+          if (prev.length > 0 && prev[prev.length - 1].type === 'thought') {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              ...updated[updated.length - 1],
+              message: updated[updated.length - 1].message + text,
+            };
+            return updated;
+          }
+          return [...prev, {
+            type: 'thought',
+            message: text,
+            timestamp: new Date().toLocaleTimeString()
+          }];
+        });
+      },
+      onToolStart: (tool, input) => {
+        setAgentThoughts(prev => [...prev, {
+          type: 'tool',
+          message: `🔧 Calling: ${tool}`,
+          detail: input,
+          timestamp: new Date().toLocaleTimeString()
+        }]);
+      },
+      onToolResult: (tool, result) => {
+        let summary = `✅ ${tool} completed`;
+        try {
+          const parsed = JSON.parse(result);
+          if (parsed.item_count) summary = `✅ ${tool}: ${parsed.item_count} items`;
+          else if (parsed.success === false) summary = `❌ ${tool}: ${parsed.message}`;
+        } catch { /* keep default */ }
+        
+        setAgentThoughts(prev => [...prev, {
+          type: 'status',
+          message: summary,
+          timestamp: new Date().toLocaleTimeString()
+        }]);
+      },
+      onDone: () => {
+        setCleaning(false);
+        eventSourceRef.current = null;
+        loadMenuData();
+      },
+      onError: (err) => {
+        setError(err);
+        setCleaning(false);
         eventSourceRef.current = null;
       },
     }, 'default', null, { llm: 'ollama' });
@@ -649,6 +771,61 @@ function VishvaPage() {
     }
   };
 
+  const handlePreAnalyze = async (file) => {
+    setAnalyzing(true);
+    setError(null);
+    try {
+      const result = await preAnalyzeClassification(file);
+      if (result.success) {
+        setFileColumns(result.columns);
+        setShowMapping(true);
+        // Reset mapping
+        setColumnMapping({
+          item_name: '',
+          qty: '',
+          margin: '',
+          price: '',
+          profit: '',
+          category: ''
+        });
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const handleAnalyze = async (params = classificationParams, mapping = columnMapping) => {
+    if (!classificationFile && !classificationData) {
+      setError('Please upload a sales CSV/Excel file first.');
+      return;
+    }
+    
+    setAnalyzing(true);
+    setError(null);
+    try {
+      const result = await analyzeClassification(
+        classificationFile || classificationData.file_blob, // Fallback if re-analyzing
+        params.mode,
+        params.qty_threshold,
+        params.profit_threshold,
+        mapping
+      );
+      if (result.success) {
+        // Store the file blob if we just uploaded it, so we can re-analyze without re-uploading
+        const dataWithBlob = { ...result.data, file_blob: classificationFile || classificationData.file_blob };
+        setClassificationData(dataWithBlob);
+        setSelectedQuadrant(null); // Reset filter
+        setShowMapping(false); // Hide mapping UI after success
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
   const totalLabels = trainingData.category_list?.length || modelStatus?.categories?.length || 0;
   const reviewQueueCount = predictions.filter(
     (prediction) => !prediction.corrected && prediction.confidence < confidenceSettings.flag_for_review_below
@@ -782,6 +959,7 @@ function VishvaPage() {
         <nav className="flex flex-wrap gap-2">
           {[
             { id: 'extract', label: isSimpleMode ? 'Workspace' : 'Pipeline Workspace' },
+            { id: 'classification', label: 'Menu Engineering' },
             ...(!isSimpleMode ? [
               { id: 'training-data', label: 'Dataset Curation' },
               { id: 'performance', label: 'Quality Metrics' },
@@ -911,6 +1089,45 @@ function VishvaPage() {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Clean Data Card */}
+          <div className={`card transition-all duration-500 ${rawFilePath ? 'border-amber-200 bg-amber-50/30' : 'opacity-50'}`}>
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">Clean & Structure Data</h3>
+            <p className="mb-4 text-sm text-gray-600">
+              Process raw extracted data into structured JSON. If the standard cleaner fails, the agent will analyze the content and fix it dynamically.
+            </p>
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 p-3 bg-white/50 rounded-lg border border-gray-200 text-xs font-mono truncate">
+                  {rawFilePath ? `Raw Source: ${rawFilePath.split(/[\\/]/).pop()}` : 'No raw data available'}
+                </div>
+                <button
+                  onClick={() => {
+                    getLatestRawFile().then(res => {
+                      if (res.success) setRawFilePath(res.file_path);
+                    });
+                  }}
+                  title="Scan for latest raw data"
+                  className="p-3 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors text-gray-600"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              </div>
+              <button
+                onClick={handleClean}
+                disabled={!rawFilePath || cleaning}
+                className={`w-full py-2 px-4 rounded-lg font-medium transition-all ${
+                  rawFilePath && !cleaning 
+                    ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md' 
+                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {cleaning ? 'Cleaning...' : 'Run Agent Cleaning'}
+              </button>
             </div>
           </div>
         </div>
@@ -1988,7 +2205,508 @@ function VishvaPage() {
         </div>
       )}
 
-      {/* Settings Tab */}
+      {/* Menu Engineering Tab */}
+      {activeTab === 'classification' && (
+        <div className="space-y-6">
+          {!classificationData && !analyzing ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+              <div className="h-20 w-20 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 mb-6">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Menu Engineering Analysis</h2>
+              <p className="text-gray-500 max-w-md text-center mb-8">
+                Upload your sales data (CSV or Excel) to perform a professional quadrant analysis and identify your high-performers and margin-risks.
+              </p>
+              <div className="flex flex-col items-center gap-4">
+                <input
+                  type="file"
+                  id="classification-file-input"
+                  className="hidden"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setClassificationFile(file);
+                      handlePreAnalyze(file);
+                    }
+                  }}
+                />
+                {!showMapping && (
+                  <>
+                    <button
+                      onClick={() => document.getElementById('classification-file-input').click()}
+                      className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-lg transition-all"
+                    >
+                      📁 Upload Sales Data
+                    </button>
+                    <p className="text-xs text-gray-400">Supported formats: CSV, XLSX, XLS</p>
+                  </>
+                )}
+              </div>
+
+              {/* Mapping UI */}
+              {showMapping && (
+                <div className="w-full max-w-2xl bg-gray-50 p-8 rounded-3xl border border-gray-200 animate-in fade-in zoom-in-95 duration-300">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-gray-800">Match Fields</h3>
+                    <button 
+                      onClick={() => setShowMapping(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-6">
+                    Select the columns from your file that correspond to the required analysis fields.
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[
+                      { key: 'item_name', label: 'Item Name *', description: 'Product or dish name' },
+                      { key: 'qty', label: 'Quantity Sold *', description: 'Total units sold' },
+                      { key: 'margin', label: 'Profit Margin *', description: 'Percentage (%)' },
+                      { key: 'price', label: 'Selling Price', description: 'Unit price' },
+                      { key: 'category', label: 'Category', description: 'Menu section' },
+                    ].map(field => (
+                      <div key={field.key} className="space-y-2">
+                        <label className="block text-sm font-bold text-gray-700">
+                          {field.label}
+                        </label>
+                        <select
+                          value={columnMapping[field.key]}
+                          onChange={(e) => setColumnMapping({ ...columnMapping, [field.key]: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                        >
+                          <option value="">-- Select Column --</option>
+                          {fileColumns.map(col => (
+                            <option key={col} value={col}>{col}</option>
+                          ))}
+                        </select>
+                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-wider">{field.description}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-10 flex gap-4">
+                    <button
+                      onClick={() => handleAnalyze()}
+                      disabled={!columnMapping.item_name || !columnMapping.qty || !columnMapping.margin}
+                      className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white font-bold rounded-2xl shadow-lg transition-all"
+                    >
+                      🚀 Start Analysis
+                    </button>
+                    <button
+                      onClick={() => setShowMapping(false)}
+                      className="px-6 py-3 bg-white border border-gray-200 text-gray-600 font-bold rounded-2xl hover:bg-gray-50 transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : analyzing ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-emerald-500 mb-6"></div>
+              <h2 className="text-xl font-bold text-gray-800">Analyzing Your Menu...</h2>
+              <p className="text-gray-500 mt-2">Calculating popularity indexes and profit margins...</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Header & Controls */}
+              <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Menu Classification Matrix</h2>
+                  <p className="text-sm text-gray-500">Analysis for {classificationFile?.name || 'Uploaded Data'}</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      setClassificationData(null);
+                      setClassificationFile(null);
+                      setShowMapping(false);
+                      setFileColumns([]);
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-red-600 transition-colors"
+                  >
+                    🗑️ Clear & Upload New
+                  </button>
+                  <button
+                    onClick={() => handleAnalyze()}
+                    className="px-6 py-2 bg-emerald-600 text-white font-bold rounded-xl shadow-md hover:bg-emerald-700 transition-all"
+                  >
+                    ↻ Refresh Analysis
+                  </button>
+                </div>
+              </div>
+
+              {/* Configuration Panel */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white p-6 rounded-3xl border border-emerald-100 shadow-sm md:col-span-1">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <span className="text-emerald-500">⚙️</span> Analysis Mode
+                  </h3>
+                  
+                  <div className="flex p-1 bg-gray-100 rounded-2xl mb-6">
+                    <button
+                      onClick={() => {
+                        const newParams = { ...classificationParams, mode: 'static' };
+                        setClassificationParams(newParams);
+                        handleAnalyze(newParams);
+                      }}
+                      className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all ${
+                        classificationParams.mode === 'static' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-500'
+                      }`}
+                    >
+                      Static
+                    </button>
+                    <button
+                      onClick={() => {
+                        const newParams = { ...classificationParams, mode: 'index' };
+                        setClassificationParams(newParams);
+                        handleAnalyze(newParams);
+                      }}
+                      className={`flex-1 py-2 text-sm font-bold rounded-xl transition-all ${
+                        classificationParams.mode === 'index' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-500'
+                      }`}
+                    >
+                      Index-Based
+                    </button>
+                  </div>
+
+                  {classificationParams.mode === 'static' ? (
+                    <div className="space-y-6">
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <label className="text-sm font-bold text-gray-700">Quantity Threshold</label>
+                          <span className="text-sm font-bold text-emerald-600">{classificationParams.qty_threshold.toLocaleString()}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="100"
+                          max="10000"
+                          step="100"
+                          value={classificationParams.qty_threshold}
+                          onChange={(e) => setClassificationParams({ ...classificationParams, qty_threshold: parseInt(e.target.value) })}
+                          onMouseUp={() => handleAnalyze()}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                        />
+                      </div>
+                      <div>
+                        <div className="flex justify-between mb-2">
+                          <label className="text-sm font-bold text-gray-700">Margin Threshold (%)</label>
+                          <span className="text-sm font-bold text-emerald-600">{classificationParams.profit_threshold}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="10"
+                          max="90"
+                          step="5"
+                          value={classificationParams.profit_threshold}
+                          onChange={(e) => setClassificationParams({ ...classificationParams, profit_threshold: parseInt(e.target.value) })}
+                          onMouseUp={() => handleAnalyze()}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
+                      <p className="text-xs text-emerald-700 leading-relaxed">
+                        <strong>Z-Score Indexing:</strong> Items are compared against the average. Scores <strong>{">"} 0</strong> indicate above-average performance in popularity and profitability.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* KPI Cards */}
+                <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                  <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Items</p>
+                    <p className="text-3xl font-black text-gray-800">{classificationData.kpis.total_items}</p>
+                    <div className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400"></span> Active menu records
+                    </div>
+                  </div>
+                  <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
+                    <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Cash Cows</p>
+                    <p className="text-3xl font-black text-emerald-700">{classificationData.kpis.cash_cows}</p>
+                    <div className="mt-2 text-xs text-gray-500">High profit & popularity</div>
+                  </div>
+                  <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
+                    <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-1">Margin Risks</p>
+                    <p className="text-3xl font-black text-red-700">{classificationData.kpis.margin_risk}</p>
+                    <div className="mt-2 text-xs text-gray-500">High popularity, low profit</div>
+                  </div>
+                  <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
+                    <p className="text-xs font-bold text-sky-600 uppercase tracking-wider mb-1">Avg Margin</p>
+                    <p className="text-3xl font-black text-sky-700">{classificationData.kpis.avg_margin}</p>
+                    <div className="mt-2 text-xs text-gray-500">Across all analyzed items</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Charts Row */}
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                {/* Scatter Plot - The Matrix */}
+                <div className="xl:col-span-2 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm min-h-[500px]">
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-xl font-bold text-gray-800">Classification Matrix</h3>
+                    <div className="flex items-center gap-4 text-xs font-bold">
+                      <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#38a169]"></span> Cow</div>
+                      <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#e53e3e]"></span> Risk</div>
+                      <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#4299e1]"></span> Low</div>
+                      <div className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#718096]"></span> Unprod</div>
+                    </div>
+                  </div>
+                  
+                  <div className="h-[400px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis 
+                          type="number" 
+                          dataKey={classificationParams.mode === 'static' ? 'qty' : 'pop_index'} 
+                          name="Popularity" 
+                          label={{ value: classificationParams.mode === 'static' ? 'Sold Quantity' : 'Popularity Index', position: 'bottom', offset: 0, fontSize: 12, fontWeight: 'bold' }}
+                        />
+                        <YAxis 
+                          type="number" 
+                          dataKey={classificationParams.mode === 'static' ? 'margin' : 'margin_index'} 
+                          name="Profitability" 
+                          label={{ value: classificationParams.mode === 'static' ? 'Profit Margin (%)' : 'Profitability Index', angle: -90, position: 'left', fontSize: 12, fontWeight: 'bold' }}
+                        />
+                        <ReChartsTooltip 
+                          cursor={{ strokeDasharray: '3 3' }} 
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="bg-white p-3 border border-gray-200 rounded-xl shadow-xl">
+                                  <p className="font-bold text-gray-800 mb-1">{data.item_name}</p>
+                                  <div className="space-y-1 text-xs">
+                                    <p className="text-gray-500">Qty: <span className="font-bold text-gray-800">{data.qty.toLocaleString()}</span></p>
+                                    <p className="text-gray-500">Margin: <span className="font-bold text-gray-800">{data.margin.toFixed(1)}%</span></p>
+                                    <p className="text-gray-500">Revenue: <span className="font-bold text-gray-800">LKR {data.revenue.toLocaleString()}</span></p>
+                                    <div className={`mt-2 inline-block px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider
+                                      ${data.quadrant === 'Cash Cow' ? 'bg-emerald-100 text-emerald-700' : ''}
+                                      ${data.quadrant === 'Margin Risk' ? 'bg-red-100 text-red-700' : ''}
+                                      ${data.quadrant === 'Low Impact' ? 'bg-blue-100 text-blue-700' : ''}
+                                      ${data.quadrant === 'Unproductive' ? 'bg-gray-100 text-gray-700' : ''}
+                                    `}>
+                                      {data.quadrant}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Scatter 
+                          data={selectedQuadrant ? classificationData.items.filter(i => i.quadrant === selectedQuadrant) : classificationData.items} 
+                          fill="#8884d8"
+                        >
+                          {classificationData.items.map((entry, index) => {
+                            let color = '#718096';
+                            if (entry.quadrant === 'Cash Cow') color = '#38a169';
+                            else if (entry.quadrant === 'Margin Risk') color = '#e53e3e';
+                            else if (entry.quadrant === 'Low Impact') color = '#4299e1';
+                            
+                            return <Cell key={`cell-${index}`} fill={color} fillOpacity={0.7} strokeWidth={1} stroke="#fff" />;
+                          })}
+                        </Scatter>
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Pie Chart - Distribution */}
+                <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
+                  <h3 className="text-xl font-bold text-gray-800 mb-8">Quadrant Distribution</h3>
+                  <div className="flex-1 min-h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={classificationData.charts.pie}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          paddingAngle={5}
+                          dataKey="value"
+                          onClick={(data) => setSelectedQuadrant(selectedQuadrant === data.name ? null : data.name)}
+                          className="cursor-pointer outline-none"
+                        >
+                          {classificationData.charts.pie.map((entry, index) => {
+                            let color = '#718096';
+                            if (entry.name === 'Cash Cow') color = '#38a169';
+                            else if (entry.name === 'Margin Risk') color = '#e53e3e';
+                            else if (entry.name === 'Low Impact') color = '#4299e1';
+                            
+                            return <Cell 
+                              key={`cell-${index}`} 
+                              fill={color} 
+                              opacity={selectedQuadrant && selectedQuadrant !== entry.name ? 0.3 : 1}
+                              stroke="none"
+                            />;
+                          })}
+                        </Pie>
+                        <ReChartsTooltip 
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              return (
+                                <div className="bg-white p-2 border border-gray-100 rounded-lg shadow-lg text-xs font-bold">
+                                  {payload[0].name}: {payload[0].value} items
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  
+                  {/* Legend / Filter Chips */}
+                  <div className="flex flex-wrap gap-2 mt-4">
+                    {classificationData.charts.pie.map((entry) => {
+                       let colorClass = 'bg-gray-100 text-gray-700';
+                       if (entry.name === 'Cash Cow') colorClass = 'bg-emerald-50 text-emerald-700 border-emerald-100';
+                       else if (entry.name === 'Margin Risk') colorClass = 'bg-red-50 text-red-700 border-red-100';
+                       else if (entry.name === 'Low Impact') colorClass = 'bg-blue-50 text-blue-700 border-blue-100';
+                       
+                       const isActive = selectedQuadrant === entry.name;
+                       
+                       return (
+                         <button
+                           key={entry.name}
+                           onClick={() => setSelectedQuadrant(isActive ? null : entry.name)}
+                           className={`flex-1 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider border transition-all
+                             ${colorClass} ${isActive ? 'ring-2 ring-offset-1 ring-gray-400' : 'opacity-70 hover:opacity-100'}
+                           `}
+                         >
+                           {entry.name}
+                         </button>
+                       );
+                    })}
+                  </div>
+                  {selectedQuadrant && (
+                    <button 
+                      onClick={() => setSelectedQuadrant(null)}
+                      className="mt-4 text-xs text-gray-400 hover:text-gray-600 font-bold"
+                    >
+                      ✕ Clear Filter
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom Row - Top Items & Table */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {/* Top Items Bar Chart */}
+                <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+                  <h3 className="text-xl font-bold text-gray-800 mb-8">Top 10 Performers by Revenue</h3>
+                  <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={classificationData.charts.top_items.slice(0, 10)}
+                        layout="vertical"
+                        margin={{ left: 50, right: 30 }}
+                      >
+                        <XAxis type="number" hide />
+                        <YAxis 
+                          type="category" 
+                          dataKey="item_name" 
+                          width={150} 
+                          tick={{ fontSize: 10, fontWeight: 'bold', fill: '#64748b' }}
+                        />
+                        <ReChartsTooltip 
+                           content={({ active, payload }) => {
+                             if (active && payload && payload.length) {
+                               const data = payload[0].payload;
+                               return (
+                                 <div className="bg-white p-3 border border-gray-200 rounded-xl shadow-xl">
+                                   <p className="font-bold text-gray-800">{data.item_name}</p>
+                                   <p className="text-xs text-emerald-600 font-black">LKR {data.revenue.toLocaleString()}</p>
+                                 </div>
+                               );
+                             }
+                             return null;
+                           }}
+                        />
+                        <Bar 
+                          dataKey="revenue" 
+                          radius={[0, 10, 10, 0]}
+                        >
+                          {classificationData.charts.top_items.slice(0, 10).map((entry, index) => {
+                            let color = '#718096';
+                            if (entry.quadrant === 'Cash Cow') color = '#38a169';
+                            else if (entry.quadrant === 'Margin Risk') color = '#e53e3e';
+                            else if (entry.quadrant === 'Low Impact') color = '#4299e1';
+                            return <Cell key={`bar-${index}`} fill={color} fillOpacity={0.8} />;
+                          })}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Items Table */}
+                <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col">
+                  <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-xl font-bold text-gray-800">Item Details</h3>
+                    {selectedQuadrant && (
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider
+                        ${selectedQuadrant === 'Cash Cow' ? 'bg-emerald-100 text-emerald-700' : ''}
+                        ${selectedQuadrant === 'Margin Risk' ? 'bg-red-100 text-red-700' : ''}
+                        ${selectedQuadrant === 'Low Impact' ? 'bg-blue-100 text-blue-700' : ''}
+                        ${selectedQuadrant === 'Unproductive' ? 'bg-gray-100 text-gray-700' : ''}
+                      `}>
+                        Filtering: {selectedQuadrant}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto max-h-[400px] scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-white border-b border-gray-100">
+                        <tr>
+                          <th className="text-left py-3 px-2 text-gray-400 font-bold uppercase text-[10px]">Item</th>
+                          <th className="text-right py-3 px-2 text-gray-400 font-bold uppercase text-[10px]">Qty</th>
+                          <th className="text-right py-3 px-2 text-gray-400 font-bold uppercase text-[10px]">Margin</th>
+                          <th className="text-right py-3 px-2 text-gray-400 font-bold uppercase text-[10px]">Quadrant</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {(selectedQuadrant 
+                          ? classificationData.items.filter(i => i.quadrant === selectedQuadrant) 
+                          : classificationData.items
+                        ).map((item, i) => (
+                          <tr key={i} className="hover:bg-gray-50 transition-colors">
+                            <td className="py-3 px-2 font-bold text-gray-700">{item.item_name}</td>
+                            <td className="py-3 px-2 text-right text-gray-500">{item.qty.toLocaleString()}</td>
+                            <td className="py-3 px-2 text-right font-bold text-emerald-600">{item.margin.toFixed(1)}%</td>
+                            <td className="py-3 px-2 text-right">
+                              <span className={`inline-block w-2 h-2 rounded-full
+                                ${item.quadrant === 'Cash Cow' ? 'bg-emerald-500' : ''}
+                                ${item.quadrant === 'Margin Risk' ? 'bg-red-500' : ''}
+                                ${item.quadrant === 'Low Impact' ? 'bg-blue-500' : ''}
+                                ${item.quadrant === 'Unproductive' ? 'bg-gray-400' : ''}
+                              `}></span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {activeTab === 'settings' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Abbreviation Mapper */}
