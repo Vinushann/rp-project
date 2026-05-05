@@ -37,6 +37,26 @@ router = APIRouter()
 MODULE_NAME = "vishva"
 
 
+def _trigger_retrain():
+    """
+    Background task to retrain the model when data changes.
+    This ensures that manual corrections in the dashboard are immediately 
+    reflected in the model's intelligence.
+    """
+    try:
+        from app.modules.vishva.tools import train_category_classifier
+        training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
+        if os.path.exists(training_file):
+            print(f"[VISHVA] Background retraining triggered...")
+            train_category_classifier(
+                training_file=training_file,
+                output_dir=os.path.join(MODULE_DIR, "models")
+            )
+            print(f"[VISHVA] Background retraining complete.")
+    except Exception as e:
+        print(f"[ERROR] Background retraining failed: {e}")
+
+
 # ============================================
 # SCHEMAS
 # ============================================
@@ -1185,9 +1205,13 @@ async def get_training_data():
         return {"success": False, "items": [], "message": str(e)}
 
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/training-data")
-async def add_training_item(item: TrainingItem):
-    """Add a new training item"""
+async def add_training_item(item: TrainingItem, background_tasks: BackgroundTasks):
+    """Add a new training item and trigger retrain"""
     training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
     
     try:
@@ -1207,14 +1231,17 @@ async def add_training_item(item: TrainingItem):
         with open(training_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         
-        return {"success": True, "message": "Item added successfully", "id": len(data) - 1}
+        # Trigger background retraining
+        background_tasks.add_task(_trigger_retrain)
+        
+        return {"success": True, "message": "Item added successfully. Retraining triggered.", "id": len(data) - 1}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.put("/training-data/{item_id}")
-async def update_training_item(item_id: int, item: UpdateTrainingItemRequest):
-    """Update a training item"""
+async def update_training_item(item_id: int, item: UpdateTrainingItemRequest, background_tasks: BackgroundTasks):
+    """Update a training item and trigger retrain"""
     training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
     
     try:
@@ -1234,7 +1261,10 @@ async def update_training_item(item_id: int, item: UpdateTrainingItemRequest):
         with open(training_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         
-        return {"success": True, "message": "Item updated successfully", "item": {"id": item_id, **data[item_id]}}
+        # Trigger background retraining
+        background_tasks.add_task(_trigger_retrain)
+        
+        return {"success": True, "message": "Item updated successfully. Retraining triggered.", "item": {"id": item_id, **data[item_id]}}
     except HTTPException:
         raise
     except Exception as e:
@@ -1242,8 +1272,8 @@ async def update_training_item(item_id: int, item: UpdateTrainingItemRequest):
 
 
 @router.delete("/training-data/{item_id}")
-async def delete_training_item(item_id: int):
-    """Delete a training item"""
+async def delete_training_item(item_id: int, background_tasks: BackgroundTasks):
+    """Delete a training item and trigger retrain"""
     training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
     
     try:
@@ -1258,7 +1288,10 @@ async def delete_training_item(item_id: int):
         with open(training_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         
-        return {"success": True, "message": "Item deleted successfully", "deleted_item": deleted_item}
+        # Trigger background retraining
+        background_tasks.add_task(_trigger_retrain)
+        
+        return {"success": True, "message": "Item deleted successfully. Retraining triggered.", "deleted_item": deleted_item}
     except HTTPException:
         raise
     except Exception as e:
@@ -1266,8 +1299,8 @@ async def delete_training_item(item_id: int):
 
 
 @router.post("/training-data/merge-categories")
-async def merge_categories(request: MergeCategoriesRequest):
-    """Merge multiple categories into one"""
+async def merge_categories(request: MergeCategoriesRequest, background_tasks: BackgroundTasks):
+    """Merge multiple categories into one and trigger retrain"""
     training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
     
     try:
@@ -1283,9 +1316,12 @@ async def merge_categories(request: MergeCategoriesRequest):
         with open(training_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         
+        # Trigger background retraining
+        background_tasks.add_task(_trigger_retrain)
+        
         return {
             "success": True,
-            "message": f"Merged {merged_count} items into '{request.target_category}'",
+            "message": f"Merged {merged_count} items into '{request.target_category}'. Retraining triggered.",
             "merged_count": merged_count
         }
     except Exception as e:
@@ -1293,8 +1329,8 @@ async def merge_categories(request: MergeCategoriesRequest):
 
 
 @router.post("/training-data/split-category")
-async def split_category(request: SplitCategoryRequest):
-    """Split a category by assigning items to new categories"""
+async def split_category(request: SplitCategoryRequest, background_tasks: BackgroundTasks):
+    """Split a category and trigger retrain"""
     training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
     
     try:
@@ -1311,9 +1347,12 @@ async def split_category(request: SplitCategoryRequest):
         with open(training_file, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
         
+        # Trigger background retraining
+        background_tasks.add_task(_trigger_retrain)
+        
         return {
             "success": True,
-            "message": f"Split {split_count} items into new categories",
+            "message": f"Split {split_count} items into new categories. Retraining triggered.",
             "split_count": split_count
         }
     except Exception as e:
@@ -1444,9 +1483,10 @@ async def submit_feedback(
     item_name: str,
     predicted_category: str,
     correct_category: str,
+    background_tasks: BackgroundTasks,
     price: Optional[str] = ""
 ):
-    """Submit a correction for a wrong prediction"""
+    """Submit a correction and trigger retrain if auto-add is enabled"""
     feedback_file = os.path.join(MODULE_DIR, "data/feedback.json")
     training_file = os.path.join(MODULE_DIR, "output/menu_data.json")
     
@@ -1474,6 +1514,7 @@ async def submit_feedback(
             json.dump(feedback_data, f, indent=2, ensure_ascii=False)
         
         # Auto-add to training data if enabled
+        retrain_triggered = False
         if feedback_data.get("auto_add_to_training", True):
             if os.path.exists(training_file):
                 with open(training_file, 'r', encoding='utf-8') as f:
@@ -1491,11 +1532,16 @@ async def submit_feedback(
                 })
                 with open(training_file, 'w', encoding='utf-8') as f:
                     json.dump(training_data, f, indent=2, ensure_ascii=False)
+                
+                # Trigger background retraining
+                background_tasks.add_task(_trigger_retrain)
+                retrain_triggered = True
         
         return {
             "success": True,
-            "message": "Feedback recorded",
-            "added_to_training": feedback_data.get("auto_add_to_training", True)
+            "message": "Feedback recorded" + (". Retraining triggered." if retrain_triggered else ""),
+            "added_to_training": feedback_data.get("auto_add_to_training", True),
+            "retrain_triggered": retrain_triggered
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

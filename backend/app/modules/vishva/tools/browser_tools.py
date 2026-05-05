@@ -69,6 +69,47 @@ async def scroll_page(page):
     except Exception:
         return {"new_content": False}
 
+async def get_visual_layout(page):
+    """
+    Extracts the visual layout of the page, including bounding boxes for 
+    headings and text blocks, to help the model understand spatial context.
+    """
+    try:
+        data = await page.evaluate('''() => {
+            const layout = [];
+            
+            // Extract all text-bearing elements with their coordinates
+            const elements = document.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span, div, li, td');
+            
+            elements.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                const text = el.innerText.trim();
+                
+                // Only keep visible elements with meaningful text
+                if (text && rect.width > 0 && rect.height > 0 && text.length < 500) {
+                    const style = window.getComputedStyle(el);
+                    layout.push({
+                        text: text,
+                        tag: el.tagName,
+                        x: Math.round(rect.x),
+                        y: Math.round(rect.y),
+                        width: Math.round(rect.width),
+                        height: Math.round(rect.height),
+                        fontSize: style.fontSize,
+                        fontWeight: style.fontWeight,
+                        color: style.color
+                    });
+                }
+            });
+            
+            // Sort by Y position then X position
+            return layout.sort((a, b) => (a.y - b.y) || (a.x - b.x));
+        }''')
+        return data
+    except Exception as e:
+        print(f"[WARNING] Layout extraction failed: {e}")
+        return []
+
 async def click_element(page, text):
     try:
         clean_text = text.strip()
@@ -93,3 +134,43 @@ async def click_element(page, text):
         return {"clicked": None}
     except Exception:
         return {"clicked": None}
+
+async def get_category_links(page):
+    """
+    Identifies links that likely lead to category pages or menu sections.
+    Looks for links in nav bars, sidebars, or with specific text.
+    """
+    try:
+        links = await page.evaluate('''() => {
+            const results = [];
+            const seen = new Set();
+            const currentOrigin = window.location.origin;
+            
+            // Keywords that suggest a category/menu/product page
+            const catRegex = /category|menu|section|product|type|kind|shop|catalogue|item|list|category/i;
+            
+            // Keywords to explicitly avoid
+            const blockRegex = /about|story|contact|history|location|privacy|terms|cart|account|login|signup|news|blog|event|career|job|help|faq|policy/i;
+            
+            document.querySelectorAll('a').forEach(a => {
+                const href = a.href;
+                const text = a.innerText.trim();
+                
+                if (href && text && !seen.has(href) && href.startsWith(currentOrigin) && href !== window.location.href + '#' && href !== window.location.href) {
+                    const isNav = a.closest('nav') || a.closest('.nav') || a.closest('.navigation') || a.closest('.sidebar') || a.closest('.menu-container');
+                    const hasKeyword = catRegex.test(href) || catRegex.test(text);
+                    const isBlocked = blockRegex.test(href) || blockRegex.test(text);
+                    
+                    // High probability if it's in nav or has keywords, AND not blocked
+                    if (!isBlocked && ((isNav && text.length < 30) || (hasKeyword && text.length < 40))) {
+                        results.push({ href, text });
+                        seen.add(href);
+                    }
+                }
+            });
+            return results;
+        }''')
+        return links
+    except Exception as e:
+        print(f"[WARNING] Link discovery failed: {e}")
+        return []

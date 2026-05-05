@@ -1,7 +1,7 @@
 import asyncio
 import httpx
 import json
-from .browser_tools import get_visible_text, scroll_page, click_element
+from .browser_tools import get_visible_text, scroll_page, click_element, get_category_links
 
 async def get_available_models() -> list[str]:
     """Call Ollama API: GET /api/tags and return list of model names."""
@@ -35,24 +35,28 @@ Given the current page state, decide the next action.
 Available actions:
 - click
 - scroll
+- navigate
 - finish
 
 Rules:
-1. Click if a button likely reveals menu content
-2. Scroll if more content may exist
-3. Finish only if menu appears fully visible and no more actions are useful
-4. Do NOT repeat useless actions
+1. Click if a button likely reveals menu/product content (e.g. "Load More", "Expand")
+2. Scroll if more menu content may exist on the current view
+3. Navigate if you see category links or a navigation bar that leads to other menu/product sections.
+4. IMPORTANT: Stay within the main topic (Products/Menu). Avoid non-relevant sections like "About Us", "Our Story", "Contact", "Privacy", "Careers", "News", or "Cart".
+5. Finish only if you have explored all relevant menu sections and the content appears fully visible.
+6. Do NOT repeat useless actions.
 
 Current Page State:
 Headings: {state.get('headings', [])}
 Buttons: {state.get('buttons', [])}
+Category Links Discovered: {state.get('category_links', [])}
 Text Sample: {state.get('visible_text_sample', '')}
 
 Return ONLY JSON:
 {{
 "thought": "brief reasoning",
-"action": "click|scroll|finish",
-"action_input": "button text if clicking"
+"action": "click|scroll|navigate|finish",
+"action_input": "button text for click, or URL for navigate"
 }}"""
 
     try:
@@ -82,18 +86,43 @@ async def run_exploration_loop(page) -> dict:
     
     actions_taken = []
     clicked_buttons = set()
+    visited_urls = {page.url}
+    discovery_queue = []
     no_new_content_count = 0
     
-    for i in range(10):
+    for i in range(15):  # Increased steps for multi-page
         state = await get_visible_text(page)
+        # Add category links to state for LLM
+        cat_links = await get_category_links(page)
+        state['category_links'] = cat_links[:10] # Top 10 links
+        
         decision = await decide_next_action(state, model)
         
         action = decision.get("action", "scroll")
         action_input = decision.get("action_input", "")
         thought = decision.get("thought", "No thought provided")
 
-        if action not in ["click", "scroll", "finish"]:
+        if action not in ["click", "scroll", "navigate", "finish"]:
             action = "scroll"
+
+        if action == "navigate":
+            target_url = action_input
+            if target_url and target_url not in visited_urls:
+                print(f"[AGENT] Navigating to category: {target_url}")
+                try:
+                    await page.goto(target_url, wait_until="load", timeout=30000)
+                    visited_urls.add(target_url)
+                    actions_taken.append({
+                        "step": i + 1, 
+                        "action": "navigate", 
+                        "input": target_url, 
+                        "thought": thought
+                    })
+                except Exception as e:
+                    print(f"[WARNING] Navigation failed: {e}")
+                    action = "scroll"
+            else:
+                action = "scroll"
 
         if action == "click":
             # Safety rule: Track clicked buttons → do not repeat
@@ -129,6 +158,8 @@ async def run_exploration_loop(page) -> dict:
                 no_new_content_count = 0
                 
             if no_new_content_count >= 2:
+                # If scrolling fails, check if we have other pages to visit
+                if i < 10: continue # Keep going, maybe LLM chooses navigate next
                 break
 
         elif action == "finish":

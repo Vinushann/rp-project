@@ -1,35 +1,42 @@
-Parse attempt failed at 2026-05-05 08:55:49.069452
-Error: Expecting value: line 1 column 1 (char 0)
+Parse attempt failed at 2026-05-05 15:40:55.573924
+Error: Expecting value: line 1 column 2 (char 1)
 
 ============================================================
 ORIGINAL CONTENT (first 2000 chars):
 ============================================================
-Error at 2026-05-05 08:55:12.429928
-Type: NameError
-Details: name 'time' is not defined
+Error at 2026-05-05 15:40:51.359102
+Type: Exception
+Details: Browser.close: Connection closed while reading from the driver
 
 Full Traceback:
 Traceback (most recent call last):
-  File "C:\SLIIT\Y4S2\RP\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 273, in extract_menu_data
+  File "C:\SLIIT\Y4S2\RP\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 320, in extract_menu_data
     return _extract_with_local_llm(url, output_dir, headless)
-  File "C:\SLIIT\Y4S2\RP\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 193, in _extract_with_local_llm
-    last_print_time = time.time()
-                      ^^^^
-NameError: name 'time' is not defined. Did you forget to import 'time'?
+  File "C:\SLIIT\Y4S2\RP\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 286, in _extract_with_local_llm
+    browser.close()
+    ~~~~~~~~~~~~~^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\playwright\sync_api\_generated.py", line 14339, in close
+    return mapping.from_maybe_impl(self._sync(self._impl_obj.close(reason=reason)))
+                                   ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\playwright\_impl\_sync_base.py", line 115, in _sync
+    return task.result()
+           ~~~~~~~~~~~^^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\playwright\_impl\_browser.py", line 241, in close
+    raise e
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\playwright\_impl\_browser.py", line 238, in close
+    await self._channel.send("close", None, {"reason": reason})
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\playwright\_impl\_connection.py", line 69, in send
+    return await self._connection.wrap_api_call(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\SLIIT\Y4S2\RP\Implementation\rp-project\venv\Lib\site-packages\playwright\_impl\_connection.py", line 559, in wrap_api_call
+    raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+Exception: Browser.close: Connection closed while reading from the driver
 
 
 ============================================================
 CLEANED CONTENT (first 2000 chars):
 ============================================================
-Error at 2026-05-05 08:55:12.429928
-Type: NameError
-Details: name 'time' is not defined
-
-Full Traceback:
-Traceback (most recent call last):
-  File "C:\SLIIT\Y4S2\RP\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 273, in extract_menu_data
-    return _extract_with_local_llm(url, output_dir, headless)
-  File "C:\SLIIT\Y4S2\RP\rp-project\backend\app\modules\vishva\tools\extract_tool.py", line 193, in _extract_with_local_llm
-    last_print_time = time.time()
-                      ^^^^
-NameError: name 'time' is not defined. Did you forget to import 'time'?
+['apiName']

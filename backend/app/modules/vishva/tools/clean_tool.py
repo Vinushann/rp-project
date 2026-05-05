@@ -18,8 +18,8 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
-    print(f"🔧 Starting JSON cleaner...")
-    print(f"📖 Reading file: {input_file}")
+    print(f"Starting JSON cleaner...")
+    print(f"Reading file: {input_file}")
     print("-" * 50)
     
     try:
@@ -33,29 +33,29 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
             "item_count": 0
         }
     
-    print(f"✅ File loaded ({len(content)} characters)")
+    print(f"File loaded ({len(content)} characters)")
     
     # Step 1: Normalize mixed quote escaping issues
     # The browser agent sometimes produces inconsistent escaping where some
     # fields have \" and others have unescaped "
     if r'\"' in content:
-        print("ℹ️  Detected escaped quotes, normalizing...")
-        # Handle double-escaped quotes first: \\\" → PLACEHOLDER (these are literal quotes in values like inch marks)
+        print("    Detected escaped quotes, normalizing...")
+        # Handle double-escaped quotes first: \\\"   PLACEHOLDER (these are literal quotes in values like inch marks)
         content = content.replace('\\\\\\"', '<<INCH_QUOTE>>')
-        # Now unescape structural quotes: \" → "
+        # Now unescape structural quotes: \"   "
         content = content.replace(r'\"', '"')
         # Restore literal quotes as empty string (remove inch symbols that break JSON)
         content = content.replace('<<INCH_QUOTE>>', '')
     
     # Handle escaped newlines and other sequences
     if r'\n' in content:
-        print("ℹ️  Detected escaped newlines, unescaping...")
+        print("    Detected escaped newlines, unescaping...")
         content = content.replace(r'\n', '\n')
         content = content.replace(r'\/', '/')
         content = content.replace(r'\t', '\t')
     
     # Step 1.5: Fix unescaped quotes inside JSON string values
-    # e.g. "name": "MacBook Pro 16" M4 Max" → "name": "MacBook Pro 16 M4 Max"
+    # e.g. "name": "MacBook Pro 16" M4 Max"   "name": "MacBook Pro 16 M4 Max"
     # This happens when product names contain inch symbols (") or similar
     def fix_unescaped_quotes_in_values(text):
         """Remove stray quotes inside JSON string values that break parsing."""
@@ -82,39 +82,39 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
     try:
         data = json.loads(content)
         parse_method = "direct"
-        print("✅ File is already valid JSON")
+        print("File is already valid JSON")
     except json.JSONDecodeError as e:
-        print(f"⚠️  Direct parsing failed: {str(e)[:100]}")
+        print(f"    Direct parsing failed: {str(e)[:100]}")
     
     # Step 3: Try to extract JSON from markdown code blocks
     if not data:
-        print("ℹ️  Trying markdown extraction...")
+        print("    Trying markdown extraction...")
         json_match = re.search(r'```json\s*([\s\S]*?)\s*```', content)
         if json_match:
             try:
                 extracted = json_match.group(1)
                 data = json.loads(extracted)
                 parse_method = "markdown"
-                print("✅ Extracted JSON from markdown code block")
+                print("Extracted JSON from markdown code block")
             except json.JSONDecodeError as e:
-                print(f"⚠️  Markdown extraction failed: {str(e)[:100]}")
+                print(f"    Markdown extraction failed: {str(e)[:100]}")
     
     # Step 4: Try to find JSON array anywhere in the text
     if not data:
-        print("ℹ️  Trying array extraction...")
+        print("    Trying array extraction...")
         json_array_match = re.search(r'\[\s*\{[\s\S]*\}\s*\]', content, re.DOTALL)
         if json_array_match:
             try:
                 extracted = json_array_match.group(0)
                 data = json.loads(extracted)
                 parse_method = "array_extraction"
-                print("✅ Extracted JSON array from text")
+                print("Extracted JSON array from text")
             except json.JSONDecodeError as e:
-                print(f"⚠️  Array extraction failed: {str(e)[:100]}")
+                print(f"    Array extraction failed: {str(e)[:100]}")
     
     # Step 5: Try to clean common JSON formatting issues
     if not data:
-        print("ℹ️  Attempting to fix common JSON issues...")
+        print("    Attempting to fix common JSON issues...")
         
         cleaned_content = content
         
@@ -134,9 +134,9 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
         try:
             data = json.loads(cleaned_content)
             parse_method = "cleaned"
-            print("✅ JSON parsed after cleaning")
+            print("JSON parsed after cleaning")
         except json.JSONDecodeError as e:
-            print(f"❌ All parsing attempts failed: {str(e)[:100]}")
+            print(f"  All parsing attempts failed: {str(e)[:100]}")
             
             # Save debug file with both original and cleaned content
             debug_file = os.path.join(output_dir, "debug_failed_parse.txt")
@@ -161,14 +161,14 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
     
     # Step 6: Validate and clean the parsed data
     if isinstance(data, list):
-        print(f"ℹ️  Validating {len(data)} items...")
+        print(f"    Validating {len(data)} items...")
         
         # Remove any null or invalid items
         original_count = len(data)
         data = [item for item in data if item and isinstance(item, dict)]
         
         if len(data) < original_count:
-            print(f"⚠️  Removed {original_count - len(data)} invalid items")
+            print(f"    Removed {original_count - len(data)} invalid items")
         
         # Clean up each item
         for item in data:
@@ -179,9 +179,9 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
                 item['price'] = ''
             if 'category' not in item:
                 item['category'] = ''
-            # Remove description if it exists (not needed for POS system)
-            if 'description' in item:
-                del item['description']
+            # Ensure description exists
+            if 'description' not in item:
+                item['description'] = ''
             
             # Clean up whitespace in all fields
             for key in item:
@@ -202,19 +202,18 @@ def clean_json_data(input_file: str, output_dir: str = "output") -> dict:
     
     item_count = len(data) if isinstance(data, list) else 1
     
-    print(f"\n✅ Clean JSON saved to: {output_filename}")
-    print(f"✅ Main file saved to: {main_filename}")
-    print(f"📊 Total items: {item_count}")
-    print(f"🔧 Parse method: {parse_method}")
+    print(f"\nClean JSON saved to: {output_filename}")
+    print(f"Main file saved to: {main_filename}")
+    print(f"Total items: {item_count}")
+    print(f"Parse method: {parse_method}")
     
-    # Display sample items
     if isinstance(data, list) and len(data) > 0:
-        print(f"\n📋 Sample items (first 3):")
+        print(f"\nSample items (first 3):")
         for item in data[:3]:
             name = item.get('name', 'N/A')
             price = item.get('price', 'N/A')
             category = item.get('category', 'N/A')
-            print(f"   • {name} - {price} ({category})")
+            print(f"     {name} - {price} ({category})")
     
     return {
         "success": True,

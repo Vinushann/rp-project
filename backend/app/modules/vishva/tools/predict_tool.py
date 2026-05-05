@@ -9,9 +9,23 @@ import re
 # Text preprocessing
 try:
     from nltk.corpus import stopwords
+    from nltk.stem import WordNetLemmatizer
+    import nltk
+    try:
+        nltk.data.find('corpora/wordnet')
+    except LookupError:
+        nltk.download('wordnet', quiet=True)
+        
     STOP_WORDS = set(stopwords.words('english'))
+    LEMMATIZER = WordNetLemmatizer()
 except:
     STOP_WORDS = set()
+    LEMMATIZER = None
+
+try:
+    from ollama import Client as OllamaClient
+except ImportError:
+    OllamaClient = None
 
 
 def preprocess_text(text: str) -> str:
@@ -28,10 +42,15 @@ def preprocess_text(text: str) -> str:
     # Remove extra spaces
     text = ' '.join(text.split())
     
-    # Remove stopwords
+    # Remove stopwords and lemmatize
+    words = text.split()
     if STOP_WORDS:
-        words = text.split()
-        text = ' '.join([w for w in words if w not in STOP_WORDS])
+        words = [w for w in words if w not in STOP_WORDS]
+    
+    if LEMMATIZER:
+        words = [LEMMATIZER.lemmatize(w) for w in words]
+        
+    text = ' '.join(words)
     
     return text
 
@@ -96,8 +115,9 @@ def predict_single_item(item: Dict, components: Dict) -> Dict:
             'error': 'Item name is required'
         }
     
-    # Use only name for prediction (same as training)
-    preprocessed = preprocess_text(name)
+    # Combine name and description for prediction
+    combined_text = f"{name} {item.get('description', '')}".strip()
+    preprocessed = preprocess_text(combined_text)
     
     if not preprocessed:
         return {
@@ -121,10 +141,10 @@ def predict_single_item(item: Dict, components: Dict) -> Dict:
             X = X.toarray()
         X = components['scaler'].transform(X)
     
-    # Predict
+    # Predict with ML Model
     prediction = components['model'].predict(X)[0]
     
-    # Get confidence (probability)
+    # Get confidence (probability) from ML Model
     if hasattr(components['model'], 'predict_proba'):
         probabilities = components['model'].predict_proba(X)[0]
         confidence = float(max(probabilities))
@@ -136,11 +156,53 @@ def predict_single_item(item: Dict, components: Dict) -> Dict:
         confidence = 1.0
         all_probs = {prediction: 1.0}
     
+    # Store raw ML results for transparency
+    ml_prediction = prediction
+    ml_confidence = confidence
+    agent_prediction = None
+    agent_confidence = None
+
+    # --- HYBRID FALLBACK: Use LLM if confidence is low (< 0.6) ---
+    if ml_confidence < 0.6 and OllamaClient is not None:
+        print(f"    Low confidence ({ml_confidence:.2f}) for '{name}'. Using LLM fallback...")
+        try:
+            model_name = os.getenv('VISHVA_OLLAMA_MODEL', 'qwen2.5:7b')
+            host = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+            client = OllamaClient(host=host)
+            
+            categories = list(all_probs.keys())
+            prompt = (
+                f"Categorize the menu item '{name}' ({item.get('description', '')}) "
+                f"into one of these categories: {categories}.\n"
+                "Return ONLY the category name."
+            )
+            
+            response = client.chat(model=model_name, messages=[{'role': 'user', 'content': prompt}])
+            llm_category = response['message']['content'].strip().strip("'").strip('"')
+            
+            # Verify LLM returned a valid category
+            for cat in categories:
+                if cat.lower() in llm_category.lower():
+                    print(f"  LLM corrected '{name}': {ml_prediction} -> {cat}")
+                    agent_prediction = cat
+                    agent_confidence = 0.95
+                    # Update final prediction for backward compatibility
+                    prediction = agent_prediction
+                    confidence = agent_confidence
+                    break
+        except Exception as e:
+            print(f"  LLM fallback failed: {e}")
+
     return {
         'name': name,
         'price': price,
+        'description': item.get('description', ''),
         'predicted_category': prediction,
         'confidence': confidence,
+        'ml_prediction': ml_prediction,
+        'ml_confidence': ml_confidence,
+        'agent_prediction': agent_prediction,
+        'agent_confidence': agent_confidence,
         'all_probabilities': all_probs
     }
 
@@ -162,16 +224,16 @@ def predict_categories(
         dict with predictions and statistics
     """
     
-    print("🔮 MENU CATEGORY PREDICTION")
+    print("  MENU CATEGORY PREDICTION")
     print("="*70)
     
     try:
         # Load model components
-        print(f"📦 Loading model from: {model_dir}")
+        print(f"  Loading model from: {model_dir}")
         components = load_model_components(model_dir)
         
         model_info = components['info'].get('best_model', {})
-        print(f"✅ Model loaded:")
+        print(f"  Model loaded:")
         print(f"   Model: {model_info.get('model', 'Unknown')}")
         print(f"   Vectorizer: {model_info.get('vectorizer', 'Unknown')}")
         print(f"   Feature Selector: {model_info.get('feature_selector', 'Unknown')}")
@@ -179,17 +241,17 @@ def predict_categories(
         
         # Load items
         if isinstance(items, str):
-            print(f"\n📖 Loading items from: {items}")
+            print(f"\n  Loading items from: {items}")
             with open(items, 'r', encoding='utf-8') as f:
                 items = json.load(f)
         
         if not isinstance(items, list):
             raise ValueError("Items must be a list of dictionaries")
         
-        print(f"✅ Loaded {len(items)} items to categorize")
+        print(f"  Loaded {len(items)} items to categorize")
         
         # Predict categories
-        print(f"\n🔍 Predicting categories...")
+        print(f"\n  Predicting categories...")
         print("-"*70)
         
         predictions = []
@@ -207,7 +269,7 @@ def predict_categories(
             if i % 10 == 0 or i == len(items):
                 print(f"   Processed {i}/{len(items)} items...")
         
-        print("✅ Predictions complete")
+        print("  Predictions complete")
         
         # Calculate statistics
         avg_confidence = np.mean([p['confidence'] for p in predictions])
@@ -215,29 +277,33 @@ def predict_categories(
         
         # Print summary
         print(f"\n{'='*70}")
-        print("📊 PREDICTION SUMMARY")
+        print("  PREDICTION SUMMARY")
         print(f"{'='*70}")
         print(f"   Total items: {len(predictions)}")
         print(f"   Average confidence: {avg_confidence:.2%}")
         print(f"   Low confidence items: {len(low_confidence)}")
-        print(f"\n📋 Category Distribution:")
+        print(f"\n  Category Distribution:")
         for category, count in sorted(category_counts.items(), key=lambda x: x[1], reverse=True):
             percentage = (count / len(predictions)) * 100
-            print(f"   • {category}: {count} items ({percentage:.1f}%)")
+            print(f"     {category}: {count} items ({percentage:.1f}%)")
         
         # Show sample predictions
-        print(f"\n📝 Sample Predictions (first 5):")
+        print(f"\n  Sample Predictions (first 5):")
         print("-"*70)
         for pred in predictions[:5]:
-            print(f"   • {pred['name']}")
-            print(f"     Category: {pred['predicted_category']} (Confidence: {pred['confidence']:.2%})")
+            print(f"     {pred['name']}")
+            if pred['agent_prediction']:
+                print(f"     -> ML Predicted: {pred['ml_prediction']} (Low Confidence: {pred['ml_confidence']:.2%})")
+                print(f"     -> AGENT Corrected: {pred['agent_prediction']} (Confidence: {pred['agent_confidence']:.2%})")
+            else:
+                print(f"     -> Final Category: {pred['predicted_category']} (Confidence: {pred['confidence']:.2%})")
         
         # Show low confidence items if any
         if low_confidence:
-            print(f"\n⚠️  Low Confidence Predictions (confidence < 50%):")
+            print(f"\n    Low Confidence Predictions (confidence < 50%):")
             print("-"*70)
             for pred in low_confidence[:5]:
-                print(f"   • {pred['name']}")
+                print(f"     {pred['name']}")
                 print(f"     Category: {pred['predicted_category']} (Confidence: {pred['confidence']:.2%})")
                 print(f"     Top alternatives: {sorted(pred['all_probabilities'].items(), key=lambda x: x[1], reverse=True)[:3]}")
         
@@ -258,7 +324,7 @@ def predict_categories(
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(output_data, f, indent=2, ensure_ascii=False)
             
-            print(f"\n💾 Predictions saved to: {output_file}")
+            print(f"\n  Predictions saved to: {output_file}")
         
         return {
             "success": True,
@@ -276,7 +342,7 @@ def predict_categories(
     except Exception as e:
         import traceback
         error_msg = f"Prediction failed: {str(e)}"
-        print(f"\n❌ {error_msg}")
+        print(f"\n  {error_msg}")
         print(traceback.format_exc())
         
         return {

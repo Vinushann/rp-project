@@ -1,442 +1,614 @@
 [
   {
     "name": "The Yankee (Crispy Chicken & Cheese)",
-    "price": "RS 1,650",
+    "price": "1,650 RS",
+    "description": "Crumb Fried Chicken Breast + Braised Red Cabbage + French Fries + Green Salad + Mustard Mayonnaise Sauce",
     "category": "Burgers"
   },
   {
     "name": "El Double (Grilled Beef & Cheese)",
-    "price": "RS 1,950",
+    "price": "1,950 RS",
+    "description": "Grilled Beef Fillet + Caramelized Onion + French Fries + Green Salad + Mustard Mayonnaise Sauce",
     "category": "Burgers"
   },
   {
     "name": "Holy Chunk (Belly Pork & Cheese)",
-    "price": "RS 1,850",
+    "price": "1,850 RS",
+    "description": "Teriyaki Pork Belly + Pickled Vegetables + French Fries + Green Salad + Mustard Mayonnaise Sauce",
     "category": "Burgers"
   },
   {
     "name": "Chicken Bowl",
-    "price": "RS 1,750",
+    "price": "1,750 RS",
+    "description": "Chicken + Wasabi Sticky Rice + Kimchi + Pickled Onion + Tomato + Carrot+ Corn + Kidney Beans + Boiled Egg + Roasted Sesame Seeds served with Lime Chili Soya Dressing",
     "category": "Healthy Bowls"
   },
   {
     "name": "Tuna Bowl",
-    "price": "RS 1,850",
+    "price": "1,850 RS",
+    "description": "Tuna + Wasabi Sticky Rice + Kimchi + Pickle onion + Tomato + Carrot + Corn + Kidney Beans + Boiled Egg + Roasted Sesame Seeds served with Lime Chili Soya Dressing",
     "category": "Healthy Bowls"
   },
   {
     "name": "Tofu Bowl",
-    "price": "RS 1,650",
+    "price": "1,650 RS",
+    "description": "Tofu + Wasabi Sticky Rice + Kimchi + Pickled Onion + Tomato + Carrot + Corn + Kidney Beans + Boiled Egg + Roasted Sesame Seeds served with Lime Chili Soya Dressing",
     "category": "Healthy Bowls"
+  },
+  {
+    "name": "Greek Salad",
+    "price": "1,850 RS",
+    "description": "Feta Cheese + Tomato + Onion + Cucumber + Olives + Lemon Dressing",
+    "category": "Salads & Soups"
+  },
+  {
+    "name": "Hawaiian Chicken Salad",
+    "price": "1,950 RS",
+    "description": "Chicken + Pineapple + Tomato + Onion",
+    "category": "Salads & Soups"
+  },
+  {
+    "name": "Caesar Salad - Prawns/Chicken/Lobster",
+    "price": "2,100 RS",
+    "description": "Pork Bacon + Iceberg Lettuce + Parmesan Cheese + Egg",
+    "category": "Salads & Soups"
+  },
+  {
+    "name": "Beef Bone Marrow Soup",
+    "price": "1,850 RS",
+    "description": "Beef + Ginger + Lemongrass + Toasted Garlic Bread",
+    "category": "Salads & Soups"
+  },
+  {
+    "name": "Chicken Noodle Soup",
+    "price": "1,750 RS",
+    "description": "Chicken + Vegetables + Egg + Chili Oil",
+    "category": "Salads & Soups"
+  },
+  {
+    "name": "Pepper Mutton Broth",
+    "price": "2,650 RS",
+    "description": "Lemongrass + Coriander + Steamed Basmati Rice",
+    "category": "Salads & Soups"
+  },
+  {
+    "name": "Seafood Tom Yum Soup",
+    "price": "2,950 RS",
+    "description": "Prawns + Fish + Octopus + Calamari + Lemongrass + Tomato",
+    "category": "Salads & Soups"
+  },
+  {
+    "name": "Thai Spicy Beef Salad",
+    "price": "2,350 RS",
+    "description": "Beef + Thai Chili + Coriander Leaves + Peanut + Lime",
+    "category": "Salads & Soups"
+  },
+  {
+    "name": "Cream of Shiitake Mushroom Soup",
+    "price": "1,600 RS",
+    "description": "Shitakii Mushrooms + Onion + Garlic + Butter",
+    "category": "Salads & Soups"
   },
   {
     "name": "Prawn Bowl",
     "price": "RS 1,950",
+    "description": "Prawn + Wasabi Sticky Rice + Kimchi + Pickled Onion + Tomato + Carrot + Corn + Kidney Beans + Boiled Egg + Roasted Sesame Seeds served with Lime Chili Soya Dressing",
     "category": "Healthy Bowls"
   },
   {
     "name": "Seafood",
     "price": "RS 1,490",
+    "description": "Seafood Kebabs + Corn and Egg Rice + Stir Fried Mushroom and Green Beans + Tofu + Prawn Crackers + Mixed Green Salad + Chocolate Mousse + Fruit Salsa",
     "category": "Executive Lunch Set Menu"
   },
   {
     "name": "Chicken",
     "price": "RS 1,490",
+    "description": "Chicken Kebabs + Corn and Egg Rice + Stir Fried Mushroom and Green Beans + Tofu + Prawn Crackers + Mixed Green Salad + Chocolate Mousse + Fruit Salsa",
     "category": "Executive Lunch Set Menu"
   },
   {
-    "name": "Greek Salad",
-    "price": "RS 1,850",
-    "category": "Salads & Soups"
-  },
-  {
-    "name": "Hawaiian Chicken Salad",
-    "price": "RS 1,950",
-    "category": "Salads & Soups"
-  },
-  {
-    "name": "Caesar Salad - Prawns/Chicken/Lobster",
-    "price": "RS 2,100",
-    "category": "Salads & Soups"
-  },
-  {
-    "name": "Beef Bone Marrow Soup",
-    "price": "RS 1,850",
-    "category": "Salads & Soups"
-  },
-  {
-    "name": "Chicken Noodle Soup",
-    "price": "RS 1,750",
-    "category": "Salads & Soups"
-  },
-  {
-    "name": "Pepper Mutton Broth",
-    "price": "RS 2,650",
-    "category": "Salads & Soups"
-  },
-  {
-    "name": "Seafood Tom Yum Soup",
-    "price": "RS 2,950",
-    "category": "Salads & Soups"
-  },
-  {
-    "name": "Thai Spicy Beef Salad",
+    "name": "Beef + Ginger + Lemongrass + Toasted Garlic Bread",
     "price": "RS 2,350",
-    "category": "Salads & Soups"
-  },
-  {
-    "name": "Cream of Shiitake Mushroom Soup",
-    "price": "RS 1,600",
-    "category": "Salads & Soups"
+    "description": "",
+    "category": "Mains"
   },
   {
     "name": "Crispy Fried Whole Tilapia Fish & Chip",
     "price": "Per 100g RS 490",
+    "description": "Fried Garlic + Curry Leaves + Red Chili + French Fries + Green Salad + Home-Made Sauces",
     "category": "Mains"
+  },
+  {
+    "name": "Fried Garlic + Curry Leaves + Red Chili + French Fries + Green Salad + Home-Made Sauces",
+    "price": "RS 3,100",
+    "description": "Fried Garlic + Curry Leaves + Red Chili + French Fries + Green Salad + Home-Made Sauces",
+    "category": "Main Course"
   },
   {
     "name": "Grilled Greek Chicken",
     "price": "RS 3,100",
-    "category": "Mains"
+    "description": "Chicken + Grilled Vegetable & Pineapple + Garlic + Lemon + Herbs",
+    "category": "Main Course"
   },
   {
     "name": "Grilled Beef Fillet",
     "price": "RS 4,950",
-    "category": "Mains"
+    "description": "Beef + Chilli Spaghetti + Grilled Vegetables + Beef Herb Jus",
+    "category": "Main Course"
   },
   {
     "name": "Teriyaki Beef",
     "price": "RS 3,850",
-    "category": "Mains"
+    "description": "Beef + Vegetables + Ginger + Garlic + Chilli Dark Soya",
+    "category": "Main Course"
   },
   {
     "name": "Herb Marinated Pork Leg Steak",
     "price": "RS 2,950",
-    "category": "Mains"
+    "description": "Pork + Pineapple + Grilled Vegetables + Barbecue Sauce",
+    "category": "Main Course"
   },
   {
     "name": "Teriyaki Pork Belly",
     "price": "RS 3,550",
-    "category": "Mains"
+    "description": "Pork + Grilled Pineapple + Grilled Vegetables + Spicy Red Sambal + Teriyaki Sauce + Steamed Rice",
+    "category": "Main Course"
   },
   {
     "name": "Crispy Pork Knuckle",
     "price": "Per 100g RS 750",
-    "category": "Mains"
+    "description": "Pork + Jacket Potato + Grilled Tomato + Mushroom Sauce",
+    "category": "Main Course"
   },
   {
     "name": "Sizzling Thai Grilled Calamari",
     "price": "RS 2,950",
-    "category": "Mains"
-  },
-  {
-    "name": "Grilled Tiger Prawns",
-    "price": "RS 5,100",
-    "category": "Mains"
-  },
-  {
-    "name": "Garlic Butter Crab",
-    "price": "800g RS 4,500",
-    "category": "Mains"
-  },
-  {
-    "name": "Singaporean Style Chilli Crab",
-    "price": "800g RS 4,200",
-    "category": "Mains"
-  },
-  {
-    "name": "Thai Crab Curry",
-    "price": "800g RS 4,200",
-    "category": "Mains"
+    "description": "Calamari + Tomato + Onions + Cucumber + Kochchi Sambal + Karapincha Sambal",
+    "category": "Seafood"
   },
   {
     "name": "Murex Mussel (Shell-less)",
     "price": "500g RS 4,950",
-    "category": "Mains"
-  },
-  {
-    "name": "Lemongrass Marinated Sizzling Thai Octopus",
-    "price": "500g RS 3,400",
-    "category": "Mains"
-  },
-  {
-    "name": "Vegetable Tempura with Crushed Sweet Corn",
-    "price": "RS 2,250",
-    "category": "Mains"
-  },
-  {
-    "name": "Basil Pesto Couscous with Grilled Zucchini & Ratatouille",
-    "price": "RS 2,450",
-    "category": "Mains"
+    "description": "Murrex Mussel + Onion + Garlic + Chilli + Garlic Bread",
+    "category": "Seafood"
   },
   {
     "name": "Fried Pork",
     "price": "Large RS 2,950",
-    "category": "Fried Meat And Seafood"
+    "description": "Pork + Tomato + Onions + Cucumber + Kochchi Sambal + Karapincha Sambal",
+    "category": "Main Course"
   },
   {
     "name": "Fried Kochchi Beef",
     "price": "RS 3,350",
-    "category": "Fried Meat And Seafood"
+    "description": "Beef + Tomato + Onions + Cucumber + Kochchi Sambal + Karapincha Sambal",
+    "category": "Main Course"
   },
   {
     "name": "Fried Chicken",
     "price": "Large RS 2,700",
-    "category": "Fried Meat And Seafood"
+    "description": "Chicken + Tomato + Onions + Cucumber + Kochchi Sambal + Karapincha Sambal",
+    "category": "Main Course"
   },
   {
     "name": "Karaage Chicken",
     "price": "RS 2,800",
-    "category": "Fried Meat And Seafood"
+    "description": "Chicken + Ginger + Dark Soya + Kochchi Sambal + Tartar Sauce",
+    "category": "Main Course"
   },
   {
     "name": "Crispy Fried Calamari",
     "price": "RS 2,950",
-    "category": "Fried Meat And Seafood"
+    "description": "Calamari + Tomato + Onions + Cucumber + Kochchi Sambal + Karapincha Sambal",
+    "category": "Seafood"
   },
   {
-    "name": "Side Dishes",
+    "name": "Hot Butter Calamari",
+    "price": "Large RS 2,950",
+    "description": "Calamari + Red Chili + Garlic + Vegetables + Tamarind Dressing",
+    "category": "Seafood"
+  },
+  {
+    "name": "Battered Prawns",
+    "price": "Large RS 2,950",
+    "description": "Prawns + Kochchi Sambal + Tartar Sauce",
+    "category": "Seafood"
+  },
+  {
+    "name": "Lemongrass Marinated Sizzling Thai Octopus",
+    "price": "RS 3,400",
+    "description": "Octopus + Lemongrass + Garlic + Scallions + Lime",
+    "category": "Seafood"
+  },
+  {
+    "name": "Vegetable Tempura with Crushed Sweet Corn",
+    "price": "RS 2,250",
+    "description": "Assorted Vegetables + Sweet Corn + Ginger + Garlic + Butter",
+    "category": "Side Dishes"
+  },
+  {
+    "name": "Basil Pesto Couscous with Grilled Zucchini & Ratatouille",
+    "price": "RS 2,450",
+    "description": "Fresh Basil + Vegetable Broth + Ginger + Garlic",
+    "category": "Salads & Soups"
+  },
+  {
+    "name": "Red Chicken Curry",
+    "price": "RS 2,950",
+    "description": "Sri Lankan Curry with Roast Paan OR Pol Rotti + Pol Sambal",
+    "category": "Sri Lankan Curry"
+  },
+  {
+    "name": "Black Pork Curry",
+    "price": "RS 3,100",
+    "description": "Sri Lankan Curry with Roast Paan OR Pol Rotti + Pol Sambal",
+    "category": "Sri Lankan Curry"
+  },
+  {
+    "name": "Red Beef Curry",
+    "price": "RS 3,300",
+    "description": "Sri Lankan Curry with Roast Paan OR Pol Rotti + Pol Sambal",
+    "category": "Sri Lankan Curry"
+  },
+  {
+    "name": "Red Mutton Curry",
+    "price": "RS 4,100",
+    "description": "Sri Lankan Curry with Roast Paan OR Pol Rotti + Pol Sambal",
+    "category": "Sri Lankan Curry"
+  },
+  {
+    "name": "Red Prawns Curry",
+    "price": "RS 3,950",
+    "description": "Sri Lankan Curry with Roast Paan OR Pol Rotti + Pol Sambal",
+    "category": "Sri Lankan Curry"
+  },
+  {
+    "name": "Jaffna Crab Curry",
+    "price": "RS 4,100",
+    "description": "Sri Lankan Curry with Roast Paan OR Pol Rotti + Pol Sambal",
+    "category": "Sri Lankan Curry"
+  },
+  {
+    "name": "Tilapiya Fish Curry",
+    "price": "Rs 3,100",
+    "description": "Sri Lankan Curry with Roast Paan OR Pol Rotti + Pol Sambal",
+    "category": "Sri Lankan Curry"
+  },
+  {
+    "name": "Spaghetti Aglio e Olio",
+    "price": "RS 2,650",
+    "description": "Chilli Flakes + Garlic + Parmesan Cheese + Olive Oil",
+    "category": "Pasta"
+  },
+  {
+    "name": "Spaghetti with Fresh Basil Pesto",
+    "price": "RS 2,650",
+    "description": "Fresh Basil + Nuts + Olive Oil",
+    "category": "Pasta"
+  },
+  {
+    "name": "Spaghetti Alle Vongole (Clams Spaghatti)",
+    "price": "RS 3,450",
+    "description": "Clams + Garlic + Parmesan Cheese + Olive Oil",
+    "category": "Pasta"
+  },
+  {
+    "name": "Fettuccine with Beef and White Truffle",
+    "price": "RS 3,450",
+    "description": "Beef + Fettuccine + Mushrooms + Truffle Oil",
+    "category": "Pasta"
+  },
+  {
+    "name": "Chicken Bolognese",
+    "price": "RS 2,950",
+    "description": "Minced Chicken + Spaghetti + Tomato Paste",
+    "category": "Pasta"
+  },
+  {
+    "name": "Creamy Seafood Penne Pasta",
+    "price": "RS 3,450",
+    "description": "Prawns + Cuttlefish + Parmesan Cheese + Fresh Milk + Garlic",
+    "category": "Pasta"
+  },
+  {
+    "name": "Wok Fried Spicy Mixed Meat Rice",
+    "price": "RS 2,950",
+    "description": "Chicken + Pork + Beef + Egg + Vegetables + Sesame Oil",
+    "category": "Rice"
+  },
+  {
+    "name": "Spicy Chili Chicken Rice",
+    "price": "RS 2,650",
+    "description": "Chicken + Egg + Thai Chili Paste + Sesami Oil",
+    "category": "Rice"
+  },
+  {
+    "name": "Mixed Cheese Omelette",
     "price": "RS 1,950",
+    "description": "Mixed Meat + Seafood + Cheese + Onion + Green Chilli",
     "category": "Side Dishes"
   },
   {
     "name": "Sri Lankan Chicken Omelette",
     "price": "RS 1,650",
+    "description": "",
     "category": "Side Dishes"
   },
   {
     "name": "French Fries",
-    "price": "Regular RS 950",
+    "price": "['Regular RS 950', 'Large RS 1,950']",
+    "description": "",
     "category": "Side Dishes"
   },
   {
     "name": "Home-made Potato Wedges",
-    "price": "Regular RS 950",
+    "price": "['Regular RS 950', 'Large RS 1,950']",
+    "description": "",
     "category": "Side Dishes"
   },
   {
     "name": "Sauteed Garlic Button Mushroom",
     "price": "RS 750",
+    "description": "Fresh Rosemary + Spinach + Haricot Beans",
     "category": "Side Dishes"
   },
   {
     "name": "Garlic Rice",
     "price": "RS 590",
+    "description": "",
     "category": "Side Dishes"
   },
   {
     "name": "Egg Rice",
     "price": "RS 590",
+    "description": "",
     "category": "Side Dishes"
   },
   {
     "name": "Pol Rotti",
     "price": "RS 490",
+    "description": "",
     "category": "Side Dishes"
   },
   {
     "name": "Steamed Basmati Rice",
     "price": "RS 490",
+    "description": "",
     "category": "Side Dishes"
   },
   {
     "name": "Garlic Bread",
     "price": "RS 490",
+    "description": "",
     "category": "Side Dishes"
   },
   {
     "name": "Roasted Paan",
     "price": "RS 430",
+    "description": "",
     "category": "Side Dishes"
   },
   {
     "name": "Crispy Chicken Nuggets + Home-made Potato Wedges with Honey Mayo",
     "price": "RS 1,450",
+    "description": "",
     "category": "Kids Menu"
   },
   {
     "name": "Spaghetti Beef Bolognese with Parmesan Cheese",
     "price": "RS 1,450",
+    "description": "",
     "category": "Kids Menu"
   },
   {
     "name": "Chicken & Cheese Wrap",
     "price": "RS 1,450",
+    "description": "",
     "category": "Kids Menu"
   },
   {
     "name": "Amberella Mint & Lime Cooler",
     "price": "RS 950",
-    "category": "Mocktails"
+    "description": "",
+    "category": "Beverages"
   },
   {
     "name": "Virgin Mojito",
     "price": "RS 850",
-    "category": "Mocktails"
-  },
-  {
-    "name": "Limy Watermelon Fizz",
-    "price": "RS 850",
-    "category": "Mocktails"
-  },
-  {
-    "name": "Mint Passion Refresher",
-    "price": "RS 900",
-    "category": "Mocktails"
-  },
-  {
-    "name": "Creamy Tropical Piña Colada",
-    "price": "RS 950",
-    "category": "Mocktails"
-  },
-  {
-    "name": "Soda",
-    "price": "400ml RS 350",
-    "category": "Soft Drinks"
-  },
-  {
-    "name": "Coca-Cola",
-    "price": "400ml RS 400",
-    "category": "Soft Drinks"
-  },
-  {
-    "name": "Sprite",
-    "price": "400ml RS 400",
-    "category": "Soft Drinks"
-  },
-  {
-    "name": "Ginger Beer",
-    "price": "400ml RS 400",
-    "category": "Soft Drinks"
-  },
-  {
-    "name": "Ginger Ale",
-    "price": "400ml RS 400",
-    "category": "Soft Drinks"
-  },
-  {
-    "name": "Lemonade",
-    "price": "400ml RS 400",
-    "category": "Soft Drinks"
-  },
-  {
-    "name": "Tonic",
-    "price": "400ml RS 400",
-    "category": "Soft Drinks"
-  },
-  {
-    "name": "Redbull",
-    "price": "250ml RS 1,450",
-    "category": "Soft Drinks"
-  },
-  {
-    "name": "Mineral Water Bottle",
-    "price": "1L RS 450",
-    "category": "Soft Drinks"
-  },
-  {
-    "name": "Fresh Mixed Fruit Juice",
-    "price": "RS 850",
-    "category": "Juices & Shakes"
-  },
-  {
-    "name": "Fresh Orange Juice",
-    "price": "RS 950",
-    "category": "Juices & Shakes"
-  },
-  {
-    "name": "Fresh Papaya Juice",
-    "price": "RS 750",
-    "category": "Juices & Shakes"
-  },
-  {
-    "name": "Fresh Passion Juice",
-    "price": "RS 750",
-    "category": "Juices & Shakes"
-  },
-  {
-    "name": "Fresh Pineapple Juice",
-    "price": "RS 800",
-    "category": "Juices & Shakes"
-  },
-  {
-    "name": "Fresh Watermelon Juice",
-    "price": "RS 700",
-    "category": "Juices & Shakes"
-  },
-  {
-    "name": "Fresh Lime Juice",
-    "price": "RS 650",
-    "category": "Juices & Shakes"
-  },
-  {
-    "name": "Chocolate",
-    "price": "RS 950",
-    "category": "Desserts"
-  },
-  {
-    "name": "Vanilla",
-    "price": "RS 950",
-    "category": "Desserts"
-  },
-  {
-    "name": "Espresso",
-    "price": "RS 500",
-    "category": "Hot Beverages"
-  },
-  {
-    "name": "Double Espresso",
-    "price": "RS 600",
-    "category": "Hot Beverages"
-  },
-  {
-    "name": "Cappucino",
-    "price": "RS 650",
-    "category": "Hot Beverages"
-  },
-  {
-    "name": "Cafe Latte",
-    "price": "RS 650",
-    "category": "Hot Beverages"
-  },
-  {
-    "name": "Americano",
-    "price": "RS 600",
-    "category": "Hot Beverages"
+    "description": "",
+    "category": "Beverages"
   },
   {
     "name": "Chocolate Mousse",
     "price": "RS 690",
+    "description": "",
     "category": "Desserts"
   },
   {
     "name": "White Chocolate Mousse",
     "price": "RS 690",
+    "description": "",
     "category": "Desserts"
   },
   {
     "name": "French Vanilla",
     "price": "RS 750",
-    "category": "Ice Cream"
+    "description": "",
+    "category": "Desserts"
   },
   {
     "name": "Rocky Road",
     "price": "RS 850",
-    "category": "Ice Cream"
+    "description": "",
+    "category": "Desserts"
   },
   {
     "name": "Choc Choc Chip",
-    "price": "RS 890",
-    "category": "Ice Cream"
+    "price": "RS 850",
+    "description": "",
+    "category": "Desserts"
   },
   {
     "name": "Very Berry",
     "price": "RS 890",
-    "category": "Ice Cream"
+    "description": "",
+    "category": "Desserts"
   },
   {
     "name": "Cookie Cream",
     "price": "RS 890",
-    "category": "Ice Cream"
+    "description": "",
+    "category": "Desserts"
+  },
+  {
+    "name": "Mint Passion Refresher",
+    "price": "RS 900",
+    "description": "",
+    "category": "Soft Drinks"
+  },
+  {
+    "name": "Creamy Tropical Piña Colada",
+    "price": "RS 950",
+    "description": "",
+    "category": "Soft Drinks"
+  },
+  {
+    "name": "Soda",
+    "price": "RS 350",
+    "description": "400ml",
+    "category": "Soft Drinks"
+  },
+  {
+    "name": "Coca-Cola",
+    "price": "RS 400",
+    "description": "400ml",
+    "category": "Soft Drinks"
+  },
+  {
+    "name": "Sprite",
+    "price": "RS 400",
+    "description": "400ml",
+    "category": "Soft Drinks"
+  },
+  {
+    "name": "Ginger Beer",
+    "price": "RS 400",
+    "description": "400ml",
+    "category": "Soft Drinks"
+  },
+  {
+    "name": "Ginger Ale",
+    "price": "RS 400",
+    "description": "400ml",
+    "category": "Soft Drinks"
+  },
+  {
+    "name": "Lemonade",
+    "price": "RS 400",
+    "description": "400ml",
+    "category": "Soft Drinks"
+  },
+  {
+    "name": "Tonic",
+    "price": "RS 400",
+    "description": "400ml",
+    "category": "Soft Drinks"
+  },
+  {
+    "name": "Redbull",
+    "price": "RS 1,450",
+    "description": "250ml",
+    "category": "Soft Drinks"
+  },
+  {
+    "name": "Mineral Water Bottle",
+    "price": "RS 450",
+    "description": "1L",
+    "category": "Soft Drinks"
+  },
+  {
+    "name": "Fresh Mixed Fruit Juice",
+    "price": "RS 850",
+    "description": "",
+    "category": "Juices & Shakes"
+  },
+  {
+    "name": "Fresh Orange Juice",
+    "price": "RS 950",
+    "description": "",
+    "category": "Juices & Shakes"
+  },
+  {
+    "name": "Fresh Papaya Juice",
+    "price": "RS 750",
+    "description": "",
+    "category": "Juices & Shakes"
+  },
+  {
+    "name": "Fresh Passion Juice",
+    "price": "RS 750",
+    "description": "",
+    "category": "Juices & Shakes"
+  },
+  {
+    "name": "Fresh Pineapple Juice",
+    "price": "RS 800",
+    "description": "",
+    "category": "Juices & Shakes"
+  },
+  {
+    "name": "Fresh Watermelon Juice",
+    "price": "RS 700",
+    "description": "",
+    "category": ""
+  },
+  {
+    "name": "Fresh Lime Juice",
+    "price": "RS 650",
+    "description": "",
+    "category": ""
+  },
+  {
+    "name": "Chocolate",
+    "price": "RS 950",
+    "description": "",
+    "category": ""
+  },
+  {
+    "name": "Vanilla",
+    "price": "RS 950",
+    "description": "",
+    "category": ""
+  },
+  {
+    "name": "Espresso",
+    "price": "RS 500",
+    "description": "",
+    "category": "Hot Beverages"
+  },
+  {
+    "name": "Double Espresso",
+    "price": "RS 600",
+    "description": "",
+    "category": "Hot Beverages"
+  },
+  {
+    "name": "Cappucino",
+    "price": "RS 650",
+    "description": "",
+    "category": "Hot Beverages"
+  },
+  {
+    "name": "Cafe Latte",
+    "price": "RS 650",
+    "description": "",
+    "category": "Hot Beverages"
+  },
+  {
+    "name": "Americano",
+    "price": "RS 600",
+    "description": "",
+    "category": "Hot Beverages"
   }
 ]

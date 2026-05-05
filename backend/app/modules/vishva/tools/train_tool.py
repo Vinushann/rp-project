@@ -50,6 +50,12 @@ except LookupError:
 
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+
+try:
+    nltk.data.find('corpora/wordnet')
+except LookupError:
+    nltk.download('wordnet', quiet=True)
 
 class MenuCategoryClassifier:
     """
@@ -84,8 +90,10 @@ class MenuCategoryClassifier:
         
         try:
             self.stop_words = set(stopwords.words('english'))
+            self.lemmatizer = WordNetLemmatizer()
         except:
             self.stop_words = set()
+            self.lemmatizer = None
     
     def preprocess_text(self, text: str) -> str:
         """Preprocess text: lowercase, remove special chars, remove stopwords"""
@@ -101,16 +109,21 @@ class MenuCategoryClassifier:
         # Remove extra spaces
         text = ' '.join(text.split())
         
-        # Remove stopwords
+        # Remove stopwords and lemmatize
+        words = text.split()
         if self.stop_words:
-            words = text.split()
-            text = ' '.join([w for w in words if w not in self.stop_words])
+            words = [w for w in words if w not in self.stop_words]
+        
+        if self.lemmatizer:
+            words = [self.lemmatizer.lemmatize(w) for w in words]
+            
+        text = ' '.join(words)
         
         return text
     
     def load_training_data(self, json_file: str) -> Tuple[List[str], List[str]]:
         """Load and prepare training data from JSON file"""
-        print(f"📖 Loading training data from: {json_file}")
+        print(f"Loading training data from: {json_file}")
         
         with open(json_file, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -122,23 +135,24 @@ class MenuCategoryClassifier:
         categories = []
         
         for item in data:
-            # Use only name for classification (no description - POS items won't have it)
-            # Handle None values explicitly
+            # Combine name and description for richer features
             name = (item.get('name') or '').strip()
+            description = (item.get('description') or '').strip()
             category = (item.get('category') or '').strip()
             
             if not name or not category:
                 continue
             
-            # Use only name for classification
-            preprocessed = self.preprocess_text(name)
+            # Combine text for classification
+            combined_text = f"{name} {description}".strip()
+            preprocessed = self.preprocess_text(combined_text)
             
-            if preprocessed:  # Only add if text is not empty after preprocessing
+            if preprocessed:
                 texts.append(preprocessed)
                 categories.append(category)
         
-        print(f"✅ Loaded {len(texts)} items")
-        print(f"📊 Categories found: {len(set(categories))}")
+        print(f"Loaded {len(texts)} items")
+        print(f"Categories found: {len(set(categories))}")
         print(f"   Categories: {', '.join(sorted(set(categories)))}")
         
         return texts, categories
@@ -149,7 +163,7 @@ class MenuCategoryClassifier:
         This fixes the 'stratify' error in train_test_split.
         """
         if ChatOllama is None:
-            print("⚠️ langchain_ollama not installed. Cannot rebalance categories via agent.")
+            print("   langchain_ollama not installed. Cannot rebalance categories via agent.")
             return False
 
         if not os.path.exists(json_file):
@@ -172,17 +186,17 @@ class MenuCategoryClassifier:
         if not singletons:
             return False
             
-        print(f"⚠️ Found {len(singletons)} categories with only 1 member: {singletons}")
+        print(f"Found {len(singletons)} categories with only 1 member: {singletons}")
         
         # Valid target categories (those with > 1 member)
         targets = [cat for cat, count in counts.items() if count >= 2]
         if not targets:
             # If all categories are singletons, we can't rebalance into existing ones.
             # In this case, we might want to suggest a generic category or just fail.
-            print("❌ No valid target categories found for rebalancing (> 1 member).")
+            print("  No valid target categories found for rebalancing (> 1 member).")
             return False
             
-        print(f"🤖 Using local agent to re-categorize {len(singletons)} items into {len(targets)} possible categories...")
+        print(f"Using local agent to re-categorize {len(singletons)} items into {len(targets)} possible categories...")
         
         # Initialize LLM
         try:
@@ -222,27 +236,27 @@ class MenuCategoryClassifier:
                                     break
                         
                         if new_cat in targets:
-                            print(f"✅ Re-categorized '{name}': [{old_cat}] -> [{new_cat}]")
+                            print(f"Re-categorized '{name}': [{old_cat}] -> [{new_cat}]")
                             item['category'] = new_cat
                             updated = True
                         else:
                             # Fallback to the most populated target or first target
                             fallback = targets[0]
-                            print(f"⚠️ Agent suggested '{new_cat}' but it's not in the list. Falling back to '{fallback}'.")
+                            print(f"   Agent suggested '{new_cat}' but it's not in the list. Falling back to '{fallback}'.")
                             item['category'] = fallback
                             updated = True
                     except Exception as inner_e:
-                        print(f"⚠️ Failed to re-categorize '{name}': {inner_e}")
+                        print(f"   Failed to re-categorize '{name}': {inner_e}")
                         continue
             
             if updated:
                 with open(json_file, 'w', encoding='utf-8') as f:
                     json.dump(data, f, indent=2, ensure_ascii=False)
-                print(f"💾 Updated training data saved to {json_file}")
+                print(f"Updated training data saved to {json_file}")
                 return True
                 
         except Exception as e:
-            print(f"❌ Rebalancing process failed: {e}")
+            print(f"  Rebalancing process failed: {e}")
             return False
             
         return False
@@ -290,7 +304,7 @@ class MenuCategoryClassifier:
         """Train all model combinations and find the best one"""
         
         print("\n" + "="*70)
-        print("🤖 TRAINING MULTIPLE MODELS")
+        print("TRAINING MULTIPLE MODELS")
         print("="*70)
         
         # Split data
@@ -298,7 +312,7 @@ class MenuCategoryClassifier:
             texts, categories, test_size=0.2, random_state=42, stratify=categories
         )
         
-        print(f"\n📊 Data split:")
+        print(f"Data split:")
         print(f"   Training: {len(X_train_text)} items")
         print(f"   Testing: {len(X_test_text)} items")
         
@@ -311,16 +325,16 @@ class MenuCategoryClassifier:
         current = 0
         
         for vec_name, vectorizer in self.vectorizers.items():
-            print(f"\n{'─'*70}")
-            print(f"🔤 Feature Extraction: {vec_name}")
-            print(f"{'─'*70}")
+            print(f"\n{' '*70}")
+            print(f"Feature Extraction: {vec_name}")
+            print(f"{' '*70}")
             
             # Vectorize
             X_train_vec = vectorizer.fit_transform(X_train_text)
             X_test_vec = vectorizer.transform(X_test_text)
             
             for fs_name, fs_method in self.feature_selectors.items():
-                print(f"\n  🔍 Feature Selection: {fs_name}")
+                print(f"  Feature Selection: {fs_name}")
                 
                 # Apply feature selection
                 X_train_selected, X_test_selected, selector = self.apply_feature_selection(
@@ -329,7 +343,7 @@ class MenuCategoryClassifier:
                 
                 for model_name, model in self.models.items():
                     current += 1
-                    print(f"\n    🎯 Model {current}/{total_combinations}: {model_name}")
+                    print(f"    Model {current}/{total_combinations}: {model_name}")
                     
                     try:
                         # Clone model
@@ -382,9 +396,9 @@ class MenuCategoryClassifier:
                         
                         results.append(result)
                         
-                        print(f"       ✓ Accuracy: {accuracy:.4f}")
-                        print(f"       ✓ F1-Score: {f1:.4f}")
-                        print(f"       ✓ CV Score: {cv_mean:.4f} (±{cv_std:.4f})")
+                        print(f"         Accuracy: {accuracy:.4f}")
+                        print(f"         F1-Score: {f1:.4f}")
+                        print(f"         CV Score: {cv_mean:.4f} ( {cv_std:.4f})")
                         
                         # Track best model
                         if accuracy > best_accuracy:
@@ -401,7 +415,7 @@ class MenuCategoryClassifier:
                             }
                     
                     except Exception as e:
-                        print(f"       ✗ Failed: {str(e)[:50]}")
+                        print(f"         Failed: {str(e)[:50]}")
                         continue
         
         # Store results
@@ -519,10 +533,10 @@ def train_category_classifier(training_file: str, output_dir: str = "models") ->
         dict with training results and best model info
     """
     
-    print("🤖 MENU CATEGORY CLASSIFIER TRAINING")
+    print("MENU CATEGORY CLASSIFIER TRAINING")
     print("="*70)
-    print(f"📁 Training file: {training_file}")
-    print(f"📁 Output directory: {output_dir}")
+    print(f"Training file: {training_file}")
+    print(f"Output directory: {output_dir}")
     print("="*70)
     
     try:
@@ -548,7 +562,7 @@ def train_category_classifier(training_file: str, output_dir: str = "models") ->
         
         # Check for underpopulated classes (singletons) before training
         if classifier.rebalance_singleton_categories(training_file):
-            print("🔄 Re-loading data after rebalancing...")
+            print("Re-loading data after rebalancing...")
             texts, categories = classifier.load_training_data(training_file)
 
         # Train all models
@@ -563,12 +577,12 @@ def train_category_classifier(training_file: str, output_dir: str = "models") ->
         
         # Print results summary
         print("\n" + "="*70)
-        print("📊 FINAL RESULTS SUMMARY")
+        print("FINAL RESULTS SUMMARY")
         print("="*70)
         
-        print("\n🏆 TOP 5 MODEL CONFIGURATIONS:")
+        print("\nTOP 5 MODEL CONFIGURATIONS:")
         print(f"{'Rank':<6} {'Vectorizer':<20} {'Feature Selector':<20} {'Model':<25} {'Accuracy':<10}")
-        print("─"*95)
+        print(" "*95)
         
         for i, result in enumerate(classifier.results[:5], 1):
             print(f"{i:<6} {result['vectorizer']:<20} {result['feature_selector']:<20} "
@@ -577,7 +591,7 @@ def train_category_classifier(training_file: str, output_dir: str = "models") ->
         # Best model details
         best = classifier.results[0]
         print(f"\n{'='*70}")
-        print("🥇 BEST MODEL SELECTED")
+        print("BEST MODEL SELECTED")
         print(f"{'='*70}")
         print(f"   Vectorizer: {best['vectorizer']}")
         print(f"   Feature Selector: {best['feature_selector']}")
@@ -586,21 +600,21 @@ def train_category_classifier(training_file: str, output_dir: str = "models") ->
         print(f"   Precision: {best['precision']:.4f}")
         print(f"   Recall: {best['recall']:.4f}")
         print(f"   F1-Score: {best['f1_score']:.4f}")
-        print(f"   CV Score: {best['cv_mean']:.4f} (±{best['cv_std']:.4f})")
+        print(f"   CV Score: {best['cv_mean']:.4f} ( {best['cv_std']:.4f})")
         
         # Save model with categories
-        print(f"\n💾 Saving best model...")
+        print(f"\nSaving best model...")
         unique_categories = list(set(categories))
         model_file, vec_file, results_file = classifier.save_model(output_dir, unique_categories)
         
-        print(f"✅ Model saved to: {model_file}")
-        print(f"✅ Vectorizer saved to: {vec_file}")
-        print(f"✅ Results saved to: {results_file}")
+        print(f"  Model saved to: {model_file}")
+        print(f"  Vectorizer saved to: {vec_file}")
+        print(f"  Results saved to: {results_file}")
         
         # Confusion matrix for best model
         if training_results['y_pred'] is not None:
-            print(f"\n📊 Classification Report (Best Model):")
-            print("─"*70)
+            print(f"\nClassification Report (Best Model):")
+            print(" "*70)
             print(classification_report(
                 training_results['y_test'], 
                 training_results['y_pred'],
@@ -629,7 +643,7 @@ def train_category_classifier(training_file: str, output_dir: str = "models") ->
     except Exception as e:
         import traceback
         error_msg = f"Training failed: {str(e)}"
-        print(f"\n❌ {error_msg}")
+        print(f"\nError: {error_msg}")
         print(traceback.format_exc())
         
         return {

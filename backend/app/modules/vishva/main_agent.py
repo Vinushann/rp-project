@@ -15,20 +15,20 @@ def run_menu_extraction_pipeline(url: str):
     """
     
     print("=" * 60)
-    print("🚀 MENU EXTRACTION PIPELINE")
+    print("MENU EXTRACTION PIPELINE")
     print("=" * 60)
-    print(f"🎯 Target URL: {url}")
-    print(f"🕐 Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Target URL: {url}")
+    print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
     
     # Step 1: Extract data
-    print("\n📥 STEP 1: EXTRACTING DATA")
+    print("\nSTEP 1: EXTRACTING DATA")
     print("-" * 60)
     
     extraction_result = extract_menu_data(url, output_dir="data/raw")
     
     if not extraction_result["success"]:
-        print(f"\n❌ PIPELINE FAILED at extraction step")
+        print(f"\nPIPELINE FAILED at extraction step")
         print(f"   Error: {extraction_result['message']}")
         return {
             "success": False,
@@ -36,14 +36,14 @@ def run_menu_extraction_pipeline(url: str):
             "error": extraction_result['message']
         }
     
-    print(f"\n✅ Extraction completed successfully")
-    print(f"   📁 Raw file: {extraction_result['file_path']}")
-    print(f"   📊 Data size: {extraction_result['data_length']} characters")
+    print(f"\nExtraction completed successfully")
+    print(f"   Raw file: {extraction_result['file_path']}")
+    print(f"   Data size: {extraction_result['data_length']} characters")
     if extraction_result['item_count'] > 0:
-        print(f"   📋 Detected items: {extraction_result['item_count']}")
+        print(f"   Detected items: {extraction_result['item_count']}")
     
     # Step 2: Clean data
-    print("\n🧹 STEP 2: CLEANING DATA")
+    print("\nSTEP 2: CLEANING DATA")
     print("-" * 60)
     
     cleaning_result = clean_json_data(
@@ -61,20 +61,20 @@ def run_menu_extraction_pipeline(url: str):
             "raw_file": extraction_result['file_path']
         }
     
-    print(f"\n✅ Cleaning completed successfully")
-    print(f"   📁 Clean file: {cleaning_result['file_path']}")
-    print(f"   📁 Main file: {cleaning_result['main_file']}")
-    print(f"   📋 Total items: {cleaning_result['item_count']}")
-    print(f"   🔧 Parse method: {cleaning_result['parse_method']}")
+    print(f"\nCleaning completed successfully")
+    print(f"   Clean file: {cleaning_result['file_path']}")
+    print(f"   Main file: {cleaning_result['main_file']}")
+    print(f"   Total items: {cleaning_result['item_count']}")
+    print(f"   Parse method: {cleaning_result['parse_method']}")
     
     # Final summary
     print("\n" + "=" * 60)
-    print("✅ PIPELINE COMPLETED SUCCESSFULLY")
+    print("\nPIPELINE COMPLETED SUCCESSFULLY")
     print("=" * 60)
-    print(f"📥 Raw extraction: {extraction_result['file_path']}")
-    print(f"📤 Clean output: {cleaning_result['main_file']}")
-    print(f"📊 Items extracted: {cleaning_result['item_count']}")
-    print(f"🕐 Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Raw extraction: {extraction_result['file_path']}")
+    print(f"Clean output: {cleaning_result['main_file']}")
+    print(f"Items extracted: {cleaning_result['item_count']}")
+    print(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 60)
     
     return {
