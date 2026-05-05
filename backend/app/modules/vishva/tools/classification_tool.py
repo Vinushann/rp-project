@@ -121,14 +121,9 @@ def process_menu_classification(
     df_cleaned['quadrant'] = df_cleaned.apply(classify, axis=1)
 
     # 3. Prepare Chart Data
-    # Scatter Data
     scatter_data = df_cleaned.to_dict('records')
-
-    # Pie Data
     quadrant_counts = df_cleaned['quadrant'].value_counts().to_dict()
     pie_data = [{"name": k, "value": int(v)} for k, v in quadrant_counts.items()]
-
-    # Bar Data (Top items by revenue)
     top_items = df_cleaned.sort_values('revenue', ascending=False).head(20).to_dict('records')
 
     # 4. Calculate KPIs
@@ -140,13 +135,34 @@ def process_menu_classification(
         "avg_revenue": f"LKR {df_cleaned['revenue'].mean():,.0f}"
     }
 
+    # 5. Category Analysis
+    cat_analysis = []
+    if 'category' in df_cleaned.columns:
+        cat_groups = df_cleaned.groupby('category')
+        total_revenue = df_cleaned['revenue'].sum()
+        
+        for name, group in cat_groups:
+            cat_rev = group['revenue'].sum()
+            cat_analysis.append({
+                "category": name,
+                "item_count": len(group),
+                "avg_margin": float(group['margin'].mean()),
+                "total_revenue": float(cat_rev),
+                "rev_contribution": float((cat_rev / total_revenue * 100) if total_revenue > 0 else 0),
+                "quadrants": group['quadrant'].value_counts().to_dict()
+            })
+        
+        # Sort categories by revenue contribution
+        cat_analysis = sorted(cat_analysis, key=lambda x: x['total_revenue'], reverse=True)
+
     return {
         "success": True,
         "data": {
             "items": scatter_data,
             "charts": {
                 "pie": pie_data,
-                "top_items": top_items
+                "top_items": top_items,
+                "category_analysis": cat_analysis
             },
             "kpis": kpis,
             "thresholds": {

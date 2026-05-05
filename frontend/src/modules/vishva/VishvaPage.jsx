@@ -138,6 +138,7 @@ function VishvaPage() {
     profit_threshold: 60
   });
   const [selectedQuadrant, setSelectedQuadrant] = useState(null);
+  const [selectedAnalysisCategory, setSelectedAnalysisCategory] = useState('All');
 
   // State for Column Mapping
   const [fileColumns, setFileColumns] = useState([]);
@@ -2314,7 +2315,24 @@ function VishvaPage() {
               <p className="text-gray-500 mt-2">Calculating popularity indexes and profit margins...</p>
             </div>
           ) : (
-            <div className="space-y-6">
+            (() => {
+              const filteredItems = classificationData.items.filter(i => {
+                const matchQuad = selectedQuadrant ? i.quadrant === selectedQuadrant : true;
+                const matchCat = selectedAnalysisCategory === 'All' ? true : i.category === selectedAnalysisCategory;
+                return matchQuad && matchCat;
+              });
+
+              const filteredKPIs = {
+                total: filteredItems.length,
+                cashCows: filteredItems.filter(i => i.quadrant === 'Cash Cow').length,
+                marginRisk: filteredItems.filter(i => i.quadrant === 'Margin Risk').length,
+                avgMargin: filteredItems.length > 0 
+                  ? (filteredItems.reduce((acc, i) => acc + i.margin, 0) / filteredItems.length).toFixed(1) + '%' 
+                  : '0%'
+              };
+
+              return (
+                <div className="space-y-6">
               {/* Header & Controls */}
               <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
                 <div>
@@ -2328,6 +2346,8 @@ function VishvaPage() {
                       setClassificationFile(null);
                       setShowMapping(false);
                       setFileColumns([]);
+                      setSelectedAnalysisCategory('All');
+                      setSelectedQuadrant(null);
                     }}
                     className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-red-600 transition-colors"
                   >
@@ -2422,27 +2442,28 @@ function VishvaPage() {
 
                 {/* KPI Cards */}
                 <div className="md:col-span-2 grid grid-cols-2 gap-4">
-                  <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
+                  <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden">
+                    {selectedAnalysisCategory !== 'All' && <div className="absolute top-0 right-0 w-1 h-full bg-emerald-500"></div>}
                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Items</p>
-                    <p className="text-3xl font-black text-gray-800">{classificationData.kpis.total_items}</p>
+                    <p className="text-3xl font-black text-gray-800">{filteredKPIs.total}</p>
                     <div className="mt-2 text-xs text-gray-500 flex items-center gap-1">
-                      <span className="h-2 w-2 rounded-full bg-emerald-400"></span> Active menu records
+                      <span className="h-2 w-2 rounded-full bg-emerald-400"></span> {selectedAnalysisCategory === 'All' ? 'Active menu records' : `Items in ${selectedAnalysisCategory}`}
                     </div>
                   </div>
                   <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
                     <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1">Cash Cows</p>
-                    <p className="text-3xl font-black text-emerald-700">{classificationData.kpis.cash_cows}</p>
+                    <p className="text-3xl font-black text-emerald-700">{filteredKPIs.cashCows}</p>
                     <div className="mt-2 text-xs text-gray-500">High profit & popularity</div>
                   </div>
                   <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
                     <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-1">Margin Risks</p>
-                    <p className="text-3xl font-black text-red-700">{classificationData.kpis.margin_risk}</p>
+                    <p className="text-3xl font-black text-red-700">{filteredKPIs.marginRisk}</p>
                     <div className="mt-2 text-xs text-gray-500">High popularity, low profit</div>
                   </div>
                   <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm">
                     <p className="text-xs font-bold text-sky-600 uppercase tracking-wider mb-1">Avg Margin</p>
-                    <p className="text-3xl font-black text-sky-700">{classificationData.kpis.avg_margin}</p>
-                    <div className="mt-2 text-xs text-gray-500">Across all analyzed items</div>
+                    <p className="text-3xl font-black text-sky-700">{filteredKPIs.avgMargin}</p>
+                    <div className="mt-2 text-xs text-gray-500">{selectedAnalysisCategory === 'All' ? 'Across all items' : `Avg for ${selectedAnalysisCategory}`}</div>
                   </div>
                 </div>
               </div>
@@ -2520,7 +2541,13 @@ function VishvaPage() {
                           }}
                         />
                         <Scatter 
-                          data={selectedQuadrant ? classificationData.items.filter(i => i.quadrant === selectedQuadrant) : classificationData.items} 
+                          data={
+                            classificationData.items.filter(i => {
+                              const matchQuad = selectedQuadrant ? i.quadrant === selectedQuadrant : true;
+                              const matchCat = selectedAnalysisCategory === 'All' ? true : i.category === selectedAnalysisCategory;
+                              return matchQuad && matchCat;
+                            })
+                          } 
                           fill="#8884d8"
                         >
                           {classificationData.items.map((entry, index) => {
@@ -2618,6 +2645,128 @@ function VishvaPage() {
                 </div>
               </div>
 
+              {/* Category Impact Analysis Section */}
+              <div className="mt-8 space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-black text-gray-800 flex items-center gap-3">
+                    <span className="p-2 bg-emerald-100 text-emerald-600 rounded-xl">📊</span>
+                    Category Strategic Impact
+                  </h2>
+                  <div className="flex bg-white p-1.5 rounded-2xl border border-gray-200 shadow-sm overflow-x-auto max-w-full no-scrollbar">
+                    <button 
+                      onClick={() => setSelectedAnalysisCategory('All')}
+                      className={`px-4 py-1.5 text-sm font-bold rounded-xl transition-all whitespace-nowrap ${selectedAnalysisCategory === 'All' ? 'bg-gray-800 text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+                    >
+                      All Categories
+                    </button>
+                    {classificationData.charts.category_analysis?.map(cat => (
+                      <button 
+                        key={cat.category}
+                        onClick={() => setSelectedAnalysisCategory(cat.category)}
+                        className={`px-4 py-1.5 text-sm font-bold rounded-xl transition-all whitespace-nowrap ${selectedAnalysisCategory === cat.category ? 'bg-emerald-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+                      >
+                        {cat.category}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                  {/* Category Contribution Card */}
+                  <div className="lg:col-span-3 bg-white p-8 rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="flex justify-between items-start mb-10">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800">Revenue Contribution vs. Item Performance</h3>
+                        <p className="text-sm text-gray-500 mt-1">Strategic performance distribution across each menu category.</p>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-8">
+                      {classificationData.charts.category_analysis?.map((cat, idx) => (
+                        <div key={cat.category} className="group relative">
+                          <div className="flex justify-between items-end mb-2">
+                            <div className="flex items-center gap-3">
+                              <span className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-lg text-xs font-black text-gray-400 group-hover:bg-emerald-100 group-hover:text-emerald-600 transition-all">
+                                0{idx + 1}
+                              </span>
+                              <div>
+                                <h4 className="font-bold text-gray-800">{cat.category}</h4>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase">{cat.item_count} Items • {cat.avg_margin.toFixed(1)}% Avg Margin</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-black text-gray-800">{cat.rev_contribution.toFixed(1)}%</p>
+                              <p className="text-[10px] text-gray-500 font-medium">Revenue Contribution</p>
+                            </div>
+                          </div>
+                          <div className="h-3 w-full bg-gray-50 rounded-full overflow-hidden flex">
+                            <div 
+                              className="h-full bg-emerald-500 transition-all duration-1000 ease-out" 
+                              style={{ width: `${cat.rev_contribution}%` }}
+                            />
+                          </div>
+                          
+                          {/* Mini distribution bar */}
+                          <div className="mt-3 flex gap-1 h-1.5 opacity-60 group-hover:opacity-100 transition-all">
+                            {['Cash Cow', 'Margin Risk', 'Low Impact', 'Unproductive'].map((q, i) => {
+                              const count = cat.quadrants[q] || 0;
+                              const pct = (count / cat.item_count) * 100;
+                              if (pct === 0) return null;
+                              
+                              const colors = {
+                                'Cash Cow': 'bg-emerald-400',
+                                'Margin Risk': 'bg-red-400',
+                                'Low Impact': 'bg-blue-400',
+                                'Unproductive': 'bg-gray-400'
+                              };
+                              
+                              return (
+                                <div 
+                                  key={q} 
+                                  className={`h-full ${colors[q]} rounded-full`} 
+                                  style={{ width: `${pct}%` }}
+                                  title={`${q}: ${count} items`}
+                                />
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Strategic Insight Card */}
+                  <div className="bg-gradient-to-br from-emerald-600 to-emerald-800 p-8 rounded-3xl shadow-xl text-white relative overflow-hidden flex flex-col justify-between">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+                    <div>
+                      <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-[10px] font-black uppercase tracking-widest mb-6 inline-block">
+                        Product Importance
+                      </span>
+                      <h3 className="text-2xl font-black leading-tight mb-4">
+                        Strategic Focus
+                      </h3>
+                      <p className="text-emerald-100 text-sm leading-relaxed mb-8">
+                        The <strong>{classificationData.charts.category_analysis?.[0]?.category}</strong> category is your primary revenue driver.
+                        Maintain its quality while optimizing lower-performing sections.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10">
+                        <p className="text-[10px] font-bold text-emerald-200 uppercase tracking-wider mb-1">Top Revenue Source</p>
+                        <p className="text-lg font-bold truncate">{classificationData.charts.category_analysis?.[0]?.category || 'N/A'}</p>
+                      </div>
+                      <button 
+                        onClick={() => setSelectedAnalysisCategory(classificationData.charts.category_analysis?.[0]?.category)}
+                        className="w-full py-3 bg-white text-emerald-800 font-black rounded-xl shadow-lg hover:bg-emerald-50 transition-all"
+                      >
+                        Drill Down Matrix
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Bottom Row - Top Items & Table */}
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 {/* Top Items Bar Chart */}
@@ -2695,10 +2844,11 @@ function VishvaPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
-                        {(selectedQuadrant 
-                          ? classificationData.items.filter(i => i.quadrant === selectedQuadrant) 
-                          : classificationData.items
-                        ).map((item, i) => (
+                        {classificationData.items.filter(i => {
+                          const matchQuad = selectedQuadrant ? i.quadrant === selectedQuadrant : true;
+                          const matchCat = selectedAnalysisCategory === 'All' ? true : i.category === selectedAnalysisCategory;
+                          return matchQuad && matchCat;
+                        }).map((item, i) => (
                           <tr key={i} className="hover:bg-gray-50 transition-colors">
                             <td className="py-3 px-2 font-bold text-gray-700">{item.item_name}</td>
                             <td className="py-3 px-2 text-right text-gray-500">{item.qty.toLocaleString()}</td>
@@ -2719,9 +2869,11 @@ function VishvaPage() {
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          )
+        })()
       )}
+    </div>
+  )}
       {activeTab === 'settings' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Abbreviation Mapper */}
