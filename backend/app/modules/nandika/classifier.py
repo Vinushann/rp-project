@@ -49,16 +49,10 @@ HF_REPO_ID = "NandikA123/xlm-roberta-sinhala-sentiment"
 
 class SentimentAnalyzer:
     def __init__(self, model_path="./my_sentiment_model_Roberta_1"):
-        # If local model folder is missing or incomplete, download from Hugging Face Hub.
-        has_dir = os.path.isdir(model_path)
-        has_files = has_dir and bool(os.listdir(model_path))
-        has_weights = has_dir and (
-            os.path.exists(os.path.join(model_path, "model.safetensors"))
-            or os.path.exists(os.path.join(model_path, "pytorch_model.bin"))
-        )
-
-        if (not has_dir) or (not has_files) or (not has_weights):
-            print(f"⬇️  Local model not found at '{model_path}'")
+        # If local model folder is missing or incomplete, download from Hugging Face Hub
+        # Check for config.json specifically — an incomplete download may leave other files
+        if not os.path.exists(model_path) or not os.path.isfile(os.path.join(model_path, "config.json")):
+            print(f"⬇️  Local model not found or incomplete at '{model_path}'")
             print(f"⬇️  Downloading from Hugging Face: {HF_REPO_ID} ...")
             from huggingface_hub import snapshot_download
             snapshot_download(

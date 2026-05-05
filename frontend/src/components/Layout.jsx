@@ -2,10 +2,10 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { ToastContainer } from './ui';
 
 const modules = [
-  { name: 'Vinushan', path: '/vinushan', color: 'bg-blue-500' },
-  { name: 'Vishva', path: '/vishva', color: 'bg-green-500' },
-  { name: 'Nandika', path: '/nandika', color: 'bg-purple-500' },
-  { name: 'Ayathma', path: '/ayathma', color: 'bg-orange-500' },
+  { name: 'ATHENA', path: '/vinushan', color: 'bg-blue-500' },
+  { name: 'ExtractIQ', path: '/vishva', color: 'bg-green-500' },
+  { name: 'SentiPulse', path: '/nandika', color: 'bg-purple-500' },
+  { name: 'KPIForge', path: '/ayathma', color: 'bg-orange-500' },
 ];
 
 function Layout() {
@@ -22,10 +22,10 @@ function Layout() {
         <div className="p-6 border-b border-gray-800">
           <Link to="/" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary-500 rounded-lg flex items-center justify-center">
-              <span className="text-xl font-bold">RP</span>
+              <span className="text-xl font-bold">CX</span>
             </div>
             <div>
-              <h1 className="font-bold text-lg">RP Project</h1>
+              <h1 className="font-bold text-lg">Contrextra</h1>
               <p className="text-xs text-gray-400">Research Dashboard</p>
             </div>
           </Link>
