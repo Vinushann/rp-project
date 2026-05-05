@@ -9,7 +9,7 @@ import os
 import re
 import uuid
 from calendar import month_name
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import AsyncGenerator, List, Dict, Any, Optional
 from threading import Thread
 from queue import Queue, Empty
@@ -143,6 +143,64 @@ def _extract_target_month_year(message: str) -> tuple:
             target_year = now.year - 1
     
     return (target_month, target_year)
+
+
+def _extract_date_range(message: str) -> Optional[dict]:
+    """
+    Extract a specific date range from the user message for sub-month queries
+    like 'next week', 'this week', 'tomorrow', etc.
+
+    Returns None if no sub-month range is detected (i.e. month-level query).
+    Otherwise returns {"start": "YYYY-MM-DD", "end": "YYYY-MM-DD", "label": "..."}.
+    """
+    msg = message.lower()
+    now = datetime.now()
+    today = now.date()
+
+    if 'next week' in msg:
+        # Next Monday to next Sunday
+        days_until_monday = (7 - today.weekday()) % 7 or 7
+        start = today + timedelta(days=days_until_monday)
+        end = start + timedelta(days=6)
+        return {"start": str(start), "end": str(end), "label": f"next week ({start.strftime('%b %d')} – {end.strftime('%b %d, %Y')})"}
+
+    # Weekend detection: "this weekend", "coming weekend", "next weekend", "the weekend"
+    if re.search(r'(this|coming|the|next)\s+weekend', msg) or msg.strip() == 'weekend':
+        # Find the upcoming Saturday
+        days_until_sat = (5 - today.weekday()) % 7
+        if days_until_sat == 0 and 'next' in msg:
+            days_until_sat = 7  # If today is Saturday and they say "next weekend"
+        if days_until_sat == 0 and today.weekday() == 6:  # Sunday
+            days_until_sat = 6  # Next Saturday
+        if days_until_sat <= 0:
+            days_until_sat += 7
+        sat = today + timedelta(days=days_until_sat)
+        sun = sat + timedelta(days=1)
+        return {"start": str(sat), "end": str(sun), "label": f"the coming weekend ({sat.strftime('%b %d')} – {sun.strftime('%b %d, %Y')})"}
+
+    if 'this week' in msg:
+        start = today - timedelta(days=today.weekday())  # Monday
+        end = start + timedelta(days=6)  # Sunday
+        return {"start": str(start), "end": str(end), "label": f"this week ({start.strftime('%b %d')} – {end.strftime('%b %d, %Y')})"}
+
+    if 'tomorrow' in msg:
+        tmrw = today + timedelta(days=1)
+        return {"start": str(tmrw), "end": str(tmrw), "label": f"tomorrow ({tmrw.strftime('%b %d, %Y')})"}
+
+    if 'today' in msg:
+        return {"start": str(today), "end": str(today), "label": f"today ({today.strftime('%b %d, %Y')})"}
+
+    if 'next 7 days' in msg or 'next seven days' in msg:
+        start = today + timedelta(days=1)
+        end = today + timedelta(days=7)
+        return {"start": str(start), "end": str(end), "label": f"next 7 days ({start.strftime('%b %d')} – {end.strftime('%b %d, %Y')})"}
+
+    if 'next 14 days' in msg or 'next two weeks' in msg or 'next 2 weeks' in msg:
+        start = today + timedelta(days=1)
+        end = today + timedelta(days=14)
+        return {"start": str(start), "end": str(end), "label": f"next 14 days ({start.strftime('%b %d')} – {end.strftime('%b %d, %Y')})"}
+
+    return None
     AGENT_THOUGHT = "agent_thought"
     AGENT_QUERY = "agent_query"
     AGENT_SELF_CHECK = "agent_self_check"
@@ -274,8 +332,38 @@ class StreamingCallbackHandler:
 # ============================================================================
 # Agent Thought Templates - Structured reasoning output
 # ============================================================================
-def _generate_router_thought(message: str, agents_needed: list, is_comprehensive: bool, needs_rag: bool = False) -> str:
+def _generate_router_thought(message: str, agents_needed: list, is_comprehensive: bool, needs_rag: bool = False, is_knowledge_query: bool = False, is_conversational: bool = False, is_irrelevant: bool = False, unknown_product: str = None) -> str:
     """Generate structured router thought text."""
+    
+    if is_irrelevant:
+        return f"""alright, the manager asked: "{message[:100]}..."
+
+step 1: classify the question.
+- this question is NOT related to the coffee shop business.
+- i will politely decline and explain what i can help with."""
+    
+    if unknown_product:
+        return f"""alright, the manager asked: "{message[:100]}..."
+
+step 1: classify the question.
+- the manager mentioned "{unknown_product}" which is not in our product catalogue.
+- i will let them know what products we do carry."""
+    
+    if is_knowledge_query:
+        return f"""alright, the manager asked: "{message[:100]}..."
+
+step 1: classify the question.
+- this is a knowledge/methodology question about ATHENA itself.
+- i will search the knowledge base and provide a direct answer.
+- no data analysis agents are needed for this."""
+    
+    if is_conversational:
+        return f"""alright, the manager asked: "{message[:100]}..."
+
+step 1: classify the question.
+- this is a conversational message (greeting, follow-up, or meta-request).
+- i will respond naturally without data analysis."""
+    
     agents_list = "\n".join([f"- {a}" for a in agents_needed])
     
     rag_note = ""
@@ -765,16 +853,23 @@ def _rewrite_followup_query(message: str, history: List[Message]) -> dict:
         timeout=15,
     )
 
-    prompt = f"""You are a query rewriter for a coffee-shop analytics assistant.
+    prompt = f"""You are a query rewriter for a coffee-shop analytics assistant called ATHENA.
+Today's date is {datetime.now().strftime("%A, %B %d, %Y")}.
 
 Given the recent conversation and a new user message, decide:
-1. Is the new message a FOLLOW-UP that depends on prior context (pronouns like "they/it/that", implicit references, or continuation of a previous topic)?
-2. If yes, rewrite it into a COMPLETE, SELF-CONTAINED question that includes all necessary context from the conversation.
-3. If no (the message is already self-contained), return it unchanged.
+1. Is the new message a FOLLOW-UP that depends on prior context?
+   Follow-ups include:
+   - Pronouns referring to something earlier ("they", "it", "that", "those")
+   - Implicit references or topic continuation ("what about next month?", "and for holidays?")
+   - Requests to modify a previous answer ("summarize that", "make it shorter", "explain like a beginner", "can you make it short?", "in 3 points")
+   - Filtering/scoping a previous analysis ("now show me drinks only", "what about burgers?")
+2. If YES, rewrite it into a COMPLETE, SELF-CONTAINED question that includes context from conversation history.
+3. If NO (the message is already self-contained), return it unchanged.
 
 Rules:
 - Preserve the user's intent exactly — do not add extra analysis.
 - Keep the rewritten question concise.
+- For modification requests (summarize/shorten/explain), rewrite as: "Based on the previous analysis about [topic], [user's request]"
 - If the prior conversation discussed a specific item, month, metric, or visualization type, carry that context forward.
 
 Recent conversation:
@@ -833,24 +928,31 @@ def _handle_conversational_message(
     )
     
     business_name = os.getenv("BUSINESS_NAME", "Rossmann Coffee Shop")
+    today = datetime.now().strftime("%A, %B %d, %Y")
     
     system_content = f"""You are ATHENA, a friendly AI assistant for {business_name}, a coffee shop in Sri Lanka.
+Today's date is {today}.
 You help the shop manager with business questions about sales, forecasting, inventory, and planning.
 
 When responding to greetings or general conversation:
 - Be friendly and welcoming
 - Briefly mention what you can help with (sales analysis, forecasting, holiday planning, weather impacts)
-- Keep responses concise and natural"""
+- Keep responses concise and natural
+
+When the manager asks you to modify, summarize, shorten, or re-explain a previous response:
+- Use the conversation history to find the relevant previous response
+- Fulfill their request (summarize, simplify, shorten, etc.) based on that content
+- Keep the reformulated answer accurate and helpful"""
 
     if rag_context:
         system_content += f"\n\nYou have the following domain knowledge available:\n{rag_context}"
     
     messages = [{"role": "system", "content": system_content}]
     
-    for msg in history[-4:]:
+    for msg in history[-6:]:
         messages.append({
             "role": "user" if msg.role == "user" else "assistant",
-            "content": msg.content[:500]
+            "content": msg.content[:800]
         })
     
     messages.append({"role": "user", "content": message})
@@ -866,6 +968,55 @@ When responding to greetings or general conversation:
             data={"output_preview": response.content[:200]}
         )
     
+    return response.content
+
+
+def _handle_knowledge_query(
+    message: str,
+    history: List[Message],
+    emitter: Optional[EventEmitter] = None,
+    rag_context: str = "",
+) -> str:
+    """Handle questions about ATHENA's methodology, models, or domain knowledge using RAG + LLM."""
+    llm = ChatOpenAI(
+        model=os.getenv("MODEL", "gpt-4o-mini"),
+        temperature=0.4,
+        timeout=30,
+    )
+
+    business_name = os.getenv("BUSINESS_NAME", "Rossmann Coffee Shop")
+
+    today = datetime.now().strftime("%A, %B %d, %Y")
+
+    system_content = f"""You are ATHENA, a Context-Aware Forecasting and Decision Support System for {business_name}.
+Today's date is {today}.
+
+The manager is asking about how you work, your methodology, limitations, or domain knowledge.
+Answer clearly, accurately and concisely.
+
+Key facts about yourself:
+- You use a multi-agent architecture powered by CrewAI with specialist agents: Historical Analyst, Forecasting Specialist, Holiday Analyst, Weather Analyst, Strategy Planner, and Visualization Specialist.
+- Demand forecasting uses a trained Facebook Prophet model on 2020-2025 daily sales data.
+- You incorporate holiday calendars (Sri Lankan Poya days, public holidays) and weather data (temperature, rainfall).
+- You use Retrieval-Augmented Generation (RAG) to inject domain knowledge from curated documents.
+- You provide Explainable AI (XAI) analysis showing decision factors, confidence scores, and assumptions.
+- Your data covers items in categories: Burger, Chicken, Dessert, Drink, Pasta, Pizza, Roll, Sandwich.
+- Limitations: You cannot access real-time POS data; forecasts depend on historical patterns; unusual events may not be captured."""
+
+    if rag_context:
+        system_content += f"\n\nRelevant domain knowledge:\n{rag_context}"
+
+    messages_list = [{"role": "system", "content": system_content}]
+
+    for msg in history[-4:]:
+        messages_list.append({
+            "role": "user" if msg.role == "user" else "assistant",
+            "content": msg.content[:500]
+        })
+
+    messages_list.append({"role": "user", "content": message})
+
+    response = llm.invoke(messages_list)
     return response.content
 
 
@@ -889,10 +1040,23 @@ def _handle_visualization_directly(
     try:
         chart_type = "general"
         
-        # Detect time-based sales queries (e.g. "last 6 months sales", "sales over time")
+        # Product categories from dataset for item matching
+        _PRODUCT_CATEGORIES = [
+            "burger", "chicken", "dessert", "drink", "pasta", "pizza", "roll", "sandwich",
+            "classic", "crispy", "deluxe", "herb", "spicy", "sweet", "veggie", "zesty",
+        ]
+        
+        def _extract_item_from_message(msg_lower: str) -> str:
+            """Extract a product/category name from the message."""
+            for cat in _PRODUCT_CATEGORIES:
+                if cat in msg_lower:
+                    return cat
+            return None
+        
+        # Detect time-based sales queries (e.g. "last 6 months sales", "sales over time", "trend for pasta")
         _is_time_sales = (
-            any(word in message_lower for word in ["trend", "over time", "sales trend", "monthly sales"])
-            or (re.search(r'last\s+\d+\s+months?\b', message_lower) and "sales" in message_lower)
+            any(word in message_lower for word in ["trend", "over time", "sales trend", "monthly sales", "line graph"])
+            or (re.search(r'last\s+\d+\s+months?\b', message_lower) and any(w in message_lower for w in ["sales", "trend", "chart", "graph"]))
             or (re.search(r'\d+\s+months?\s+sales', message_lower))
         )
         
@@ -905,11 +1069,7 @@ def _handle_visualization_directly(
                     data={"tool_name": "SalesTrendChartTool"}
                 )
             
-            item = None
-            for food in ["coffee", "latte", "cappuccino", "espresso", "tea", "cake", "muffin", "sandwich", "croissant"]:
-                if food in message_lower:
-                    item = food
-                    break
+            item = _extract_item_from_message(message_lower)
             
             # Extract month count from message (e.g. "last 6 months" -> 6)
             month_match = re.search(r'(\d+)\s+months?', message_lower)
@@ -918,7 +1078,7 @@ def _handle_visualization_directly(
             result = create_sales_trend_chart(item_name=item, months=months, group_by="month")
             chart_type = "trend"
             
-        elif any(word in message_lower for word in ["top", "best selling", "popular", "most sold"]):
+        elif any(word in message_lower for word in ["top", "best selling", "popular", "most sold", "best"]):
             if emitter:
                 emitter.emit(
                     EventType.TOOL_START,
@@ -1153,7 +1313,9 @@ def _generate_promotion_evidence_charts(
 # ============================================================================
 async def stream_chat_realtime(
     message: str,
-    conversation_history: List[Message]
+    conversation_history: List[Message],
+    enable_followup: bool = False,
+    enable_xai: bool = True,
 ) -> AsyncGenerator[str, None]:
     """
     Stream chat response with real-time reasoning events.
@@ -1184,7 +1346,7 @@ async def stream_chat_realtime(
         
         # ── FOLLOW-UP RESOLUTION ──
         # Rewrite ambiguous follow-ups into self-contained questions
-        if conversation_history:
+        if enable_followup and conversation_history:
             loop_rw = asyncio.get_event_loop()
             rewrite_result = await loop_rw.run_in_executor(
                 None,
@@ -1214,10 +1376,19 @@ async def stream_chat_realtime(
         reasoning = routing_result.get("reasoning", "")
         is_comprehensive = routing_result.get("is_comprehensive", False)
         is_conversational = routing_result.get("is_conversational", False)
+        is_irrelevant = routing_result.get("is_irrelevant", False)
+        unknown_product = routing_result.get("unknown_product", None)
         needs_visualization = routing_result.get("needs_visualization", False)
         
         # Generate structured router thought
-        router_thought = _generate_router_thought(message, agents_needed, is_comprehensive, needs_rag=routing_result.get("needs_rag", False))
+        router_thought = _generate_router_thought(
+            message, agents_needed, is_comprehensive,
+            needs_rag=routing_result.get("needs_rag", False),
+            is_knowledge_query=routing_result.get("is_knowledge_query", False),
+            is_conversational=is_conversational,
+            is_irrelevant=is_irrelevant,
+            unknown_product=unknown_product,
+        )
         
         yield _format_sse(EventType.QUERY_ANALYSIS, _create_event(
             EventType.QUERY_ANALYSIS,
@@ -1229,11 +1400,137 @@ async def stream_chat_realtime(
                 "agents_needed": agents_needed,
                 "is_comprehensive": is_comprehensive,
                 "is_conversational": is_conversational,
+                "is_irrelevant": is_irrelevant,
+                "is_knowledge_query": routing_result.get("is_knowledge_query", False),
+                "unknown_product": unknown_product,
                 "needs_visualization": needs_visualization,
                 "needs_rag": routing_result.get("needs_rag", False),
             }
         ))
         await asyncio.sleep(0.05)
+        
+        # ── HANDLE IRRELEVANT QUESTIONS ──
+        if is_irrelevant:
+            yield _format_sse(EventType.AGENT_START, _create_event(
+                EventType.AGENT_START,
+                run_id,
+                agent="Query Validator",
+                task="Validating question relevance",
+                content="Checking if question is within ATHENA's scope...",
+                data={"step_number": 1}
+            ))
+            await asyncio.sleep(0.05)
+            
+            irrelevant_response = (
+                "I appreciate your curiosity! However, I'm **ATHENA** — a Context-Aware Forecasting "
+                "and Decision Support System designed specifically for **Rossmann Coffee Shop**.\n\n"
+                "I can help you with:\n"
+                "- 📊 **Sales analysis** — historical trends, top-selling items, declining products\n"
+                "- 🔮 **Demand forecasting** — predict future sales using trained ML models\n"
+                "- 🎉 **Holiday impact** — how festivals and Poya days affect your business\n"
+                "- 🌦️ **Weather effects** — rain, temperature impacts on sales\n"
+                "- 📈 **Business strategy** — actionable recommendations and planning\n"
+                "- 📉 **Visualizations** — charts and graphs of your data\n\n"
+                "Please ask me something related to your coffee shop business and I'll be happy to help! ☕"
+            )
+            
+            yield _format_sse(EventType.AGENT_END, _create_event(
+                EventType.AGENT_END,
+                run_id,
+                agent="Query Validator",
+                task="Validating question relevance",
+                content="Question is outside ATHENA's scope",
+                data={"output_preview": irrelevant_response[:200]}
+            ))
+            
+            final_data = {
+                "response": irrelevant_response,
+                "routing_reasoning": reasoning,
+                "agents_used": [],
+                "is_irrelevant": True,
+                "needs_rag": False,
+                "rag_citations": None,
+                "rag_sources": None,
+                "reasoning_steps": [{
+                    "agent_name": "Query Validator",
+                    "task_name": "Validating question relevance",
+                    "summary": "Question is not related to the coffee shop business",
+                    "output_preview": irrelevant_response[:200],
+                    "duration_seconds": None,
+                }],
+                "charts": None,
+            }
+            
+            yield _format_sse(EventType.RUN_END, _create_event(
+                EventType.RUN_END,
+                run_id,
+                content="Query validation complete",
+                data=final_data
+            ))
+            return
+        
+        # ── HANDLE UNKNOWN PRODUCTS ──
+        if unknown_product:
+            from ..router import _load_product_categories
+            categories = sorted(_load_product_categories())
+            category_list = ", ".join(categories).title() if categories else "Burger, Chicken, Dessert, Drink, Pasta, Pizza, Roll, Sandwich"
+            
+            yield _format_sse(EventType.AGENT_START, _create_event(
+                EventType.AGENT_START,
+                run_id,
+                agent="Query Validator",
+                task="Validating product reference",
+                content=f"Checking if \"{unknown_product}\" exists in our dataset...",
+                data={"step_number": 1}
+            ))
+            await asyncio.sleep(0.05)
+            
+            unknown_response = (
+                f"I couldn't find **\"{unknown_product}\"** in our product database. "
+                f"This item isn't part of the Rossmann Coffee Shop's menu.\n\n"
+                f"Our product categories include: **{category_list}**\n\n"
+                f"Each category has multiple variants (e.g., Classic Burger, Spicy Pasta 12, "
+                f"Veggie Roll 9, etc.).\n\n"
+                f"Try asking about one of these products instead! For example:\n"
+                f"- *\"What are the top-selling burgers?\"*\n"
+                f"- *\"Show me the sales trend for drinks\"*\n"
+                f"- *\"Forecast demand for pasta next month\"*"
+            )
+            
+            yield _format_sse(EventType.AGENT_END, _create_event(
+                EventType.AGENT_END,
+                run_id,
+                agent="Query Validator",
+                task="Validating product reference",
+                content=f"Product \"{unknown_product}\" not found in dataset",
+                data={"output_preview": unknown_response[:200]}
+            ))
+            
+            final_data = {
+                "response": unknown_response,
+                "routing_reasoning": reasoning,
+                "agents_used": [],
+                "unknown_product": unknown_product,
+                "needs_rag": False,
+                "rag_citations": None,
+                "rag_sources": None,
+                "reasoning_steps": [{
+                    "agent_name": "Query Validator",
+                    "task_name": "Validating product reference",
+                    "summary": f"Product \"{unknown_product}\" not found in dataset",
+                    "output_preview": unknown_response[:200],
+                    "duration_seconds": None,
+                }],
+                "charts": None,
+            }
+            
+            yield _format_sse(EventType.RUN_END, _create_event(
+                EventType.RUN_END,
+                run_id,
+                content="Query validation complete",
+                data=final_data
+            ))
+            return
         
         # Handle different request types
         charts = []
@@ -1241,6 +1538,7 @@ async def stream_chat_realtime(
         reasoning_steps = []
         rag_citations = None  # Will be set if RAG is used
         needs_rag = routing_result.get("needs_rag", False)
+        is_knowledge_query = routing_result.get("is_knowledge_query", False)
         
         # --- ADAPTIVE RAG RETRIEVAL (if needed) ---
         rag_context = ""
@@ -1332,8 +1630,40 @@ async def stream_chat_realtime(
                 output_preview=response_text[:200]
             ))
             
-        elif needs_visualization:
-            # Handle visualization directly
+        elif is_knowledge_query:
+            # Handle ATHENA methodology / domain knowledge queries with RAG + LLM
+            yield _format_sse(EventType.AGENT_START, _create_event(
+                EventType.AGENT_START,
+                run_id,
+                agent="Knowledge Specialist",
+                task="Answering knowledge question",
+                content="Searching ATHENA's knowledge base...",
+                data={"step_number": 1}
+            ))
+            await asyncio.sleep(0.05)
+            
+            response_text = _handle_knowledge_query(
+                message, conversation_history, rag_context=rag_context
+            )
+            
+            yield _format_sse(EventType.AGENT_END, _create_event(
+                EventType.AGENT_END,
+                run_id,
+                agent="Knowledge Specialist",
+                task="Answering knowledge question",
+                content="Knowledge response ready",
+                data={"output_preview": response_text[:200]}
+            ))
+            
+            reasoning_steps.append(AgentStep(
+                agent_name="Knowledge Specialist",
+                task_name="Answering knowledge question",
+                summary="Answered knowledge/methodology question using RAG",
+                output_preview=response_text[:200]
+            ))
+            
+        elif needs_visualization and agents_needed == ["visualization"]:
+            # Handle pure visualization directly (no other agents needed)
             yield _format_sse(EventType.AGENT_START, _create_event(
                 EventType.AGENT_START,
                 run_id,
@@ -1421,13 +1751,19 @@ async def stream_chat_realtime(
             # Extract target month/year from user message, default to current
             target_month, target_year = _extract_target_month_year(message)
             target_month_name = month_name[target_month]
+            date_range = _extract_date_range(message)
             
             inputs = {
                 "user_question": message,
                 "target_month": target_month,
                 "target_month_name": target_month_name,
                 "target_year": target_year,
+                "current_date": datetime.now().strftime("%A, %B %d, %Y"),
             }
+            if date_range:
+                inputs["date_range_start"] = date_range["start"]
+                inputs["date_range_end"] = date_range["end"]
+                inputs["date_range_label"] = date_range["label"]
             
             # Build crew
             builder = InstrumentedCrewBuilder(emitter)
@@ -1629,55 +1965,56 @@ async def stream_chat_realtime(
             response_text = str(result)
 
             # ── XAI / Explainability: Decompose how the AI made its decisions ──
-            yield _format_sse(EventType.XAI_EXPLANATION, _create_event(
-                EventType.XAI_EXPLANATION,
-                run_id,
-                agent="Explainability Engine",
-                phase="start",
-                content="Analyzing decision-making process for transparency...",
-                data={"status": "analyzing"}
-            ))
-            await asyncio.sleep(0.05)
-
-            try:
-                loop_xai = asyncio.get_event_loop()
-                xai_result = await loop_xai.run_in_executor(
-                    None,
-                    lambda: _perform_xai_analysis(
-                        original_question=message,
-                        response_text=response_text,
-                        agents_used=agents_needed,
-                        rag_context=rag_context or "",
-                        reasoning_steps=reasoning_steps,
-                    )
-                )
-
+            if enable_xai:
                 yield _format_sse(EventType.XAI_EXPLANATION, _create_event(
                     EventType.XAI_EXPLANATION,
                     run_id,
                     agent="Explainability Engine",
-                    phase="complete",
-                    content=f"Explainability analysis complete — {xai_result.get('overall_confidence', 75)}% overall confidence",
-                    data={
-                        "status": "complete",
-                        **xai_result,
-                    }
+                    phase="start",
+                    content="Analyzing decision-making process for transparency...",
+                    data={"status": "analyzing"}
                 ))
                 await asyncio.sleep(0.05)
-            except Exception as xai_err:
-                logger.warning(f"[{run_id}] XAI analysis failed (non-fatal): {xai_err}")
-                yield _format_sse(EventType.XAI_EXPLANATION, _create_event(
-                    EventType.XAI_EXPLANATION,
-                    run_id,
-                    agent="Explainability Engine",
-                    phase="complete",
-                    content="Explainability analysis complete",
-                    data={
-                        "status": "complete",
-                        "decision_factors": [],
-                        "agent_contributions": [],
-                        "confidence_scores": [],
-                        "overall_confidence": 75,
+
+                try:
+                    loop_xai = asyncio.get_event_loop()
+                    xai_result = await loop_xai.run_in_executor(
+                        None,
+                        lambda: _perform_xai_analysis(
+                            original_question=message,
+                            response_text=response_text,
+                            agents_used=agents_needed,
+                            rag_context=rag_context or "",
+                            reasoning_steps=reasoning_steps,
+                        )
+                    )
+
+                    yield _format_sse(EventType.XAI_EXPLANATION, _create_event(
+                        EventType.XAI_EXPLANATION,
+                        run_id,
+                        agent="Explainability Engine",
+                        phase="complete",
+                        content=f"Explainability analysis complete — {xai_result.get('overall_confidence', 75)}% overall confidence",
+                        data={
+                            "status": "complete",
+                            **xai_result,
+                        }
+                    ))
+                    await asyncio.sleep(0.05)
+                except Exception as xai_err:
+                    logger.warning(f"[{run_id}] XAI analysis failed (non-fatal): {xai_err}")
+                    yield _format_sse(EventType.XAI_EXPLANATION, _create_event(
+                        EventType.XAI_EXPLANATION,
+                        run_id,
+                        agent="Explainability Engine",
+                        phase="complete",
+                        content="Explainability analysis complete",
+                        data={
+                            "status": "complete",
+                            "decision_factors": [],
+                            "agent_contributions": [],
+                            "confidence_scores": [],
+                            "overall_confidence": 75,
                         "assumptions": [],
                         "limitations": [],
                         "counterfactuals": [],

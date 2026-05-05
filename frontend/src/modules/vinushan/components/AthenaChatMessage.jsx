@@ -1,34 +1,49 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bar, Line, Pie } from 'react-chartjs-2';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js';
+  ResponsiveContainer,
+  BarChart, Bar,
+  PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend as RechartsLegend,
+  Area, AreaChart,
+} from 'recharts';
 import { jsPDF } from 'jspdf';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
 import { saveAs } from 'file-saver';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Tooltip,
-  Legend,
-  Filler,
-);
+const CHART_COLORS = [
+  '#6366f1', '#8b5cf6', '#a78bfa', '#c084fc',
+  '#f472b6', '#fb7185', '#f97316', '#facc15',
+  '#34d399', '#22d3ee', '#60a5fa', '#818cf8',
+];
+
+function ChartGradients() {
+  return (
+    <defs>
+      {CHART_COLORS.map((color, i) => (
+        <linearGradient key={i} id={`athena-gradient-${i}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.8} />
+          <stop offset="100%" stopColor={color} stopOpacity={0.15} />
+        </linearGradient>
+      ))}
+    </defs>
+  );
+}
+
+const CustomChartTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="athena-chart-tooltip">
+      <p className="athena-chart-tooltip-label">{label}</p>
+      {payload.map((entry, i) => (
+        <p key={i} style={{ color: entry.color || CHART_COLORS[i % CHART_COLORS.length] }}>
+          {entry.name}: <strong>{typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}</strong>
+        </p>
+      ))}
+    </div>
+  );
+};
 
 /**
  * Chat Message Component for ATHENA
@@ -95,68 +110,219 @@ function parseMarkdownForExport(markdown) {
   return sections;
 }
 
-// Simple chart rendering function
+function IconSpeaker() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M11 5L6 9H3v6h3l5 4V5z" fill="currentColor" />
+      <path d="M15 9.5c1.2 1.2 1.2 3.8 0 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      <path d="M17.7 7c2.7 2.8 2.7 7.2 0 10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+function IconStop() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" />
+    </svg>
+  );
+}
+
+function IconDownload() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 4v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      <path d="M8.5 11.5L12 15l3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path d="M5 19h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+function IconMail() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3.5" y="6.5" width="17" height="11" rx="2" stroke="currentColor" strokeWidth="1.8" fill="none" />
+      <path d="M4.5 8l7.5 5 7.5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </svg>
+  );
+}
+
+function IconClose() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 7l10 10M17 7L7 17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+function IconSpinner() {
+  return (
+    <svg className="icon-spin" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" strokeDasharray="12 20" fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconExport() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 4v9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+      <path d="M8.5 10.5L12 14l3.5-3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      <path d="M5 19h14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+    </svg>
+  );
+}
+
+function IconFilePdf() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 3.5h7l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20V5a1.5 1.5 0 0 1 1-1.4z" stroke="currentColor" strokeWidth="1.6" fill="none" />
+      <path d="M14 3.5V8h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <path d="M8.5 15.5h7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M8.5 18h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconFileWord() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 3.5h7l4 4V20a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 20V5a1.5 1.5 0 0 1 1-1.4z" stroke="currentColor" strokeWidth="1.6" fill="none" />
+      <path d="M14 3.5V8h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+      <path d="M8.5 14l1.3 4 1.2-3 1.2 3 1.3-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </svg>
+  );
+}
+
+// Transform Chart.js data format to Recharts format
+function transformChartData(chartData) {
+  const { labels, datasets } = chartData;
+  return labels.map((label, i) => {
+    const point = { name: label };
+    datasets.forEach((ds) => {
+      point[ds.label] = ds.data[i];
+    });
+    return point;
+  });
+}
+
+// Modern chart rendering with Recharts
 function renderSimpleChart(chart) {
   if (!chart?.chart_data || !chart.chart_data.labels || !chart.chart_data.datasets?.length) return null;
 
-  const { chart_type, labels, datasets } = chart.chart_data;
-  
-  const colors = ['#0ea5e9', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
-  const bgColors = [
-    'rgba(14, 165, 233, 0.7)', 
-    'rgba(34, 197, 94, 0.7)', 
-    'rgba(245, 158, 11, 0.7)', 
-    'rgba(239, 68, 68, 0.7)', 
-    'rgba(139, 92, 246, 0.7)',
-  ];
-  
-  const themedDatasets = datasets.map((ds, idx) => ({
-    ...ds,
-    borderColor: colors[idx % colors.length],
-    backgroundColor: chart_type === 'line' 
-      ? 'rgba(14, 165, 233, 0.1)' 
-      : bgColors[idx % bgColors.length],
-    pointBackgroundColor: colors[idx % colors.length],
-    tension: 0.3,
-  }));
-
-  const data = { labels, datasets: themedDatasets };
-  
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { 
-        position: 'top',
-        labels: { color: '#94a3b8' }
-      },
-      tooltip: { 
-        enabled: true,
-        backgroundColor: '#1e293b',
-        titleColor: '#f1f5f9',
-        bodyColor: '#94a3b8',
-      },
-    },
-    scales: chart_type === 'pie' ? {} : {
-      x: { 
-        ticks: { color: '#94a3b8', maxTicksLimit: 10 },
-        grid: { color: 'rgba(51, 65, 85, 0.3)' },
-      },
-      y: { 
-        beginAtZero: true,
-        ticks: { color: '#94a3b8' },
-        grid: { color: 'rgba(51, 65, 85, 0.3)' },
-      },
-    },
-  };
+  const { chart_type, datasets } = chart.chart_data;
+  const data = transformChartData(chart.chart_data);
+  const dataKeys = datasets.map((ds) => ds.label);
 
   if (chart_type === 'pie') {
-    return <Pie data={data} options={options} />;
+    const pieData = data.map((d) => ({ name: d.name, value: d[dataKeys[0]] || 0 }));
+    return (
+      <ResponsiveContainer width="100%" height={320}>
+        <PieChart>
+          <Pie
+            data={pieData}
+            cx="50%"
+            cy="50%"
+            innerRadius={60}
+            outerRadius={120}
+            paddingAngle={3}
+            dataKey="value"
+            stroke="none"
+            animationBegin={0}
+            animationDuration={800}
+          >
+            {pieData.map((_, i) => (
+              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+            ))}
+          </Pie>
+          <RechartsTooltip content={<CustomChartTooltip />} />
+          <RechartsLegend
+            verticalAlign="bottom"
+            iconType="circle"
+            iconSize={10}
+            wrapperStyle={{ fontSize: '0.8rem', color: '#94a3b8' }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    );
   }
+
   if (chart_type === 'line') {
-    return <Line data={data} options={options} />;
+    return (
+      <ResponsiveContainer width="100%" height={320}>
+        <AreaChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+          <ChartGradients />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
+          <XAxis
+            dataKey="name"
+            tick={{ fill: '#94a3b8', fontSize: 11 }}
+            axisLine={{ stroke: 'rgba(148,163,184,0.2)' }}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{ fill: '#94a3b8', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <RechartsTooltip content={<CustomChartTooltip />} />
+          <RechartsLegend
+            iconType="circle"
+            iconSize={8}
+            wrapperStyle={{ fontSize: '0.8rem', color: '#94a3b8' }}
+          />
+          {dataKeys.map((key, i) => (
+            <Area
+              key={key}
+              type="monotone"
+              dataKey={key}
+              stroke={CHART_COLORS[i % CHART_COLORS.length]}
+              strokeWidth={2.5}
+              fill={`url(#athena-gradient-${i})`}
+              dot={{ r: 3, fill: CHART_COLORS[i % CHART_COLORS.length], strokeWidth: 0 }}
+              activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
+              animationDuration={800}
+            />
+          ))}
+        </AreaChart>
+      </ResponsiveContainer>
+    );
   }
-  return <Bar data={data} options={options} />;
+
+  // Default: bar chart
+  return (
+    <ResponsiveContainer width="100%" height={320}>
+      <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+        <ChartGradients />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
+        <XAxis
+          dataKey="name"
+          tick={{ fill: '#94a3b8', fontSize: 11 }}
+          axisLine={{ stroke: 'rgba(148,163,184,0.2)' }}
+          tickLine={false}
+        />
+        <YAxis
+          tick={{ fill: '#94a3b8', fontSize: 11 }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <RechartsTooltip content={<CustomChartTooltip />} cursor={{ fill: 'rgba(99,102,241,0.08)' }} />
+        <RechartsLegend
+          iconType="circle"
+          iconSize={8}
+          wrapperStyle={{ fontSize: '0.8rem', color: '#94a3b8' }}
+        />
+        {dataKeys.map((key, i) => (
+          <Bar
+            key={key}
+            dataKey={key}
+            fill={CHART_COLORS[i % CHART_COLORS.length]}
+            radius={[6, 6, 0, 0]}
+            animationDuration={800}
+          />
+        ))}
+      </BarChart>
+    </ResponsiveContainer>
+  );
 }
 
 function AthenaChatMessage({ message, charts = [], isLast = false, onDelete = null, messageIndex, userQuestion = '' }) {
@@ -588,14 +754,14 @@ function AthenaChatMessage({ message, charts = [], isLast = false, onDelete = nu
                   disabled={isLoadingAudio}
                   title={isLoadingAudio ? 'Loading audio...' : isSpeaking ? 'Stop speaking' : 'Read aloud'}
                 >
-                  {isLoadingAudio ? '⏳' : isSpeaking ? '⏹️' : '🔊'}
+                  {isLoadingAudio ? <IconSpinner /> : isSpeaking ? <IconStop /> : <IconSpeaker />}
                 </button>
                 <button
                   className="msg-action-btn"
                   onClick={() => setShowExportModal(true)}
                   title="Export response"
                 >
-                  📥
+                  <IconDownload />
                 </button>
                 <button
                   className={`msg-action-btn send-email`}
@@ -603,7 +769,14 @@ function AthenaChatMessage({ message, charts = [], isLast = false, onDelete = nu
                   disabled={isLoadingEmail}
                   title={isLoadingEmail ? 'Generating email...' : 'Send to Manager'}
                 >
-                  {isLoadingEmail ? '⏳' : '📧 Send'}
+                  {isLoadingEmail ? (
+                    <IconSpinner />
+                  ) : (
+                    <>
+                      <IconMail />
+                      <span className="btn-label">Send</span>
+                    </>
+                  )}
                 </button>
               </>
             )}
@@ -614,7 +787,7 @@ function AthenaChatMessage({ message, charts = [], isLast = false, onDelete = nu
                 onClick={() => setShowDeleteConfirm(true)}
                 title="Delete this Q&A pair"
               >
-                ✕
+                <IconClose />
               </button>
             )}
             <span className="athena-msg-time">
@@ -743,18 +916,21 @@ function AthenaChatMessage({ message, charts = [], isLast = false, onDelete = nu
       {showExportModal && (
         <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 className="modal-title">📥 Export Response</h3>
+            <h3 className="modal-title modal-title-with-icon">
+              <span className="modal-title-icon" aria-hidden="true"><IconExport /></span>
+              <span>Export Response</span>
+            </h3>
             <p className="modal-subtitle">Choose your preferred format:</p>
             <div className="modal-actions">
               <button className="modal-btn-primary pdf" onClick={exportToPDF}>
-                <span className="modal-btn-icon">📄</span>
+                <span className="modal-btn-icon" aria-hidden="true"><IconFilePdf /></span>
                 <div style={{ textAlign: 'left' }}>
                   <div>Export as PDF</div>
                   <div className="modal-btn-text-sub">Best for printing & sharing</div>
                 </div>
               </button>
               <button className="modal-btn-primary word" onClick={exportToWord}>
-                <span className="modal-btn-icon">📝</span>
+                <span className="modal-btn-icon" aria-hidden="true"><IconFileWord /></span>
                 <div style={{ textAlign: 'left' }}>
                   <div>Export as Word</div>
                   <div className="modal-btn-text-sub">Best for editing & reports</div>

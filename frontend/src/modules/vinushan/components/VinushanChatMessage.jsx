@@ -1,30 +1,177 @@
 import ReactMarkdown from 'react-markdown';
-import { Bar, Line, Pie } from 'react-chartjs-2';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Tooltip,
-  Legend,
-  Filler,
-} from 'chart.js';
+  ResponsiveContainer,
+  BarChart, Bar,
+  LineChart, Line,
+  PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  Area, AreaChart,
+} from 'recharts';
 import '../styles/ChatMessage.css';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  PointElement,
-  LineElement,
-  ArcElement,
-  Tooltip,
-  Legend,
-  Filler,
-);
+const CHART_COLORS = [
+  '#6366f1', '#8b5cf6', '#a78bfa', '#c084fc',
+  '#f472b6', '#fb7185', '#f97316', '#facc15',
+  '#34d399', '#22d3ee', '#60a5fa', '#818cf8',
+];
+
+const GRADIENTS_ID = 'athena-chart-gradients';
+
+function ChartGradients() {
+  return (
+    <defs>
+      {CHART_COLORS.map((color, i) => (
+        <linearGradient key={i} id={`gradient-${i}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity={0.8} />
+          <stop offset="100%" stopColor={color} stopOpacity={0.15} />
+        </linearGradient>
+      ))}
+    </defs>
+  );
+}
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="athena-chart-tooltip">
+      <p className="athena-chart-tooltip-label">{label}</p>
+      {payload.map((entry, i) => (
+        <p key={i} style={{ color: entry.color || CHART_COLORS[i % CHART_COLORS.length] }}>
+          {entry.name}: <strong>{typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}</strong>
+        </p>
+      ))}
+    </div>
+  );
+};
+
+function transformChartData(chartData) {
+  const { labels, datasets } = chartData;
+  return labels.map((label, i) => {
+    const point = { name: label };
+    datasets.forEach((ds) => {
+      point[ds.label] = ds.data[i];
+    });
+    return point;
+  });
+}
+
+function renderInteractiveChart(chart) {
+  if (!chart?.chart_data || !chart.chart_data.labels || !chart.chart_data.datasets?.length) return null;
+
+  const { chart_type, datasets } = chart.chart_data;
+  const data = transformChartData(chart.chart_data);
+  const dataKeys = datasets.map((ds) => ds.label);
+
+  if (chart_type === 'pie') {
+    const pieData = data.map((d, i) => ({ name: d.name, value: d[dataKeys[0]] || 0 }));
+    return (
+      <ResponsiveContainer width="100%" height={320}>
+        <PieChart>
+          <Pie
+            data={pieData}
+            cx="50%"
+            cy="50%"
+            innerRadius={60}
+            outerRadius={120}
+            paddingAngle={3}
+            dataKey="value"
+            stroke="none"
+            animationBegin={0}
+            animationDuration={800}
+          >
+            {pieData.map((_, i) => (
+              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+            ))}
+          </Pie>
+          <Tooltip content={<CustomTooltip />} />
+          <Legend
+            verticalAlign="bottom"
+            iconType="circle"
+            iconSize={10}
+            wrapperStyle={{ fontSize: '0.8rem', color: '#94a3b8' }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  if (chart_type === 'line') {
+    return (
+      <ResponsiveContainer width="100%" height={320}>
+        <AreaChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+          <ChartGradients />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
+          <XAxis
+            dataKey="name"
+            tick={{ fill: '#94a3b8', fontSize: 11 }}
+            axisLine={{ stroke: 'rgba(148,163,184,0.2)' }}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{ fill: '#94a3b8', fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend
+            iconType="circle"
+            iconSize={8}
+            wrapperStyle={{ fontSize: '0.8rem', color: '#94a3b8' }}
+          />
+          {dataKeys.map((key, i) => (
+            <Area
+              key={key}
+              type="monotone"
+              dataKey={key}
+              stroke={CHART_COLORS[i % CHART_COLORS.length]}
+              strokeWidth={2.5}
+              fill={`url(#gradient-${i})`}
+              dot={{ r: 3, fill: CHART_COLORS[i % CHART_COLORS.length], strokeWidth: 0 }}
+              activeDot={{ r: 6, stroke: '#fff', strokeWidth: 2 }}
+              animationDuration={800}
+            />
+          ))}
+        </AreaChart>
+      </ResponsiveContainer>
+    );
+  }
+
+  // Default: bar chart
+  return (
+    <ResponsiveContainer width="100%" height={320}>
+      <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+        <ChartGradients />
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.1)" />
+        <XAxis
+          dataKey="name"
+          tick={{ fill: '#94a3b8', fontSize: 11 }}
+          axisLine={{ stroke: 'rgba(148,163,184,0.2)' }}
+          tickLine={false}
+        />
+        <YAxis
+          tick={{ fill: '#94a3b8', fontSize: 11 }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(99,102,241,0.08)' }} />
+        <Legend
+          iconType="circle"
+          iconSize={8}
+          wrapperStyle={{ fontSize: '0.8rem', color: '#94a3b8' }}
+        />
+        {dataKeys.map((key, i) => (
+          <Bar
+            key={key}
+            dataKey={key}
+            fill={CHART_COLORS[i % CHART_COLORS.length]}
+            radius={[6, 6, 0, 0]}
+            animationDuration={800}
+          />
+        ))}
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
 
 const agentIcons = {
   historical: 'H',
@@ -41,33 +188,6 @@ function getAgentIcon(agentName = '') {
     if (lower.includes(key)) return icon;
   }
   return '';
-}
-
-function renderInteractiveChart(chart) {
-  if (!chart?.chart_data || !chart.chart_data.labels || !chart.chart_data.datasets?.length) return null;
-
-  const { chart_type, labels, datasets } = chart.chart_data;
-  const data = { labels, datasets };
-  const commonOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'top' },
-      tooltip: { enabled: true },
-    },
-    scales: {
-      x: { ticks: { autoSkip: true, maxTicksLimit: 12 } },
-      y: { beginAtZero: true },
-    },
-  };
-
-  if (chart_type === 'pie') {
-    return <Pie data={data} className="chartjs-canvas" />;
-  }
-  if (chart_type === 'line') {
-    return <Line data={data} options={commonOptions} className="chartjs-canvas" />;
-  }
-  return <Bar data={data} options={commonOptions} className="chartjs-canvas" />;
 }
 
 function VinushanChatMessage({ message, agentSteps, routingReasoning, agentsUsed, charts }) {

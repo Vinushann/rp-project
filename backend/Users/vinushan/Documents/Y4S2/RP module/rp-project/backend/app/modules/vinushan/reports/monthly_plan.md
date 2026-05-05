@@ -1,64 +1,55 @@
-# April 2026 Coffee Shop Action Plan
-
 ## Demand Outlook
-- **Total Expected Quantity for the Period**: 150.08 units
+- **Total Expected Quantity for April 2026**: 150.08 units per day.
 - **Busiest Predicted Days**:
-  1. April 6, 2026 (Pre-New Year)
-  2. April 20, 2026 (Post-New Year)
-  3. April 21, 2026 (Post-New Year)
-  4. April 27, 2026
-  5. April 28, 2026
-- **Confidence Intervals**: Daily quantities range from 0 to 21.84 units, indicating high uncertainty.
-- **Weather Impact**: 
-  - Rain may decrease sales slightly by -2.1% for pastries and -1.54% for other categories.
-  - Temperature variations will have minimal impact, with no major changes required.
+  1. April 27, 2026
+  2. April 28, 2026
+  3. April 6, 2026
+  4. April 20, 2026
+  5. April 21, 2026
+- **Sales Impact from Holidays**:
+  - **Bak Full Moon Poya Day (April 5, 2026)**: Expect a 7.86% increase in sales.
+  - **Day Before Sinhala and Tamil New Year (April 12, 2026)**: Anticipate a slight decrease of 3.21% in sales.
+  - **Sinhala and Tamil New Year (April 13-14, 2026)**: Expect a 1.41% increase in sales.
+  - **Special Public Holiday (April 15, 2026)**: Expect a 4.85% increase in sales.
+  - **Good Friday (April 18, 2026)**: Anticipate a slight decrease of 1.4% in sales.
 
 ## Promotions
-- **Pre-New Year (April 10-12)**: 
-  - Launch a special menu featuring traditional Sri Lankan items.
-  - Promote catering packages for families celebrating the New Year.
-- **New Year Days (April 13-14)**: 
-  - Offer discounts or special deals for travelers and tourists.
-  - Extend hours to accommodate increased foot traffic (30-50% higher) from travelers [1].
-- **Post-New Year (April 15-17)**: 
-  - Maintain some festive menu items to capture leftover demand.
+- **April 1-7**: Promote best-selling items leading up to Bak Full Moon Poya Day (April 5).
+- **April 8-14**: Create a special menu for the Sinhala and Tamil New Year, highlighting traditional items.
+- **April 15-21**: Offer discounts on coffee and pastries to attract customers during the post-New Year period.
+- **April 22-30**: Implement a loyalty program to encourage repeat visits during the busy days on April 27-28.
 
 ## Staffing
-- **Week 1 (April 1-7)**: 
-  - Ensure adequate staffing for peak hours, especially on April 6.
-- **Week 2 (April 8-14)**: 
-  - Increase staff during the New Year preparation days (April 10-12) and ensure coverage on April 13-14.
-- **Week 3 (April 15-21)**: 
-  - Increase staffing on April 20-21 to manage expected higher demand.
-- **Week 4 (April 22-30)**: 
-  - Monitor staffing needs based on sales trends and adjust as necessary.
+- **Week 1 (April 1-7)**: Standard staffing levels with a focus on training staff for increased customer service during Bak Full Moon Poya Day.
+- **Week 2 (April 8-14)**: Increase staffing on April 13-14 to handle the expected influx of customers during the New Year celebrations.
+- **Week 3 (April 15-21)**: Maintain higher staffing levels, especially on April 20-21, to manage high demand.
+- **Week 4 (April 22-30)**: Return to regular staffing levels but ensure flexibility to adjust based on demand on April 27-28.
 
 ## Inventory
-- **Week 1 (April 1-7)**: 
-  - Prepare for moderate demand; stock up on best-selling items.
-- **Week 2 (April 8-14)**: 
-  - Increase inventory of festive items and monitor sales closely.
-- **Week 3 (April 15-21)**: 
-  - Stock up on popular items in anticipation of increased demand on April 20-21.
-- **Week 4 (April 22-30)**: 
-  - Continue to monitor sales and adjust inventory based on trends.
+- **Week 1 (April 1-7)**: Stock up on coffee, pastries, and best-selling items in anticipation of Bak Full Moon Poya Day.
+- **Week 2 (April 8-14)**: Prepare additional inventory for the Sinhala and Tamil New Year, focusing on traditional items.
+- **Week 3 (April 15-21)**: Increase inventory levels significantly to accommodate high demand, especially for coffee and pastries.
+- **Week 4 (April 22-30)**: Ensure inventory is replenished post-holiday and maintain stock for busy days on April 27-28.
 
 ## Risks
-- **High Uncertainty in Demand**: The forecasted quantities have a high level of uncertainty (MAE: 7.94, MAPE: 73.04%) which may lead to overstocking or understocking.
-- **Weather Variability**: Rain and temperature changes could impact sales unexpectedly.
-- **Cultural Events**: Changes in public holiday schedules or local events could affect customer turnout.
+- **Sales Variability**: High uncertainty in demand predictions (MAE: 7.94, MAPE: 73.04) means that actual sales may differ significantly from forecasts.
+- **Weather Impact**: While rain has minimal impact, any unexpected weather changes could affect foot traffic.
+- **Staffing Challenges**: Difficulty in securing additional staff during peak holiday periods could lead to service delays.
 
-### Summary Table of Key Metrics
+## Summary Table of Key Metrics
 
-| Week         | Expected Demand | Staffing Actions                 | Inventory Actions                     | Promotions                          |
-|--------------|----------------|----------------------------------|---------------------------------------|-------------------------------------|
-| April 1-7    | Moderate       | Adequate staffing for peak hours | Stock up on best sellers              | N/A                                 |
-| April 8-14   | Fluctuating    | Increase staff for New Year prep | Increase inventory of festive items   | Special menu and catering packages  |
-| April 15-21  | Higher         | Increase staff on April 20-21    | Stock up on popular items             | Maintain festive menu items         |
-| April 22-30  | Gradual return | Monitor and adjust as needed      | Adjust inventory based on trends      | N/A                                 |
+| Date                | Expected Sales Change | Action Required                     |
+|---------------------|----------------------|-------------------------------------|
+| April 1-7           | Moderate increase     | Stock up on inventory, promote best sellers |
+| April 5 (Bak Full Moon Poya Day) | +7.86%               | Highlight best sellers              |
+| April 8-14         | Slight increase       | Prepare special New Year menu, increase staffing on April 13-14 |
+| April 12 (Day Before New Year) | -3.21%               | Maintain standard operations        |
+| April 13-14 (New Year) | +1.41%               | Stock up on inventory, increase staffing |
+| April 15 (Special Holiday) | +4.85%               | Highlight best sellers              |
+| April 18 (Good Friday) | -1.4%                | Monitor closely, maintain operations |
+| April 20-21        | High demand           | Increase inventory and staffing     |
+| April 22-30        | Stabilizing demand     | Maintain regular staffing, replenish inventory |
 
 ### Sources
 - Holiday Impact Guide
-- Weather Impact Guide
-
-This comprehensive action plan will help your coffee shop navigate the busy month of April 2026 effectively, maximizing sales while managing risks associated with demand uncertainty and external factors.
+- Demand Forecasting Data

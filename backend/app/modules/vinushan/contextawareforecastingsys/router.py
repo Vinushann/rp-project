@@ -4,12 +4,37 @@ Dynamic Router - Uses OpenAI to decide which agents to call based on the manager
 
 import json
 import os
+from datetime import datetime
+from functools import lru_cache
+from pathlib import Path
 from typing import List
 
+import pandas as pd
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 
 load_dotenv()
+
+
+# ── Product catalogue (loaded once) ──────────────────────────────────────────
+_DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+_DATASET_PATH = _DATA_DIR / "the_rossmann_coffee_shop_sales_dataset.csv"
+
+
+@lru_cache(maxsize=1)
+def _load_product_names() -> set:
+    """Return the set of unique product names from the dataset."""
+    try:
+        df = pd.read_csv(_DATASET_PATH, usecols=["food_name"])
+        return set(df["food_name"].dropna().unique())
+    except Exception:
+        return set()
+
+
+@lru_cache(maxsize=1)
+def _load_product_categories() -> set:
+    """Return unique category prefixes (first word of food_name)."""
+    return {name.split()[0].lower() for name in _load_product_names() if name.strip()}
 
 
 # Available capabilities and their agent mappings
@@ -59,44 +84,69 @@ def _build_routing_prompt(question: str) -> str:
         f"- {key}: {info['description']}"
         for key, info in AGENT_CAPABILITIES.items()
     ])
-    
-    return f"""You are a smart router for a coffee shop analytics system. 
+
+    # Build a compact product category list for the LLM
+    categories = sorted(_load_product_categories())
+    category_line = ", ".join(categories) if categories else "burger, chicken, dessert, drink, pasta, pizza, roll, sandwich"
+
+    today = datetime.now().strftime("%A, %B %d, %Y")
+
+    return f"""You are a smart router for a coffee shop analytics system called ATHENA.
+Today's date is {today}.
 Based on the manager's question, decide which analysis agents should be called.
 
 Available agents and their capabilities:
 {capabilities_desc}
 
+Product categories sold by this shop: {category_line}
+(Each category has variants such as "Classic Burger", "Spicy Pasta 12", "Veggie Roll 9", etc.)
+
 Manager's question: "{question}"
 
-Instructions:
-1. First, determine if this is a BUSINESS question that requires data analysis, OR a CONVERSATIONAL message (greeting, small talk, general questions)
-2. For CONVERSATIONAL messages (like "hello", "hi", "how are you", "thanks", "bye", general questions not about the coffee shop business), return an EMPTY agents_needed list
-3. For BUSINESS questions, select ONLY the agents that are needed to answer this specific question
-4. If it's a simple question (e.g., "what are food trends?"), select only 1-2 relevant agents
-5. If it's a comprehensive question (e.g., "what should I do next month?"), select multiple agents
-6. The "strategy" agent should ONLY be included if the question asks for recommendations, plans, or "what should I do"
-7. The "visualization" agent should be selected when the manager asks for charts, graphs, visual representations, or uses words like "show me", "visualize", "chart", "graph", "plot", "compare visually"
-8. If visualization is requested, ONLY select the visualization agent (it handles everything needed for charts)
-9. Set "needs_rag" to true when the question asks about domain knowledge that goes BEYOND raw data analysis — for example:
-   - Product recommendations, pairings, or menu advice
-   - Promotional strategies, discount guidance, or marketing ideas
-   - Operational best practices (staffing rules, inventory management)
-   - Holiday preparation tips or cultural context
-   - Weather-based business strategies
-   - How the ATHENA system works, methodology, or model details
-   - General business advice for the coffee shop
-   Set "needs_rag" to false for pure data queries (e.g., "what were top sellers last month?" or "forecast demand for June")
+CLASSIFICATION — pick exactly ONE of these five categories:
 
-Respond with a JSON object:
+A) BUSINESS_DATA — needs data analysis agents (sales trends, forecasting, holiday analysis, weather analysis, strategy, charts).
+   → Set agents_needed to the required agent keys. Set is_conversational, is_irrelevant, is_knowledge_query all to false.
+
+B) KNOWLEDGE — questions about ATHENA itself, its methodology, models, how it works, its limitations, OR general domain advice (best practices, staffing tips, operational advice) that need knowledge-base retrieval but NOT data analysis.
+   Examples: "How does ATHENA generate forecasts?", "What model does ATHENA use?", "How does ATHENA explain decisions?", "What are ATHENA's limitations?", "How can I trust this recommendation?"
+   → Set agents_needed to EMPTY list []. Set is_knowledge_query=true. Set needs_rag=true.
+
+C) CONVERSATIONAL — greetings, thanks, farewells, small talk, OR meta-requests about a previous response (e.g. "summarize that", "make it shorter", "explain like a beginner", "can you help me?").
+   → Set agents_needed to EMPTY list []. Set is_conversational=true.
+
+D) IRRELEVANT — clearly NOT about this coffee shop business or ATHENA (e.g. "capital of France", "write a poem", "explain quantum physics", sports, politics, coding help).
+   → Set agents_needed to EMPTY list []. Set is_irrelevant=true.
+
+E) UNKNOWN_PRODUCT — the question IS business-related but mentions a specific food product that does NOT exist in our categories above (e.g. "ice cream", "sushi", "steak", "tacos", "milkshakes", "noodles"). Generic terms like "items", "products", "food", "sales" are NOT unknown products — only flag specific food names absent from our catalogue.
+   → Set agents_needed to EMPTY list []. Set unknown_product to the product name mentioned.
+
+AGENT SELECTION RULES (only for BUSINESS_DATA):
+1. Select ONLY the agents needed for the specific question.
+2. Simple questions → 1-2 agents. Comprehensive questions → multiple agents.
+3. Include "strategy" ONLY if the question asks for recommendations, plans, or "what should I do".
+4. For visualization (charts/graphs/plots/"show me"/"visualize"):
+   - Pure visualization of historical data → select ONLY "visualization"
+   - Visualization that ALSO needs forecasting or analysis → select BOTH the data agent AND "visualization"
+   - Example: "Show me a chart of forecasted demand" → ["forecasting", "visualization"]
+   - Example: "Show sales trend chart" → ["visualization"]
+5. Set is_comprehensive=true when multiple agents work together for a planning question.
+
+RAG RULES:
+- Set needs_rag=true for: product recommendations, promotional strategies, best practices, holiday tips, weather strategies, how ATHENA works, domain advice.
+- Set needs_rag=false for: pure data queries like "top sellers last month" or "forecast demand for June".
+
+Respond with ONLY this JSON object:
 {{
-    "reasoning": "Brief explanation of why you selected these agents (or why none are needed for conversational messages)",
-    "agents_needed": ["list", "of", "agent", "keys"],  // Empty list [] for conversational messages
-    "is_comprehensive": true/false (whether this needs a final strategy summary),
-    "is_conversational": true/false (whether this is just a greeting or general conversation),
-    "needs_rag": true/false (whether domain knowledge retrieval would improve the answer)
-}}
-
-Only return valid JSON, no other text."""
+    "reasoning": "Brief explanation",
+    "agents_needed": [],
+    "is_comprehensive": false,
+    "is_conversational": false,
+    "is_irrelevant": false,
+    "is_knowledge_query": false,
+    "unknown_product": null,
+    "needs_rag": false
+}}"""
 
 
 def route_question(question: str) -> dict:
@@ -135,27 +185,74 @@ def route_question(question: str) -> dict:
         is_conversational = result.get("is_conversational", False)
         
         if is_conversational:
-            # Return empty agents for conversational messages
             return {
                 "agents_needed": [],
-                "reasoning": result.get("reasoning", "This is a conversational message - no business analysis needed."),
+                "reasoning": result.get("reasoning", "This is a conversational message."),
                 "is_comprehensive": False,
                 "is_conversational": True,
+                "is_irrelevant": False,
+                "is_knowledge_query": False,
+                "unknown_product": None,
+                "needs_visualization": False,
+                "needs_rag": result.get("needs_rag", False),
+            }
+        
+        # Check if this is a knowledge/methodology query
+        is_knowledge_query = result.get("is_knowledge_query", False)
+        
+        if is_knowledge_query:
+            return {
+                "agents_needed": [],
+                "reasoning": result.get("reasoning", "This is a knowledge question about the system or domain."),
+                "is_comprehensive": False,
+                "is_conversational": False,
+                "is_irrelevant": False,
+                "is_knowledge_query": True,
+                "unknown_product": None,
+                "needs_visualization": False,
+                "needs_rag": True,
+            }
+        
+        # Check if this is an irrelevant question
+        is_irrelevant = result.get("is_irrelevant", False)
+        
+        if is_irrelevant:
+            return {
+                "agents_needed": [],
+                "reasoning": result.get("reasoning", "This question is not related to the coffee shop business."),
+                "is_comprehensive": False,
+                "is_conversational": False,
+                "is_irrelevant": True,
+                "is_knowledge_query": False,
+                "unknown_product": None,
                 "needs_visualization": False,
                 "needs_rag": False,
             }
         
-        # Validate agents for business questions
+        # Check for unknown product
+        unknown_product = result.get("unknown_product", None)
+        
+        if unknown_product:
+            return {
+                "agents_needed": [],
+                "reasoning": result.get("reasoning", ""),
+                "is_comprehensive": False,
+                "is_conversational": False,
+                "is_irrelevant": False,
+                "is_knowledge_query": False,
+                "unknown_product": unknown_product,
+                "needs_visualization": False,
+                "needs_rag": False,
+            }
+        
+        # ── BUSINESS_DATA path ──
         valid_agents = [a for a in result.get("agents_needed", []) if a in AGENT_CAPABILITIES]
         
-        # If no valid agents but not conversational, default to historical
+        # If no valid agents, default to historical
         if not valid_agents:
             valid_agents = ["historical"]
         
-        # Check if visualization is requested
         needs_visualization = "visualization" in valid_agents
-        
-        # Check if RAG knowledge retrieval is needed
         needs_rag = result.get("needs_rag", False)
         
         return {
@@ -163,6 +260,9 @@ def route_question(question: str) -> dict:
             "reasoning": result.get("reasoning", ""),
             "is_comprehensive": result.get("is_comprehensive", False),
             "is_conversational": False,
+            "is_irrelevant": False,
+            "is_knowledge_query": False,
+            "unknown_product": None,
             "needs_visualization": needs_visualization,
             "needs_rag": needs_rag,
         }
@@ -212,6 +312,9 @@ def _keyword_fallback(question: str) -> dict:
         "reasoning": "Matched based on keywords in question",
         "is_comprehensive": is_comprehensive,
         "is_conversational": False,
+        "is_irrelevant": False,
+        "is_knowledge_query": False,
+        "unknown_product": None,
         "needs_visualization": needs_visualization,
         "needs_rag": needs_rag,
     }

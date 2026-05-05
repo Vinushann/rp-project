@@ -169,12 +169,16 @@ function ThoughtEntry({ label, text, time }) {
 }
 
 /* ─── Main Panel ─── */
+const STEP_REVEAL_DELAY = 400; // ms between each step reveal
+
 function AgentThoughtsPanel({
   isOpen, onClose, onClear,
   events = [], currentRunId, isLoading,
   routingReasoning, agentsNeeded = [],
 }) {
   const [elapsed, setElapsed] = useState('');
+  const [revealedCount, setRevealedCount] = useState(0);
+  const revealTimerRef = useRef(null);
   const endRef = useRef(null);
 
   const runStart = events.find(e => e.type === 'run_start')?.timestamp;
@@ -185,7 +189,7 @@ function AgentThoughtsPanel({
     if (isLoading && endRef.current) {
       endRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }
-  }, [events, isLoading]);
+  }, [events, isLoading, revealedCount]);
 
   useEffect(() => {
     let iv;
@@ -260,7 +264,60 @@ function AgentThoughtsPanel({
   const { agents, completedSet, activeAgent, ragEvents, ragComplete, xaiEvents, xaiComplete } = timeline;
   const hasContent = events.length > 0 || routingReasoning || agentsNeeded.length > 0;
 
-  let stepNum = 0;
+  // Build ordered steps array for staggered reveal
+  const allSteps = useMemo(() => {
+    const steps = [];
+    let num = 0;
+
+    // Query Analysis
+    if (routingReasoning) {
+      num++;
+      steps.push({ id: `query-${num}`, type: 'query', number: num });
+    }
+
+    // Knowledge Retrieval
+    if (ragEvents.length > 0) {
+      num++;
+      steps.push({ id: `rag-${num}`, type: 'rag', number: num });
+    }
+
+    // Agent steps
+    Object.keys(agents).forEach(name => {
+      num++;
+      steps.push({ id: `agent-${name}`, type: 'agent', number: num, agentName: name });
+    });
+
+    // XAI
+    if (xaiEvents.length > 0) {
+      num++;
+      steps.push({ id: `xai-${num}`, type: 'xai', number: num });
+    }
+
+    // Complete
+    if (isComplete) {
+      num++;
+      steps.push({ id: `complete-${num}`, type: 'complete', number: num });
+    }
+
+    return steps;
+  }, [routingReasoning, ragEvents, agents, xaiEvents, isComplete]);
+
+  // Staggered reveal effect — reveal one step at a time
+  useEffect(() => {
+    if (revealedCount < allSteps.length) {
+      revealTimerRef.current = setTimeout(() => {
+        setRevealedCount(prev => prev + 1);
+      }, STEP_REVEAL_DELAY);
+    }
+    return () => clearTimeout(revealTimerRef.current);
+  }, [allSteps.length, revealedCount]);
+
+  // Reset revealed count when reasoning is cleared
+  useEffect(() => {
+    if (!hasContent) {
+      setRevealedCount(0);
+    }
+  }, [hasContent]);
 
   return (
     <div className={`ar-panel ${isOpen ? 'open' : ''}`}>
@@ -313,91 +370,94 @@ function AgentThoughtsPanel({
             ) : (
               <div className="ar-timeline">
 
-                {/* Step: Query Analysis */}
-                {routingReasoning && (() => {
-                  stepNum++;
-                  return (
-                    <Step
-                      number={stepNum}
-                      title="Query Analysis"
-                      status="done"
-                      time={fmtTime(events.find(e => e.type === 'query_analysis')?.timestamp)}
-                    >
-                      <Content text={routingReasoning} />
-                      {agentsNeeded.length > 0 && (
-                        <div className="ar-agents-assigned">
-                          <span className="ar-label">Specialists assigned</span>
-                          <div className="ar-tags">
-                            {agentsNeeded.map((agent, i) => (
-                              <span key={i} className="ar-tag ar-tag--accent">{agent}</span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </Step>
-                  );
-                })()}
+                {allSteps.slice(0, revealedCount).map((step, idx) => {
+                  // Each step gets a fresh entrance animation
+                  const isNewlyRevealed = idx === revealedCount - 1;
+                  const animClass = isNewlyRevealed ? 'ar-step-enter' : '';
 
-                {/* Step: Knowledge Retrieval */}
-                {ragEvents.length > 0 && (() => {
-                  stepNum++;
-                  const ragStatus = ragComplete ? 'done' : (isLoading ? 'active' : 'pending');
-                  const ragData = ragComplete?.data;
-
-                  return (
-                    <Step
-                      number={stepNum}
-                      title="Knowledge Retrieval"
-                      status={ragStatus}
-                      time={fmtTime(ragEvents[0]?.timestamp)}
-                      duration={ragComplete ? `${ragData?.chunks_after_filter ?? ragData?.chunks_retrieved} chunks` : null}
-                    >
-                      {ragComplete ? (
-                        <div className="ar-rag">
-                          {ragData?.query_type && (
-                            <div className="ar-rag-row">
-                              <span className="ar-label">Query type</span>
-                              <span className="ar-tag ar-tag--accent">{ragData.query_type}</span>
-                              {ragData.classification_reasoning && (
-                                <p className="ar-muted">{ragData.classification_reasoning}</p>
-                              )}
-                            </div>
-                          )}
-
-                          {ragData?.topics?.length > 0 && (
-                            <div className="ar-rag-row">
-                              <span className="ar-label">Topics</span>
+                  if (step.type === 'query') {
+                    return (
+                      <div key={step.id} className={animClass}>
+                        <Step
+                          number={step.number}
+                          title="Query Analysis"
+                          status="done"
+                          time={fmtTime(events.find(e => e.type === 'query_analysis')?.timestamp)}
+                        >
+                          <Content text={routingReasoning} />
+                          {agentsNeeded.length > 0 && (
+                            <div className="ar-agents-assigned">
+                              <span className="ar-label">Specialists assigned</span>
                               <div className="ar-tags">
-                                {ragData.topics.map((t, i) => <span key={i} className="ar-tag">{t}</span>)}
+                                {agentsNeeded.map((agent, i) => (
+                                  <span key={i} className="ar-tag ar-tag--accent">{agent}</span>
+                                ))}
                               </div>
                             </div>
                           )}
+                        </Step>
+                      </div>
+                    );
+                  }
 
-                          <div className="ar-rag-stats">
-                            <div className="ar-stat">
-                              <span className="ar-stat-value">{ragData?.chunks_retrieved ?? 0}</span>
-                              <span className="ar-stat-label">Retrieved</span>
-                            </div>
-                            <div className="ar-stat-arrow">→</div>
-                            <div className="ar-stat">
-                              <span className="ar-stat-value ar-stat-value--accent">{ragData?.chunks_after_filter ?? ragData?.chunks_retrieved ?? 0}</span>
-                              <span className="ar-stat-label">After filter</span>
-                            </div>
-                            <div className="ar-stat">
-                              <span className="ar-stat-value">{ragData?.source_documents?.length || 0}</span>
-                              <span className="ar-stat-label">Sources</span>
-                            </div>
-                          </div>
+                  if (step.type === 'rag') {
+                    const ragStatus = ragComplete ? 'done' : (isLoading ? 'active' : 'pending');
+                    const ragData = ragComplete?.data;
+                    return (
+                      <div key={step.id} className={animClass}>
+                        <Step
+                          number={step.number}
+                          title="Knowledge Retrieval"
+                          status={ragStatus}
+                          time={fmtTime(ragEvents[0]?.timestamp)}
+                          duration={ragComplete ? `${ragData?.chunks_after_filter ?? ragData?.chunks_retrieved} chunks` : null}
+                        >
+                          {ragComplete ? (
+                            <div className="ar-rag">
+                              {ragData?.query_type && (
+                                <div className="ar-rag-row">
+                                  <span className="ar-label">Query type</span>
+                                  <span className="ar-tag ar-tag--accent">{ragData.query_type}</span>
+                                  {ragData.classification_reasoning && (
+                                    <p className="ar-muted">{ragData.classification_reasoning}</p>
+                                  )}
+                                </div>
+                              )}
 
-                          {ragData?.citations?.length > 0 && (
-                            <div className="ar-citations">
-                              <span className="ar-label">Source relevance</span>
-                              {ragData.citations.map((cite, i) => {
-                                const score = cite.score ?? cite.relevance_score ?? 0;
-                                const pct = Math.round(Math.max(0, Math.min(1, score)) * 100);
-                                return (
-                                  <div key={i} className="ar-cite">
-                                    <span className="ar-cite-name">{cite.heading || cite.source}</span>
+                              {ragData?.topics?.length > 0 && (
+                                <div className="ar-rag-row">
+                                  <span className="ar-label">Topics</span>
+                                  <div className="ar-tags">
+                                    {ragData.topics.map((t, i) => <span key={i} className="ar-tag">{t}</span>)}
+                                  </div>
+                                </div>
+                              )}
+
+                              <div className="ar-rag-stats">
+                                <div className="ar-stat">
+                                  <span className="ar-stat-value">{ragData?.chunks_retrieved ?? 0}</span>
+                                  <span className="ar-stat-label">Retrieved</span>
+                                </div>
+                                <div className="ar-stat-arrow">→</div>
+                                <div className="ar-stat">
+                                  <span className="ar-stat-value ar-stat-value--accent">{ragData?.chunks_after_filter ?? ragData?.chunks_retrieved ?? 0}</span>
+                                  <span className="ar-stat-label">After filter</span>
+                                </div>
+                                <div className="ar-stat">
+                                  <span className="ar-stat-value">{ragData?.source_documents?.length || 0}</span>
+                                  <span className="ar-stat-label">Sources</span>
+                                </div>
+                              </div>
+
+                              {ragData?.citations?.length > 0 && (
+                                <div className="ar-citations">
+                                  <span className="ar-label">Source relevance</span>
+                                  {ragData.citations.map((cite, i) => {
+                                    const score = cite.score ?? cite.relevance_score ?? 0;
+                                    const pct = Math.round(Math.max(0, Math.min(1, score)) * 100);
+                                    return (
+                                      <div key={i} className="ar-cite">
+                                        <span className="ar-cite-name">{cite.heading || cite.source}</span>
                                     <div className="ar-cite-bar">
                                       <div className="ar-cite-fill" style={{ width: `${pct}%` }} />
                                     </div>
@@ -412,154 +472,160 @@ function AgentThoughtsPanel({
                         <p className="ar-text">Searching knowledge base…</p>
                       )}
                     </Step>
-                  );
-                })()}
+                      </div>
+                    );
+                  }
 
-                {/* Steps: Agent Execution */}
-                {Object.entries(agents).map(([name, data]) => {
-                  stepNum++;
-                  const isAgentActive = activeAgent === name;
-                  const isAgentDone = completedSet.has(name);
-                  const status = isAgentDone ? 'done' : (isAgentActive ? 'active' : 'pending');
+                  if (step.type === 'agent') {
+                    const name = step.agentName;
+                    const data = agents[name];
+                    if (!data) return null;
+                    const isAgentActive = activeAgent === name;
+                    const isAgentDone = completedSet.has(name);
+                    const status = isAgentDone ? 'done' : (isAgentActive ? 'active' : 'pending');
 
-                  return (
-                    <Step
-                      key={name}
-                      number={stepNum}
-                      title={cleanAgentName(name)}
-                      status={status}
-                      time={fmtTime(data.startTime || data.thoughts[0]?.timestamp)}
-                      duration={isAgentDone && data.duration ? fmtDuration(data.duration) : null}
-                    >
-                      {data.thoughts.map((thought, ti) => (
-                        <ThoughtEntry
-                          key={ti}
-                          label={THOUGHT_LABELS[thought.phase] || thought.phase || 'Step'}
-                          text={thought.text}
-                          time={fmtTime(thought.timestamp)}
-                        />
-                      ))}
-                    </Step>
-                  );
+                    return (
+                      <div key={step.id} className={animClass}>
+                        <Step
+                          number={step.number}
+                          title={cleanAgentName(name)}
+                          status={status}
+                          time={fmtTime(data.startTime || data.thoughts[0]?.timestamp)}
+                          duration={isAgentDone && data.duration ? fmtDuration(data.duration) : null}
+                        >
+                          {data.thoughts.map((thought, ti) => (
+                            <ThoughtEntry
+                              key={ti}
+                              label={THOUGHT_LABELS[thought.phase] || thought.phase || 'Step'}
+                              text={thought.text}
+                              time={fmtTime(thought.timestamp)}
+                            />
+                          ))}
+                        </Step>
+                      </div>
+                    );
+                  }
+
+                  if (step.type === 'xai') {
+                    const xaiStatus = xaiComplete ? 'done' : (isLoading ? 'active' : 'pending');
+                    const xd = xaiComplete?.data;
+
+                    return (
+                      <div key={step.id} className={animClass}>
+                        <Step
+                          number={step.number}
+                          title="Explainability Analysis"
+                          status={xaiStatus}
+                          time={fmtTime(xaiEvents[0]?.timestamp)}
+                        >
+                          {xaiComplete ? (
+                            <div className="ar-xai">
+                              {xd?.overall_confidence != null && (
+                                <div className="ar-xai-confidence">
+                                  <span className="ar-label">Overall confidence</span>
+                                  <div className="ar-confidence-meter">
+                                    <div className="ar-confidence-fill" style={{ width: `${xd.overall_confidence}%` }} />
+                                    <span className="ar-confidence-value">{xd.overall_confidence}%</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {xd?.decision_factors?.length > 0 && (
+                                <div className="ar-xai-section">
+                                  <span className="ar-label">Decision factors</span>
+                                  {xd.decision_factors
+                                    .sort((a, b) => (b.influence || 0) - (a.influence || 0))
+                                    .map((f, i) => (
+                                      <div key={i} className="ar-factor">
+                                        <div className="ar-factor-header">
+                                          <span className="ar-factor-name">{f.factor}</span>
+                                          <span className="ar-factor-pct">{f.influence}%</span>
+                                        </div>
+                                        <div className="ar-factor-bar">
+                                          <div className="ar-factor-fill" style={{ width: `${f.influence}%` }} />
+                                        </div>
+                                        {f.reasoning && <p className="ar-muted ar-small">{f.reasoning}</p>}
+                                      </div>
+                                    ))}
+                                </div>
+                              )}
+
+                              {xd?.agent_contributions?.length > 0 && (
+                                <div className="ar-xai-section">
+                                  <span className="ar-label">Agent contributions</span>
+                                  {xd.agent_contributions.map((ac, i) => (
+                                    <div key={i} className="ar-factor">
+                                      <div className="ar-factor-header">
+                                        <span className="ar-factor-name">{ac.agent}</span>
+                                        <span className="ar-factor-pct">{ac.influence_pct}%</span>
+                                      </div>
+                                      <div className="ar-factor-bar ar-factor-bar--cyan">
+                                        <div className="ar-factor-fill" style={{ width: `${ac.influence_pct}%` }} />
+                                      </div>
+                                      {ac.contribution && <p className="ar-muted ar-small">{ac.contribution}</p>}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {(xd?.assumptions?.length > 0 || xd?.limitations?.length > 0) && (
+                                <div className="ar-xai-grid">
+                                  {xd.assumptions?.length > 0 && (
+                                    <div className="ar-xai-col">
+                                      <span className="ar-label">Assumptions</span>
+                                      <ul className="ar-simple-list">
+                                        {xd.assumptions.map((a, i) => <li key={i}>{a}</li>)}
+                                      </ul>
+                                    </div>
+                                  )}
+                                  {xd.limitations?.length > 0 && (
+                                    <div className="ar-xai-col ar-xai-col--warn">
+                                      <span className="ar-label">Limitations</span>
+                                      <ul className="ar-simple-list">
+                                        {xd.limitations.map((l, i) => <li key={i}>{l}</li>)}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {xd?.counterfactuals?.length > 0 && (
+                                <div className="ar-xai-section">
+                                  <span className="ar-label">What-if scenarios</span>
+                                  {xd.counterfactuals.map((cf, i) => (
+                                    <div key={i} className="ar-whatif">
+                                      <p className="ar-whatif-if"><strong>If</strong> {cf.scenario}</p>
+                                      <p className="ar-whatif-then"><strong>Then</strong> {cf.impact}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="ar-text">Analyzing decision factors…</p>
+                          )}
+                        </Step>
+                      </div>
+                    );
+                  }
+
+                  if (step.type === 'complete') {
+                    return (
+                      <div key={step.id} className={animClass}>
+                        <Step
+                          number={step.number}
+                          title="Complete"
+                          status="done"
+                          duration={fmtElapsed(runStart, runEnd)}
+                        >
+                          <p className="ar-text">All steps completed successfully.</p>
+                        </Step>
+                      </div>
+                    );
+                  }
+
+                  return null;
                 })}
-
-                {/* Step: Explainability */}
-                {xaiEvents.length > 0 && (() => {
-                  stepNum++;
-                  const xaiStatus = xaiComplete ? 'done' : (isLoading ? 'active' : 'pending');
-                  const xd = xaiComplete?.data;
-
-                  return (
-                    <Step
-                      number={stepNum}
-                      title="Explainability Analysis"
-                      status={xaiStatus}
-                      time={fmtTime(xaiEvents[0]?.timestamp)}
-                    >
-                      {xaiComplete ? (
-                        <div className="ar-xai">
-                          {xd?.overall_confidence != null && (
-                            <div className="ar-xai-confidence">
-                              <span className="ar-label">Overall confidence</span>
-                              <div className="ar-confidence-meter">
-                                <div className="ar-confidence-fill" style={{ width: `${xd.overall_confidence}%` }} />
-                                <span className="ar-confidence-value">{xd.overall_confidence}%</span>
-                              </div>
-                            </div>
-                          )}
-
-                          {xd?.decision_factors?.length > 0 && (
-                            <div className="ar-xai-section">
-                              <span className="ar-label">Decision factors</span>
-                              {xd.decision_factors
-                                .sort((a, b) => (b.influence || 0) - (a.influence || 0))
-                                .map((f, i) => (
-                                  <div key={i} className="ar-factor">
-                                    <div className="ar-factor-header">
-                                      <span className="ar-factor-name">{f.factor}</span>
-                                      <span className="ar-factor-pct">{f.influence}%</span>
-                                    </div>
-                                    <div className="ar-factor-bar">
-                                      <div className="ar-factor-fill" style={{ width: `${f.influence}%` }} />
-                                    </div>
-                                    {f.reasoning && <p className="ar-muted ar-small">{f.reasoning}</p>}
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-
-                          {xd?.agent_contributions?.length > 0 && (
-                            <div className="ar-xai-section">
-                              <span className="ar-label">Agent contributions</span>
-                              {xd.agent_contributions.map((ac, i) => (
-                                <div key={i} className="ar-factor">
-                                  <div className="ar-factor-header">
-                                    <span className="ar-factor-name">{ac.agent}</span>
-                                    <span className="ar-factor-pct">{ac.influence_pct}%</span>
-                                  </div>
-                                  <div className="ar-factor-bar ar-factor-bar--cyan">
-                                    <div className="ar-factor-fill" style={{ width: `${ac.influence_pct}%` }} />
-                                  </div>
-                                  {ac.contribution && <p className="ar-muted ar-small">{ac.contribution}</p>}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {(xd?.assumptions?.length > 0 || xd?.limitations?.length > 0) && (
-                            <div className="ar-xai-grid">
-                              {xd.assumptions?.length > 0 && (
-                                <div className="ar-xai-col">
-                                  <span className="ar-label">Assumptions</span>
-                                  <ul className="ar-simple-list">
-                                    {xd.assumptions.map((a, i) => <li key={i}>{a}</li>)}
-                                  </ul>
-                                </div>
-                              )}
-                              {xd.limitations?.length > 0 && (
-                                <div className="ar-xai-col ar-xai-col--warn">
-                                  <span className="ar-label">Limitations</span>
-                                  <ul className="ar-simple-list">
-                                    {xd.limitations.map((l, i) => <li key={i}>{l}</li>)}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {xd?.counterfactuals?.length > 0 && (
-                            <div className="ar-xai-section">
-                              <span className="ar-label">What-if scenarios</span>
-                              {xd.counterfactuals.map((cf, i) => (
-                                <div key={i} className="ar-whatif">
-                                  <p className="ar-whatif-if"><strong>If</strong> {cf.scenario}</p>
-                                  <p className="ar-whatif-then"><strong>Then</strong> {cf.impact}</p>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="ar-text">Analyzing decision factors…</p>
-                      )}
-                    </Step>
-                  );
-                })()}
-
-                {/* Final: Complete */}
-                {isComplete && (() => {
-                  stepNum++;
-                  return (
-                    <Step
-                      number={stepNum}
-                      title="Complete"
-                      status="done"
-                      duration={fmtElapsed(runStart, runEnd)}
-                    >
-                      <p className="ar-text">All steps completed successfully.</p>
-                    </Step>
-                  );
-                })()}
 
                 {/* Loading indicator */}
                 {isLoading && !isComplete && (

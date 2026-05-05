@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { streamVinushanChat } from '../../lib/api';
 import AthenaChatMessage from './components/AthenaChatMessage';
 import AgentThoughtsPanel from './components/AgentThoughtsPanel';
@@ -15,7 +15,13 @@ import './components/StatsPage.css';
  * Main page component with chat interface and real-time streaming reasoning panel
  */
 
-const STORAGE_KEY = 'athena-chat-history';
+const LEGACY_STORAGE_KEY = 'athena-chat-history';
+const CHAT_SESSIONS_STORAGE_KEY = 'athena-chat-sessions-v1';
+const ACTIVE_CHAT_STORAGE_KEY = 'athena-active-chat-v1';
+
+const FOLLOWUP_STORAGE_KEY = 'athena-followup-enabled';
+const XAI_STORAGE_KEY = 'athena-xai-enabled';
+const SETTINGS_STORAGE_KEY = 'athena-settings';
 
 const exampleQuestions = [
   'What are the top selling items this month?',
@@ -25,65 +31,296 @@ const exampleQuestions = [
   'What holidays are coming up?',
 ];
 
-// Helper to load messages from localStorage
-const loadMessagesFromStorage = () => {
+const buildChatTitle = (messages = []) => {
+  const firstUserMessage = messages.find((m) => m.role === 'user' && m.content?.trim());
+  if (!firstUserMessage) return 'New chat';
+  const normalized = firstUserMessage.content.replace(/\s+/g, ' ').trim();
+  return normalized.length > 44 ? `${normalized.slice(0, 44)}...` : normalized;
+};
+
+const createChatSession = (messages = []) => {
+  const now = new Date().toISOString();
+  return {
+    id: `chat_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    title: buildChatTitle(messages),
+    createdAt: now,
+    updatedAt: now,
+    messages,
+  };
+};
+
+const normalizeSessions = (sessions) => {
+  if (!Array.isArray(sessions)) return [];
+  return sessions
+    .filter((chat) => chat && typeof chat === 'object' && typeof chat.id === 'string')
+    .map((chat) => ({
+      id: chat.id,
+      title: chat.title || buildChatTitle(chat.messages || []),
+      createdAt: chat.createdAt || new Date().toISOString(),
+      updatedAt: chat.updatedAt || new Date().toISOString(),
+      messages: Array.isArray(chat.messages) ? chat.messages : [],
+    }))
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+};
+
+const loadChatStateFromStorage = () => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      // Validate it's an array
-      if (Array.isArray(parsed)) {
-        return parsed;
+    const rawSessions = localStorage.getItem(CHAT_SESSIONS_STORAGE_KEY);
+    const rawActiveChat = localStorage.getItem(ACTIVE_CHAT_STORAGE_KEY);
+
+    if (rawSessions) {
+      const parsedSessions = normalizeSessions(JSON.parse(rawSessions));
+      if (parsedSessions.length > 0) {
+        const activeChatId = parsedSessions.some((chat) => chat.id === rawActiveChat)
+          ? rawActiveChat
+          : parsedSessions[0].id;
+        return { sessions: parsedSessions, activeChatId };
+      }
+    }
+
+    // Migrate old single-chat history to sessions model
+    const legacyRaw = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacyRaw) {
+      const legacyMessages = JSON.parse(legacyRaw);
+      if (Array.isArray(legacyMessages) && legacyMessages.length > 0) {
+        const migratedChat = createChatSession(legacyMessages);
+        return { sessions: [migratedChat], activeChatId: migratedChat.id };
       }
     }
   } catch (e) {
-    console.error('Failed to load chat history:', e);
+    console.error('Failed to load chat sessions:', e);
   }
-  return [];
+
+  const freshChat = createChatSession([]);
+  return { sessions: [freshChat], activeChatId: freshChat.id };
 };
 
-// Helper to save messages to localStorage
-const saveMessagesToStorage = (messages) => {
+const persistChatState = (sessions, activeChatId) => {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+    localStorage.setItem(CHAT_SESSIONS_STORAGE_KEY, JSON.stringify(sessions));
+    localStorage.setItem(ACTIVE_CHAT_STORAGE_KEY, activeChatId || '');
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch (e) {
-    console.error('Failed to save chat history:', e);
+    console.error('Failed to save chat sessions:', e);
   }
 };
 
 function VinushanPage() {
-  // Initialize messages from localStorage
-  const [messages, setMessages] = useState(() => loadMessagesFromStorage());
+  const chatInitRef = useRef(null);
+  if (!chatInitRef.current) {
+    chatInitRef.current = loadChatStateFromStorage();
+  }
+
+  const [chatSessions, setChatSessions] = useState(() => chatInitRef.current.sessions);
+  const [activeChatId, setActiveChatId] = useState(() => chatInitRef.current.activeChatId);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showReasoning, setShowReasoning] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [activeTab, setActiveTab] = useState('athena');
+  const [enableFollowUp, setEnableFollowUp] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(FOLLOWUP_STORAGE_KEY)) ?? false; } catch { return false; }
+  });
+  const [enableXai, setEnableXai] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(XAI_STORAGE_KEY)) ?? true; } catch { return true; }
+  });
+  const [sendOnEnter, setSendOnEnter] = useState(() => {
+    try {
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || '{}');
+      return settings.sendOnEnter ?? true;
+    } catch {
+      return true;
+    }
+  });
+  const [autoOpenReasoning, setAutoOpenReasoning] = useState(() => {
+    try {
+      const settings = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || '{}');
+      return settings.autoOpenReasoning ?? true;
+    } catch {
+      return true;
+    }
+  });
   
   // Real-time event tracking
   const [currentRunId, setCurrentRunId] = useState(null);
   const [events, setEvents] = useState([]);
   const [routingReasoning, setRoutingReasoning] = useState(null);
   const [agentsNeeded, setAgentsNeeded] = useState([]);
+  const [chatSearchQuery, setChatSearchQuery] = useState('');
+  const [activeSearchResultIndex, setActiveSearchResultIndex] = useState(0);
+
+  const activeChat = useMemo(
+    () => chatSessions.find((chat) => chat.id === activeChatId) || chatSessions[0] || null,
+    [chatSessions, activeChatId]
+  );
+  const messages = activeChat?.messages || [];
+  const totalMessageCount = useMemo(
+    () => chatSessions.reduce((sum, chat) => sum + (chat.messages?.length || 0), 0),
+    [chatSessions]
+  );
   
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const abortControllerRef = useRef(null);
+  const chatSearchInputRef = useRef(null);
+  const messageNodeRefs = useRef(new Map());
+
+  const setMessagesForActiveChat = useCallback((updater) => {
+    setChatSessions((prev) => prev.map((chat) => {
+      if (chat.id !== activeChatId) return chat;
+      const currentMessages = Array.isArray(chat.messages) ? chat.messages : [];
+      const nextMessages = typeof updater === 'function' ? updater(currentMessages) : updater;
+      return {
+        ...chat,
+        messages: nextMessages,
+        title: buildChatTitle(nextMessages),
+        updatedAt: new Date().toISOString(),
+      };
+    }));
+  }, [activeChatId]);
+
+  const searchResults = useMemo(() => {
+    const query = chatSearchQuery.trim().toLowerCase();
+    if (!query) return [];
+
+    return messages
+      .map((msg, idx) => ({
+        messageIndex: idx,
+        messageKey: `${activeChatId}-${idx}-${msg.timestamp || idx}`,
+        role: msg.role,
+        content: msg.content || '',
+      }))
+      .filter((entry) => entry.content.toLowerCase().includes(query));
+  }, [messages, chatSearchQuery, activeChatId]);
+
+  const matchedMessageIndexes = useMemo(
+    () => new Set(searchResults.map((result) => result.messageIndex)),
+    [searchResults]
+  );
+
+  const activeMatchedMessageIndex = searchResults[activeSearchResultIndex]?.messageIndex ?? -1;
+
+  const scrollToSearchResult = useCallback((resultIndex) => {
+    const result = searchResults[resultIndex];
+    if (!result) return;
+    const node = messageNodeRefs.current.get(result.messageKey);
+    if (node) {
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [searchResults]);
+
+  const handleNextSearchResult = useCallback(() => {
+    if (!searchResults.length) return;
+    setActiveSearchResultIndex((prev) => {
+      const nextIndex = (prev + 1) % searchResults.length;
+      scrollToSearchResult(nextIndex);
+      return nextIndex;
+    });
+  }, [searchResults, scrollToSearchResult]);
+
+  const handlePrevSearchResult = useCallback(() => {
+    if (!searchResults.length) return;
+    setActiveSearchResultIndex((prev) => {
+      const prevIndex = (prev - 1 + searchResults.length) % searchResults.length;
+      scrollToSearchResult(prevIndex);
+      return prevIndex;
+    });
+  }, [searchResults, scrollToSearchResult]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Persist messages to localStorage whenever they change
   useEffect(() => {
-    if (messages.length > 0) {
-      saveMessagesToStorage(messages);
+    if (!chatSearchQuery.trim()) {
+      setActiveSearchResultIndex(0);
+      return;
     }
-  }, [messages]);
+
+    if (searchResults.length === 0) {
+      setActiveSearchResultIndex(0);
+      return;
+    }
+
+    setActiveSearchResultIndex((prev) => {
+      const normalized = Math.min(prev, searchResults.length - 1);
+      setTimeout(() => scrollToSearchResult(normalized), 0);
+      return normalized;
+    });
+  }, [chatSearchQuery, searchResults, scrollToSearchResult]);
+
+  useEffect(() => {
+    setChatSearchQuery('');
+    setActiveSearchResultIndex(0);
+  }, [activeChatId]);
+
+  // Persist all chat sessions whenever state changes
+  useEffect(() => {
+    if (chatSessions.length > 0) {
+      persistChatState(chatSessions, activeChatId);
+    }
+  }, [chatSessions, activeChatId]);
+
+  useEffect(() => {
+    if (!chatSessions.length) return;
+    if (!chatSessions.some((chat) => chat.id === activeChatId)) {
+      setActiveChatId(chatSessions[0].id);
+    }
+  }, [chatSessions, activeChatId]);
+
+  useEffect(() => {
+    const handleSettingsChanged = (event) => {
+      const s = event?.detail || {};
+      if (typeof s.sendOnEnter === 'boolean') {
+        setSendOnEnter(s.sendOnEnter);
+      }
+      if (typeof s.autoOpenReasoning === 'boolean') {
+        setAutoOpenReasoning(s.autoOpenReasoning);
+      }
+      if (typeof s.defaultFollowUpMode === 'boolean') {
+        setEnableFollowUp(s.defaultFollowUpMode);
+      }
+      if (typeof s.defaultExplainability === 'boolean') {
+        setEnableXai(s.defaultExplainability);
+      }
+    };
+
+    window.addEventListener('athena-settings-changed', handleSettingsChanged);
+    return () => window.removeEventListener('athena-settings-changed', handleSettingsChanged);
+  }, []);
+
+  const handleNewChat = () => {
+    if (isLoading) return;
+    const freshChat = createChatSession([]);
+    setChatSessions((prev) => [freshChat, ...prev]);
+    setActiveChatId(freshChat.id);
+    setError(null);
+    setInputValue('');
+    clearReasoning();
+  };
+
+  const handleSelectChat = (chatId) => {
+    if (isLoading || chatId === activeChatId) return;
+    setActiveChatId(chatId);
+    setError(null);
+    clearReasoning();
+  };
+
+  const handleDeleteChatSession = (chatId) => {
+    if (isLoading || chatSessions.length <= 1) return;
+    setChatSessions((prev) => {
+      const filtered = prev.filter((chat) => chat.id !== chatId);
+      if (chatId === activeChatId && filtered.length > 0) {
+        setActiveChatId(filtered[0].id);
+      }
+      return filtered;
+    });
+    clearReasoning();
+  };
 
   // Delete a Q&A pair (user message and its following assistant response)
   const handleDeleteMessage = (messageIndex) => {
-    setMessages(prev => {
+    setMessagesForActiveChat((prev) => {
       const newMessages = [...prev];
       const targetMessage = newMessages[messageIndex];
       
@@ -103,13 +340,6 @@ function VinushanPage() {
         }
       }
       
-      // Update localStorage (handle empty case)
-      if (newMessages.length === 0) {
-        localStorage.removeItem(STORAGE_KEY);
-      } else {
-        saveMessagesToStorage(newMessages);
-      }
-      
       return newMessages;
     });
   };
@@ -117,8 +347,11 @@ function VinushanPage() {
   // Clear all chat history (used by both chat and settings)
   const handleClearAllMessages = (skipConfirm = false) => {
     if (skipConfirm || window.confirm('Are you sure you want to clear all chat history?')) {
-      setMessages([]);
-      localStorage.removeItem(STORAGE_KEY);
+      const freshChat = createChatSession([]);
+      setChatSessions([freshChat]);
+      setActiveChatId(freshChat.id);
+      setError(null);
+      clearReasoning();
     }
   };
 
@@ -152,6 +385,19 @@ function VinushanPage() {
           case '5':
             e.preventDefault();
             setActiveTab('settings');
+            return;
+          case 'n':
+            if (activeTab === 'athena') {
+              e.preventDefault();
+              handleNewChat();
+            }
+            return;
+          case 'f':
+            if (activeTab === 'athena') {
+              e.preventDefault();
+              chatSearchInputRef.current?.focus();
+              chatSearchInputRef.current?.select();
+            }
             return;
           case 's':
             // Cmd+S to stop execution (only when loading)
@@ -206,7 +452,7 @@ function VinushanPage() {
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [activeTab, isLoading, showReasoning]);
+  }, [activeTab, isLoading, showReasoning, handleNewChat]);
 
   // Clear reasoning state
   const clearReasoning = () => {
@@ -228,11 +474,11 @@ function VinushanPage() {
       timestamp: new Date().toISOString(),
     };
     
-    setMessages(prev => [...prev, userMessage]);
+    setMessagesForActiveChat((prev) => [...prev, userMessage]);
     setIsLoading(true);
     
     // Open reasoning panel and reset state
-    setShowReasoning(true);
+    setShowReasoning(autoOpenReasoning);
     clearReasoning();
     
     // Create abort controller for this request
@@ -246,7 +492,7 @@ function VinushanPage() {
       }));
 
       // Use streaming API with real-time event callbacks
-      await streamVinushanChat(content, history, {
+      await streamVinushanChat(content, history, enableFollowUp, enableXai, {
         onRunStart: (data) => {
           setCurrentRunId(data.run_id);
           setEvents(prev => [...prev, data]);
@@ -321,7 +567,7 @@ function VinushanPage() {
             ragSources: responseData.rag_sources || null,
           };
 
-          setMessages(prev => [...prev, assistantMessage]);
+          setMessagesForActiveChat((prev) => [...prev, assistantMessage]);
           setIsLoading(false);
         },
         
@@ -335,7 +581,7 @@ function VinushanPage() {
     } catch (err) {
       // Check if this was an abort
       if (err.name === 'AbortError') {
-        setMessages(prev => [
+        setMessagesForActiveChat((prev) => [
           ...prev,
           {
             role: 'assistant',
@@ -348,7 +594,7 @@ function VinushanPage() {
       }
       const message = err instanceof Error ? err.message : 'Failed to send message';
       setError(message);
-      setMessages(prev => [
+      setMessagesForActiveChat((prev) => [
         ...prev,
         {
           role: 'assistant',
@@ -361,7 +607,13 @@ function VinushanPage() {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (sendOnEnter && e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(inputValue);
+      return;
+    }
+
+    if (!sendOnEnter && e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       handleSendMessage(inputValue);
     }
@@ -387,6 +639,24 @@ function VinushanPage() {
       return messages[messageIndex - 1].content;
     }
     return '';
+  };
+
+  const getChatPreview = (chat) => {
+    const lastMessage = [...(chat.messages || [])].reverse().find((m) => m.content?.trim());
+    if (!lastMessage) return 'No messages yet';
+    const compact = lastMessage.content.replace(/\s+/g, ' ').trim();
+    return compact.length > 58 ? `${compact.slice(0, 58)}...` : compact;
+  };
+
+  const formatChatTime = (isoTime) => {
+    if (!isoTime) return '';
+    const date = new Date(isoTime);
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    if (isToday) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -440,7 +710,7 @@ function VinushanPage() {
             showAgentThoughts={showReasoning}
             onToggleAgentThoughts={setShowReasoning}
             onClearChatHistory={() => handleClearAllMessages(true)}
-            chatHistoryCount={messages.length}
+            chatHistoryCount={totalMessageCount}
           />
         )}
 
@@ -462,76 +732,187 @@ function VinushanPage() {
 
         {/* Athena Chat Tab Content */}
         {activeTab === 'athena' && (
-          <>
+          <div className="athena-chat-workspace">
+            <aside className="athena-conversations">
+              <button
+                className="new-chat-btn"
+                onClick={handleNewChat}
+                disabled={isLoading}
+                title="Start a new conversation (Cmd/Ctrl+N)"
+              >
+                + New chat
+              </button>
+
+              <div className="conversation-list" role="listbox" aria-label="Conversation history">
+                {chatSessions.map((chat) => (
+                  <button
+                    key={chat.id}
+                    className={`conversation-item ${chat.id === activeChatId ? 'active' : ''}`}
+                    onClick={() => handleSelectChat(chat.id)}
+                    title={chat.title}
+                  >
+                    <div className="conversation-meta">
+                      <span className="conversation-title">{chat.title}</span>
+                      <span className="conversation-time">{formatChatTime(chat.updatedAt)}</span>
+                    </div>
+                    <span className="conversation-preview">{getChatPreview(chat)}</span>
+                    <span className="conversation-count">{chat.messages?.length || 0} msgs</span>
+                    {chatSessions.length > 1 && (
+                      <span
+                        className="conversation-delete"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteChatSession(chat.id);
+                        }}
+                        role="button"
+                        aria-label={`Delete ${chat.title}`}
+                      >
+                        x
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </aside>
+
             {/* Chat Section */}
             <section className={`athena-chat-section ${showReasoning ? 'with-reasoning' : ''}`}>
               {/* Messages Area */}
               <div className="athena-messages">
-                {messages.length === 0 ? (
-                  <div className="athena-welcome">
-                    <h3>Welcome, Vinushan!</h3>
-                    <p>
-                      I can analyze sales, forecast demand, explain holiday and weather impacts, and create charts.
-                    </p>
-                    <div className="athena-examples">
-                      {exampleQuestions.map((q) => (
-                        <button
-                          key={q}
-                          type="button"
-                          className="athena-example-btn"
-                          onClick={() => handleExampleClick(q)}
-                        >
-                          {q}
-                        </button>
-                      ))}
+                <div className="athena-messages-inner">
+                  {messages.length === 0 ? (
+                    <div className="athena-welcome">
+                      <h3>Welcome, Vinushan!</h3>
+                      <p>
+                        I can analyze sales, forecast demand, explain holiday and weather impacts, and create charts.
+                      </p>
+                      <div className="athena-examples">
+                        {exampleQuestions.map((q) => (
+                          <button
+                            key={q}
+                            type="button"
+                            className="athena-example-btn"
+                            onClick={() => handleExampleClick(q)}
+                          >
+                            {q}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <>
-                    {/* Clear All Button */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px', paddingRight: '8px' }}>
-                      <button
-                        className="clear-all-btn"
-                        onClick={handleClearAllMessages}
-                        title="Clear all chat history"
-                      >
-                        🗑️ Clear All
+                  ) : (
+                    <>
+                      <div className="athena-chat-search-bar">
+                        <div className="athena-chat-search-left">
+                          <input
+                            ref={chatSearchInputRef}
+                            type="text"
+                            className="athena-chat-search-input"
+                            placeholder="Search questions and responses..."
+                            value={chatSearchQuery}
+                            onChange={(e) => setChatSearchQuery(e.target.value)}
+                            aria-label="Search chat messages"
+                          />
+                          <span className="athena-chat-search-count" aria-live="polite">
+                            {searchResults.length > 0
+                              ? `${activeSearchResultIndex + 1}/${searchResults.length}`
+                              : '0/0'}
+                          </span>
+                        </div>
+                        <div className="athena-chat-search-actions">
+                          <button
+                            className="athena-chat-search-btn"
+                            onClick={handlePrevSearchResult}
+                            disabled={searchResults.length === 0}
+                            title="Previous result"
+                          >
+                            Prev
+                          </button>
+                          <button
+                            className="athena-chat-search-btn"
+                            onClick={handleNextSearchResult}
+                            disabled={searchResults.length === 0}
+                            title="Next result"
+                          >
+                            Next
+                          </button>
+                          {chatSearchQuery && (
+                            <button
+                              className="athena-chat-search-btn clear"
+                              onClick={() => {
+                                setChatSearchQuery('');
+                                setActiveSearchResultIndex(0);
+                                chatSearchInputRef.current?.focus();
+                              }}
+                              title="Clear search"
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Clear All Button */}
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px', paddingRight: '8px' }}>
+                        <button
+                          className="clear-all-btn"
+                          onClick={handleClearAllMessages}
+                          title="Clear all chat history"
+                        >
+                          Clear all chats
+                        </button>
+                      </div>
+                      {messages.map((msg, idx) => {
+                        const messageKey = `${activeChatId}-${idx}-${msg.timestamp || idx}`;
+                        const isMatch = matchedMessageIndexes.has(idx);
+                        const isActiveMatch = idx === activeMatchedMessageIndex;
+
+                        return (
+                          <div
+                            key={messageKey}
+                            ref={(node) => {
+                              if (node) {
+                                messageNodeRefs.current.set(messageKey, node);
+                              } else {
+                                messageNodeRefs.current.delete(messageKey);
+                              }
+                            }}
+                            className={`athena-search-message-wrap ${isMatch ? 'search-match' : ''} ${isActiveMatch ? 'search-match-active' : ''}`}
+                          >
+                            <AthenaChatMessage
+                              message={msg}
+                              charts={msg.charts}
+                              isLast={idx === messages.length - 1 && msg.role === 'assistant'}
+                              onDelete={() => handleDeleteMessage(idx)}
+                              messageIndex={idx}
+                              userQuestion={getUserQuestionForMessage(idx)}
+                            />
+                          </div>
+                        );
+                      })}
+                    </>
+                  )}
+
+                  {/* Loading indicator with Stop button */}
+                  {isLoading && (
+                    <div className="athena-loading">
+                      <div className="loading-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                      <p className="loading-text">
+                        {events.length > 0
+                          ? events[events.length - 1]?.content || 'Analyzing your question...'
+                          : 'Analyzing your question...'}
+                      </p>
+                      <button className="stop-btn" onClick={handleStopRequest}>
+                        Stop
                       </button>
                     </div>
-                    {messages.map((msg, idx) => (
-                      <AthenaChatMessage
-                        key={`${msg.timestamp}-${idx}`}
-                        message={msg}
-                        charts={msg.charts}
-                        isLast={idx === messages.length - 1 && msg.role === 'assistant'}
-                        onDelete={() => handleDeleteMessage(idx)}
-                        messageIndex={idx}
-                        userQuestion={getUserQuestionForMessage(idx)}
-                      />
-                    ))}
-                  </>
-                )}
+                  )}
 
-                {/* Loading indicator with Stop button */}
-                {isLoading && (
-                  <div className="athena-loading">
-                    <div className="loading-dots">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </div>
-                    <p className="loading-text">
-                      {events.length > 0 
-                        ? events[events.length - 1]?.content || 'Analyzing your question...'
-                        : 'Analyzing your question...'}
-                    </p>
-                    <button className="stop-btn" onClick={handleStopRequest}>
-                      ⏹ Stop
-                    </button>
-                  </div>
-                )}
-
-                <div ref={messagesEndRef} />
+                  <div ref={messagesEndRef} />
+                </div>
               </div>
 
               {/* Error Banner */}
@@ -544,6 +925,36 @@ function VinushanPage() {
 
               {/* Input Section */}
               <div className="athena-input-section">
+                <div className="athena-toggles-row">
+                  <div className="athena-followup-toggle">
+                    <label className="athena-toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={enableFollowUp}
+                        onChange={(e) => {
+                          setEnableFollowUp(e.target.checked);
+                          try { localStorage.setItem(FOLLOWUP_STORAGE_KEY, JSON.stringify(e.target.checked)); } catch {}
+                        }}
+                      />
+                      <span className="athena-toggle-slider" />
+                    </label>
+                    <span className="athena-toggle-label">Follow-up mode</span>
+                  </div>
+                  <div className="athena-followup-toggle">
+                    <label className="athena-toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={enableXai}
+                        onChange={(e) => {
+                          setEnableXai(e.target.checked);
+                          try { localStorage.setItem(XAI_STORAGE_KEY, JSON.stringify(e.target.checked)); } catch {}
+                        }}
+                      />
+                      <span className="athena-toggle-slider" />
+                    </label>
+                    <span className="athena-toggle-label">Explainability AI</span>
+                  </div>
+                </div>
                 <div className="athena-input-wrapper">
                   <textarea
                     ref={inputRef}
@@ -551,7 +962,13 @@ function VinushanPage() {
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={isLoading ? 'Thinking...' : 'Ask anything about your business...'}
+                    placeholder={
+                      isLoading
+                        ? 'Thinking...'
+                        : sendOnEnter
+                          ? 'Ask anything about your business...'
+                          : 'Ask anything... (Cmd/Ctrl + Enter to send)'
+                    }
                     disabled={isLoading}
                     rows={1}
                   />
@@ -560,7 +977,7 @@ function VinushanPage() {
                     onClick={() => handleSendMessage(inputValue)}
                     disabled={isLoading || !inputValue.trim()}
                   >
-                    {isLoading ? '...' : 'Send ↗'}
+                    {isLoading ? '...' : 'Send'}
                   </button>
                 </div>
               </div>
@@ -577,7 +994,7 @@ function VinushanPage() {
               routingReasoning={routingReasoning}
               agentsNeeded={agentsNeeded}
             />
-          </>
+          </div>
         )}
       </main>
     </div>

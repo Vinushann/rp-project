@@ -118,6 +118,8 @@ async def chat_stream(request: ChatRequest):
         stream_chat_realtime(
             message=request.message,
             conversation_history=request.conversation_history,
+            enable_followup=request.enable_followup,
+            enable_xai=request.enable_xai,
         ),
         media_type="text/event-stream",
         headers={

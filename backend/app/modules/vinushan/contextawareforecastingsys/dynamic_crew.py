@@ -189,6 +189,7 @@ class DynamicCrewBuilder:
     def _create_historical_task(self, inputs: dict) -> Task:
         return Task(
             description=f"""Analyze historical sales for {inputs.get('target_month_name', 'the target month')}.
+            Today's date is {inputs.get('current_date', 'unknown')}.
             Use the Item History Tool to find:
             - Top selling items
             - Declining items  
@@ -199,9 +200,16 @@ class DynamicCrewBuilder:
         )
 
     def _create_forecasting_task(self, inputs: dict) -> Task:
+        date_range_instruction = ""
+        if inputs.get("date_range_start"):
+            date_range_instruction = f"""
+            IMPORTANT DATE RANGE: The user is asking about {inputs.get('date_range_label', '')}.
+            You MUST use start_date="{inputs.get('date_range_start')}" and end_date="{inputs.get('date_range_end')}" with the forecast tool.
+            Only report predictions for dates within this range. Today is {inputs.get('current_date', 'unknown')}."""
+        
         return Task(
             description=f"""Forecast daily demand for {inputs.get('target_month_name', '')} {inputs.get('target_year', '')}.
-            
+            {date_range_instruction}
             IMPORTANT: Use the "Time Series Forecast Tool" to generate predictions using the trained Prophet model.
             This tool provides ML-based forecasts with confidence intervals.
             
@@ -223,18 +231,24 @@ class DynamicCrewBuilder:
     def _create_holiday_task(self, inputs: dict) -> Task:
         return Task(
             description=f"""Analyze holiday effects for month {inputs.get('target_month', '')}.
-            Use the Holiday Context Tool to explain:
-            - Each holiday's effect on sales
-            - Pre-holiday and post-holiday patterns
-            - Recommended actions per holiday
+            Today's date is {inputs.get('current_date', 'unknown')}.
+            Use the Holiday Context Tool to get holiday data. The tool returns historical dates for each holiday.
+            
+            IMPORTANT INSTRUCTIONS:
+            - Use the historical_dates field to estimate when each holiday will occur THIS YEAR.
+              For example, if Medin Full Moon Poya Day occurred on 2024-03-24 and 2025-03-13, estimate the 2026 date.
+            - ONLY include holidays that fall ON or AFTER today's date. Exclude holidays that have already passed.
+            - Always include the EXPECTED DATE for each holiday in your response.
+            - Explain each holiday's effect on sales, pre/post patterns, and recommended actions.
             Context: {inputs.get('user_question', '')}""",
-            expected_output="List of holidays with phase, effect_pct, and action",
+            expected_output="List of upcoming holidays with expected dates, phase, effect_pct, and action",
             agent=self._create_holiday_agent(),
         )
 
     def _create_weather_task(self, inputs: dict) -> Task:
         return Task(
             description=f"""Analyze weather impact for month {inputs.get('target_month', '')}.
+            Today's date is {inputs.get('current_date', 'unknown')}.
             Use the Weather Context Tool to explain:
             - Rain effects on different product categories
             - Temperature effects on hot vs cold drinks
@@ -254,8 +268,13 @@ class DynamicCrewBuilder:
         
         return Task(
             description=f"""Manager asked: "{inputs.get('user_question', '')}"
+            Today's date is {inputs.get('current_date', 'unknown')}.
             
             Combine all prior findings to create a comprehensive action plan.
+            
+            IMPORTANT: When mentioning holidays or dates, always include the SPECIFIC DATE (e.g. "Good Friday — April 3, 2026").
+            Only include FUTURE events — never mention dates that have already passed.
+            
             Structure your answer with relevant sections:
             - Demand Outlook
             - Promotions  
@@ -281,6 +300,7 @@ class DynamicCrewBuilder:
         
         return Task(
             description=f"""The manager asked: "{inputs.get('user_question', '')}"
+            Today's date is {inputs.get('current_date', 'unknown')}.
             
             Using the analysis provided, give a DIRECT and FOCUSED answer to this specific question.
             

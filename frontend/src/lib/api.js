@@ -90,7 +90,7 @@ export async function sendVinushanChat(message, conversationHistory = []) {
  * @param {AbortSignal} signal - Optional abort signal to cancel the request
  * @returns {Promise<void>}
  */
-export async function streamVinushanChat(message, conversationHistory = [], callbacks = {}, signal = null) {
+export async function streamVinushanChat(message, conversationHistory = [], enableFollowUp = false, enableXai = true, callbacks = {}, signal = null) {
   const url = `${API_BASE_URL}/api/v1/vinushan/chat/stream`;
   
   const response = await fetch(url, {
@@ -101,6 +101,8 @@ export async function streamVinushanChat(message, conversationHistory = [], call
     body: JSON.stringify({
       message,
       conversation_history: conversationHistory,
+      enable_followup: enableFollowUp,
+      enable_xai: enableXai,
     }),
     signal, // Pass abort signal to fetch
   });

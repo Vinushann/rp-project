@@ -22,6 +22,14 @@ class ChatRequest(BaseModel):
         default_factory=list,
         description="Previous messages in the conversation (frontend maintains this)"
     )
+    enable_followup: bool = Field(
+        default=False,
+        description="Whether to enable follow-up question resolution"
+    )
+    enable_xai: bool = Field(
+        default=True,
+        description="Whether to enable Explainability AI analysis"
+    )
 
 
 class AgentStep(BaseModel):

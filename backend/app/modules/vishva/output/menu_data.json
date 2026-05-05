@@ -60,104 +60,64 @@
     "category": "Tilapiya Fish"
   },
   {
-    "name": "Tilapiya Fish Curry (Regular)",
-    "price": "RS 2,950",
+    "name": "Tilapiya Fish Curry",
+    "price": "Regular RS 2,950 Large RS 3,350",
     "category": "Tilapiya Fish"
   },
   {
-    "name": "Tilapiya Fish Curry (Large)",
-    "price": "RS 3,350",
-    "category": "Tilapiya Fish"
+    "name": "Grilled Greek Chicken",
+    "price": "Regular RS 2,700 Large RS 3,100",
+    "category": "Chicken"
   },
   {
-    "name": "Grilled Greek Chicken (Regular)",
-    "price": "RS 2,700",
-    "category": "On The Grill - Chicken"
+    "name": "Grilled Chicken - Garlic Sausages",
+    "price": "Regular RS 2,450 Large RS 2,850",
+    "category": "Chicken"
   },
   {
-    "name": "Grilled Greek Chicken (Large)",
-    "price": "RS 3,100",
-    "category": "On The Grill - Chicken"
+    "name": "Grilled Beef Fillet",
+    "price": "Large RS 4,950",
+    "category": "Beef"
   },
   {
-    "name": "Grilled Chicken - Garlic Sausages (Regular)",
-    "price": "RS 2,450",
-    "category": "On The Grill - Chicken"
+    "name": "Teriyaki Beef",
+    "price": "Regular RS 2,950 Large RS 3,850",
+    "category": "Beef"
   },
   {
-    "name": "Grilled Chicken - Garlic Sausages (Large)",
-    "price": "RS 2,850",
-    "category": "On The Grill - Chicken"
+    "name": "Herb Marinated Pork Leg Steak",
+    "price": "Large RS 2,950",
+    "category": "Pork"
   },
   {
-    "name": "Grilled Beef Fillet (Large)",
-    "price": "RS 4,950",
-    "category": "On The Grill - Beef"
+    "name": "Grilled Pork Sausages",
+    "price": "Regular RS 2,850 Large RS 3,350",
+    "category": "Pork"
   },
   {
-    "name": "Teriyaki Beef (Regular)",
-    "price": "RS 2,950",
-    "category": "On The Grill - Beef"
+    "name": "Teriyaki Pork Belly",
+    "price": "Regular RS 2,750 Large RS 3,550",
+    "category": "Pork"
   },
   {
-    "name": "Teriyaki Beef (Large)",
-    "price": "RS 3,850",
-    "category": "On The Grill - Beef"
+    "name": "Crispy Pork Knuckle",
+    "price": "1KG RS 7,500",
+    "category": "Pork"
   },
   {
-    "name": "Herb Marinated Pork Leg Steak (Large)",
-    "price": "RS 2,950",
-    "category": "On The Grill - Pork"
+    "name": "Lemon Marinated Fish",
+    "price": "Tuna RS 2,950 Thalapath RS 3,100",
+    "category": "Seafood"
   },
   {
-    "name": "Grilled Pork Sausages (Regular)",
-    "price": "RS 2,850",
-    "category": "On The Grill - Pork"
+    "name": "Grilled Tiger Prawns",
+    "price": "Large RS 5,100",
+    "category": "Seafood"
   },
   {
-    "name": "Grilled Pork Sausages (Large)",
-    "price": "RS 3,350",
-    "category": "On The Grill - Pork"
-  },
-  {
-    "name": "Teriyaki Pork Belly (Regular)",
-    "price": "RS 2,750",
-    "category": "On The Grill - Pork"
-  },
-  {
-    "name": "Teriyaki Pork Belly (Large)",
-    "price": "RS 3,550",
-    "category": "On The Grill - Pork"
-  },
-  {
-    "name": "Crispy Pork Knuckle (1KG)",
-    "price": "RS 7,500",
-    "category": "On The Grill - Pork"
-  },
-  {
-    "name": "Lemon Marinated Fish (Tuna)",
-    "price": "RS 2,950",
-    "category": "On The Grill - Seafood"
-  },
-  {
-    "name": "Lemon Marinated Fish (Thalapath)",
-    "price": "RS 3,100",
-    "category": "On The Grill - Seafood"
-  },
-  {
-    "name": "Grilled Tiger Prawns (Large)",
-    "price": "RS 5,100",
-    "category": "On The Grill - Seafood"
-  },
-  {
-    "name": "Spicy Thai Grill Calamari (Regular)",
-    "price": "RS 2,350",
-    "category": "On The Grill - Seafood"
-  },
-  {
-    "name": "Spicy Thai Grill Calamari (Large)",
-    "price": "RS 2,950",
-    "category": "On The Grill - Seafood"
+    "name": "Spicy Thai Grill Calamari",
+    "price": "Large RS 2,950 Regular RS 2,350",
+    "category": "Seafood"
   },
   {
     "name": "Grilled Giant Prawn (Scampi)",
@@ -165,208 +125,158 @@
     "category": "Seafood Specials"
   },
   {
-    "name": "Battered Prawns (Large)",
-    "price": "RS 3,200",
+    "name": "Battered Prawns",
+    "price": "Large RS 3,200",
     "category": "Seafood Specials"
   },
   {
-    "name": "Garlic Butter Crab (800g)",
-    "price": "RS 4,500",
+    "name": "Garlic Butter Crab",
+    "price": "800g RS 4,500",
     "category": "Seafood Specials"
   },
   {
-    "name": "Chilli Crab (800g)",
-    "price": "RS 4,200",
+    "name": "Chilli Crab",
+    "price": "800g RS 4,200",
     "category": "Seafood Specials"
   },
   {
-    "name": "Murex Mussel (Shell-less) (500g)",
-    "price": "RS 4,950",
+    "name": "Murex Mussel (Shell-less)",
+    "price": "500g RS 4,950",
     "category": "Seafood Specials"
   },
   {
-    "name": "Baby Octopus (500g)",
-    "price": "RS 3,400",
+    "name": "Baby Octopus",
+    "price": "500g RS 3,400",
     "category": "Seafood Specials"
   },
   {
-    "name": "Fried Pork (Large)",
-    "price": "RS 2,950",
+    "name": "Fried Pork",
+    "price": "Large RS 2,950",
     "category": "Fried Meat And Seafood"
   },
   {
-    "name": "Fried Kochchi Beef (Large)",
-    "price": "RS 2,700",
+    "name": "Fried Kochchi Beef",
+    "price": "Large RS 2,700",
     "category": "Fried Meat And Seafood"
   },
   {
-    "name": "Fried Chicken (Large)",
-    "price": "RS 2,700",
+    "name": "Fried Chicken",
+    "price": "Large RS 2,700",
     "category": "Fried Meat And Seafood"
   },
   {
-    "name": "Crispy Chicken (Large)",
-    "price": "RS 2,800",
+    "name": "Crispy Chicken",
+    "price": "Large RS 2,800",
     "category": "Fried Meat And Seafood"
   },
   {
-    "name": "Karaage Chicken (Large)",
-    "price": "RS 2,950",
+    "name": "Karaage Chicken",
+    "price": "Large RS 2,950",
     "category": "Fried Meat And Seafood"
   },
   {
-    "name": "Crispy Fried Calamari (Large)",
-    "price": "RS 2,950",
+    "name": "Crispy Fried Calamari",
+    "price": "Large RS 2,950",
     "category": "Fried Meat And Seafood"
   },
   {
-    "name": "Hot Butter Calamari (Large)",
-    "price": "RS 2,950",
+    "name": "Hot Butter Calamari",
+    "price": "Large RS 2,950",
     "category": "Fried Meat And Seafood"
   },
   {
-    "name": "Creamy Butter Calamari (Large)",
-    "price": "RS 2,950",
+    "name": "Creamy Butter Calamari",
+    "price": "Large RS 2,950",
     "category": "Fried Meat And Seafood"
   },
   {
-    "name": "Black Pork Curry + Roast Paan/Pol Rotti",
+    "name": "Black Pork Curry",
     "price": "Rs 3,100",
     "category": "Island Delights"
   },
   {
-    "name": "Black Chicken Curry + Roast Paan/Pol Rotti",
+    "name": "Black Chicken Curry",
     "price": "Rs 2,950",
-    "category": "Island Delights"
+    "category": "Fried Meat And Seafood"
   },
   {
-    "name": "Black Turkey Curry + Roast Paan/Pol Rotti",
+    "name": "Black Turkey Curry",
     "price": "Rs 3,250",
     "category": "Island Delights"
   },
   {
-    "name": "Red Beef Curry + Roast Paan/Pol Rotti",
-    "price": "RS 3,300",
-    "category": "Island Delights"
+    "name": "Red Beef Curry",
+    "price": "Beef RS 3,300",
+    "category": "Red Meat Curry + Roast Paan/Pol Rotti"
   },
   {
-    "name": "Red Mutton Curry + Roast Paan/Pol Rotti",
+    "name": "Red Mutton Curry",
     "price": "RS 4,100",
-    "category": "Island Delights"
+    "category": "Red Meat Curry + Roast Paan/Pol Rotti"
   },
   {
-    "name": "Chicken Stew + Roast Paan/Pol Rotti",
+    "name": "Chicken Stew",
     "price": "Rs 2,950",
-    "category": "Island Delights"
+    "category": "Stew + Roast Paan/Pol Rotti"
   },
   {
-    "name": "Pork Stew + Roast Paan/Pol Rotti",
+    "name": "Pork Stew",
     "price": "Rs 3,100",
-    "category": "Island Delights"
+    "category": "Stew + Roast Paan/Pol Rotti"
   },
   {
-    "name": "Beef Stew + Roast Paan/Pol Rotti",
+    "name": "Beef Stew",
     "price": "Rs 3,350",
-    "category": "Island Delights"
+    "category": "Stew + Roast Paan/Pol Rotti"
   },
   {
-    "name": "Spaghetti Aglio e Olio (Regular)",
-    "price": "RS 1,650",
+    "name": "Spaghetti Aglio e Olio",
+    "price": "Regular RS 1,650 Large RS 2,650",
     "category": "Pasta & Noodles"
   },
   {
-    "name": "Spaghetti Aglio e Olio (Large)",
-    "price": "RS 2,650",
+    "name": "Mix Spaghetti or Penne Pasta",
+    "price": "Regular RS 2,350 Large RS 3,250",
     "category": "Pasta & Noodles"
   },
   {
-    "name": "Mix Spaghetti or Penne Pasta (Regular)",
-    "price": "RS 2,350",
+    "name": "Creamy Seafood Spagghetti or Penne Pasta",
+    "price": "Regular RS 2,450 Large RS 3,450",
     "category": "Pasta & Noodles"
   },
   {
-    "name": "Mix Spaghetti or Penne Pasta (Large)",
-    "price": "RS 3,250",
+    "name": "Mix Meat Mongolian Noodles",
+    "price": "Regular RS 2,700 Large RS 3,100",
     "category": "Pasta & Noodles"
   },
   {
-    "name": "Creamy Seafood Spagghetti or Penne Pasta (Regular)",
-    "price": "RS 2,450",
+    "name": "Mix Seafood Mongolian Noodles",
+    "price": "Regular RS 2,150 Large RS 3,150",
     "category": "Pasta & Noodles"
   },
   {
-    "name": "Creamy Seafood Spagghetti or Penne Pasta (Large)",
-    "price": "RS 3,450",
+    "name": "Chicken Mongolian Noodles",
+    "price": "Regular RS 1,850 Large RS 2,850",
     "category": "Pasta & Noodles"
   },
   {
-    "name": "Mix Meat Mongolian Noodles (Regular)",
-    "price": "RS 2,700",
+    "name": "Pork Mongolian Noodles",
+    "price": "Regular RS 1,950 Large RS 2,950",
     "category": "Pasta & Noodles"
   },
   {
-    "name": "Mix Meat Mongolian Noodles (Large)",
-    "price": "RS 3,100",
+    "name": "Beef Mongolian Noodles",
+    "price": "Regular RS 2,100 Large RS 3,100",
     "category": "Pasta & Noodles"
   },
   {
-    "name": "Mix Seafood Mongolian Noodles (Regular)",
-    "price": "RS 2,150",
-    "category": "Pasta & Noodles"
-  },
-  {
-    "name": "Mix Seafood Mongolian Noodles (Large)",
-    "price": "RS 3,150",
-    "category": "Pasta & Noodles"
-  },
-  {
-    "name": "Chicken Mongolian Noodles (Regular)",
-    "price": "RS 1,850",
-    "category": "Pasta & Noodles"
-  },
-  {
-    "name": "Chicken Mongolian Noodles (Large)",
-    "price": "RS 2,850",
-    "category": "Pasta & Noodles"
-  },
-  {
-    "name": "Pork Mongolian Noodles (Regular)",
-    "price": "RS 1,950",
-    "category": "Pasta & Noodles"
-  },
-  {
-    "name": "Pork Mongolian Noodles (Large)",
-    "price": "RS 2,950",
-    "category": "Pasta & Noodles"
-  },
-  {
-    "name": "Beef Mongolian Noodles (Regular)",
-    "price": "RS 2,100",
-    "category": "Pasta & Noodles"
-  },
-  {
-    "name": "Beef Mongolian Noodles (Large)",
-    "price": "RS 3,100",
-    "category": "Pasta & Noodles"
-  },
-  {
-    "name": "Mix Meat Mongolian Rice (Regular)",
-    "price": "RS 1,950",
+    "name": "Mix Meat Mongolian Rice",
+    "price": "Regular RS 1,950 Large RS 2,950",
     "category": "Rice"
   },
   {
-    "name": "Mix Meat Mongolian Rice (Large)",
-    "price": "RS 2,950",
-    "category": "Rice"
-  },
-  {
-    "name": "Mix Seafood Mongolian Rice (Regular)",
-    "price": "RS 2,100",
-    "category": "Rice"
-  },
-  {
-    "name": "Mix Seafood Mongolian Rice (Large)",
-    "price": "RS 3,150",
+    "name": "Mix Seafood Mongolian Rice",
+    "price": "Regular RS 2,100 Large RS 3,150",
     "category": "Rice"
   },
   {
@@ -375,69 +285,54 @@
     "category": "Rice"
   },
   {
-    "name": "Pork Mongolian Rice (Regular)",
-    "price": "RS 1,950",
+    "name": "Pork Mongolian Rice",
+    "price": "Regular RS 1,950 Large RS 2,950",
     "category": "Rice"
   },
   {
-    "name": "Pork Mongolian Rice (Large)",
-    "price": "RS 2,950",
+    "name": "Beef Mongolian Rice",
+    "price": "Regular RS 2,150 Large RS 3,150",
     "category": "Rice"
   },
   {
-    "name": "Beef Mongolian Rice (Regular)",
-    "price": "RS 2,150",
+    "name": "Egg Mongolian Rice",
+    "price": "Regular RS 1,550 Large RS 2,150",
     "category": "Rice"
   },
   {
-    "name": "Beef Mongolian Rice (Large)",
-    "price": "RS 3,150",
+    "name": "Vegetable Mongolian Rice",
+    "price": "Regular RS 1,350 Large RS 1,950",
     "category": "Rice"
   },
   {
-    "name": "Egg Mongolian Rice (Regular)",
-    "price": "RS 1,550",
-    "category": "Rice"
-  },
-  {
-    "name": "Egg Mongolian Rice (Large)",
-    "price": "RS 2,150",
-    "category": "Rice"
-  },
-  {
-    "name": "Vegetable Mongolian Rice (Regular)",
-    "price": "RS 1,350",
-    "category": "Rice"
-  },
-  {
-    "name": "Vegetable Mongolian Rice (Large)",
-    "price": "RS 1,950",
-    "category": "Rice"
-  },
-  {
-    "name": "Tilapiya Bento Box - Chicken",
+    "name": "Tilapiya Bento Box (Chicken)",
     "price": "RS 1,650",
-    "category": "Tilapiya Bento Box"
+    "category": "Tilapiya Bento Box (Lunch Only)"
   },
   {
-    "name": "Tilapiya Bento Box - Mutton",
+    "name": "Tilapiya Bento Box (Mutton)",
     "price": "RS 2,000",
-    "category": "Tilapiya Bento Box"
+    "category": "Tilapiya Bento Box (Lunch Only)"
   },
   {
-    "name": "Tilapiya Bento Box - Beef",
+    "name": "Tilapiya Bento Box (Beef)",
     "price": "RS 1,750",
-    "category": "Tilapiya Bento Box"
+    "category": "Tilapiya Bento Box (Lunch Only)"
   },
   {
-    "name": "Tilapiya Bento Box - Prawn",
+    "name": "Tilapiya Bento Box (Prawn)",
     "price": "RS 1,850",
-    "category": "Tilapiya Bento Box"
+    "category": "Tilapiya Bento Box (Lunch Only)"
   },
   {
-    "name": "Tilapiya Bento Box - Fish",
+    "name": "Tilapiya Bento Box (Fish)",
     "price": "RS 1,650",
-    "category": "Tilapiya Bento Box"
+    "category": "Tilapiya Bento Box (Lunch Only)"
+  },
+  {
+    "name": "Mexican Rice",
+    "price": "Not available",
+    "category": "Tilapiya Bento Box (Lunch Only)"
   },
   {
     "name": "Chicken Bowl",
@@ -485,23 +380,13 @@
     "category": "Side Dishes"
   },
   {
-    "name": "French Fries (Regular)",
-    "price": "RS 950",
+    "name": "French Fries",
+    "price": "Regular RS 950 Large RS 1,950",
     "category": "Side Dishes"
   },
   {
-    "name": "French Fries (Large)",
-    "price": "RS 1,950",
-    "category": "Side Dishes"
-  },
-  {
-    "name": "Home-made Potato Wedges (Regular)",
-    "price": "RS 950",
-    "category": "Side Dishes"
-  },
-  {
-    "name": "Home-made Potato Wedges (Large)",
-    "price": "RS 1,950",
+    "name": "Home-made Potato Wedges",
+    "price": "Regular RS 950 Large RS 1,950",
     "category": "Side Dishes"
   },
   {
@@ -595,27 +480,27 @@
     "category": "Desserts"
   },
   {
-    "name": "Ice Cream (French Vanilla)",
+    "name": "Ice Cream French Vanilla",
     "price": "RS 750",
     "category": "Ice Cream"
   },
   {
-    "name": "Ice Cream (Rocky Road)",
+    "name": "Ice Cream Rocky Road",
     "price": "RS 850",
     "category": "Ice Cream"
   },
   {
-    "name": "Ice Cream (Choc Choc Chip)",
+    "name": "Ice Cream Choc Choc Chip",
     "price": "RS 850",
     "category": "Ice Cream"
   },
   {
-    "name": "Ice Cream (Very Berry)",
+    "name": "Ice Cream Very Berry",
     "price": "RS 890",
     "category": "Ice Cream"
   },
   {
-    "name": "Ice Cream (Cookie Cream)",
+    "name": "Ice Cream Cookie Cream",
     "price": "RS 890",
     "category": "Ice Cream"
   }

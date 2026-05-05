@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Context-Aware Forecasting System",
     description="AI-powered coffee shop management assistant using CrewAI",
-    version="1.0.0",
+    version="2.0.1",
     lifespan=lifespan
 )
 

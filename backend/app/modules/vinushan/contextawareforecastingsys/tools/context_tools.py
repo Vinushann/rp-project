@@ -42,6 +42,8 @@ def get_holiday_context(df: pd.DataFrame, month: int) -> List[Dict[str, str]]:
         elif int(group["is_post_holiday"].max()) == 1:
             phase = "post-holiday"
         tip = _holiday_tip(effect)
+        # Include historical dates so agents can project future occurrences
+        hist_dates = sorted(group["system_date"].dt.strftime("%Y-%m-%d").unique().tolist())
         output.append(
             {
                 "holiday": name or "Unnamed",
@@ -49,6 +51,7 @@ def get_holiday_context(df: pd.DataFrame, month: int) -> List[Dict[str, str]]:
                 "avg_qty": round(float(avg_qty), 2),
                 "effect_pct": round(float(effect), 2),
                 "action": tip,
+                "historical_dates": hist_dates,
             }
         )
     return output
