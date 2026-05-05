@@ -15,7 +15,7 @@ import { useState } from "react";
 import { jsPDF } from "jspdf";
 
 const MODULE_NAME = "nandika";
-const API_BASE = "http://127.0.0.1:8000/api/v1/nandika";
+const API_BASE = "/api/v1/nandika";
 
 function NandikaPage() {
   // State for active tab
@@ -1073,6 +1073,13 @@ function NandikaPage() {
             {/* Scraper Results */}
             {scraperResults && (
               <div className="mt-6">
+                {scraperResults.is_demo && (
+                  <div className="mb-4 p-4 bg-yellow-50 border border-yellow-300 rounded-lg text-yellow-800 text-sm">
+                    <strong>⚠️ Demo data:</strong>{" "}
+                    {scraperResults.note ||
+                      "Real reviews could not be extracted from the URL — showing sample reviews so you can still see the pipeline."}
+                  </div>
+                )}
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                     <svg

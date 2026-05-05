@@ -5,6 +5,17 @@ This is the entry point for the backend API.
 Each team member's module is mounted as a separate router with its own prefix.
 """
 
+import sys
+
+# Force UTF-8 on stdout/stderr so emoji-containing print() statements don't
+# crash on Windows (cp1252) — required because crewai wraps stdout in a
+# stream that inherits the system encoding.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
