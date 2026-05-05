@@ -14,7 +14,7 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   ScatterChart, Scatter, XAxis, YAxis, ZAxis, CartesianGrid, 
   Tooltip as ReChartsTooltip, Legend, ResponsiveContainer, 
-  PieChart, Pie, Cell, BarChart, Bar, LabelList
+  PieChart, Pie, Cell, BarChart, Bar, LabelList, ReferenceLine
 } from 'recharts';
 import PingButton from '../../components/PingButton';
 import { 
@@ -2469,14 +2469,29 @@ function VishvaPage() {
                           type="number" 
                           dataKey={classificationParams.mode === 'static' ? 'qty' : 'pop_index'} 
                           name="Popularity" 
+                          domain={classificationParams.mode === 'static' ? [0, 'auto'] : ['auto', 'auto']}
                           label={{ value: classificationParams.mode === 'static' ? 'Sold Quantity' : 'Popularity Index', position: 'bottom', offset: 0, fontSize: 12, fontWeight: 'bold' }}
                         />
                         <YAxis 
                           type="number" 
                           dataKey={classificationParams.mode === 'static' ? 'margin' : 'margin_index'} 
                           name="Profitability" 
+                          domain={classificationParams.mode === 'static' ? [0, 'auto'] : ['auto', 'auto']}
                           label={{ value: classificationParams.mode === 'static' ? 'Profit Margin (%)' : 'Profitability Index', angle: -90, position: 'left', fontSize: 12, fontWeight: 'bold' }}
                         />
+                        
+                        {/* Threshold Crosshair */}
+                        {classificationParams.mode === 'static' ? (
+                          <>
+                            <ReferenceLine x={classificationParams.qty_threshold} stroke="#cbd5e1" strokeDasharray="5 5" label={{ position: 'top', value: 'Qty Threshold', fontSize: 10, fill: '#64748b' }} />
+                            <ReferenceLine y={classificationParams.profit_threshold} stroke="#cbd5e1" strokeDasharray="5 5" label={{ position: 'right', value: 'Margin Threshold', fontSize: 10, fill: '#64748b' }} />
+                          </>
+                        ) : (
+                          <>
+                            <ReferenceLine x={0} stroke="#cbd5e1" strokeDasharray="5 5" label={{ position: 'top', value: 'Avg Pop', fontSize: 10, fill: '#64748b' }} />
+                            <ReferenceLine y={0} stroke="#cbd5e1" strokeDasharray="5 5" label={{ position: 'right', value: 'Avg Margin', fontSize: 10, fill: '#64748b' }} />
+                          </>
+                        )}
                         <ReChartsTooltip 
                           cursor={{ strokeDasharray: '3 3' }} 
                           content={({ active, payload }) => {
