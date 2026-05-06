@@ -1,5 +1,11 @@
 [
   {
+    "name": "Sweet Pasta",
+    "price": "9",
+    "description": "",
+    "category": "Pasta"
+  },
+  {
     "name": "Crispy Pasta",
     "price": "12",
     "description": "",
@@ -61,7 +67,7 @@
   },
   {
     "name": "Zesty Pizza",
-    "price": "22",
+    "price": "",
     "description": "",
     "category": "Pizza"
   },
@@ -74,12 +80,6 @@
   {
     "name": "Sweet Burger",
     "price": "12",
-    "description": "",
-    "category": "Burger"
-  },
-  {
-    "name": "Veggie Burger",
-    "price": "",
     "description": "",
     "category": "Burger"
   },
@@ -115,7 +115,7 @@
   },
   {
     "name": "Deluxe Chicken",
-    "price": "",
+    "price": "19",
     "description": "",
     "category": "Chicken"
   },
@@ -180,22 +180,16 @@
     "category": "Sandwich"
   },
   {
-    "name": "Spicy Roll",
-    "price": "9",
-    "description": "",
-    "category": "Roll"
-  },
-  {
-    "name": "Herb Roll",
-    "price": "19",
-    "description": "",
-    "category": "Roll"
-  },
-  {
-    "name": "Deluxe Roll",
+    "name": "Zesty Sandwich",
     "price": "",
     "description": "",
-    "category": "Roll"
+    "category": "Sandwich"
+  },
+  {
+    "name": "Crispy Sandwich",
+    "price": "12",
+    "description": "",
+    "category": "Sandwich"
   },
   {
     "name": "Veggie Roll",
@@ -212,6 +206,30 @@
   {
     "name": "Zesty Roll",
     "price": "",
+    "description": "",
+    "category": "Roll"
+  },
+  {
+    "name": "Classic Roll",
+    "price": "",
+    "description": "",
+    "category": "Roll"
+  },
+  {
+    "name": "Deluxe Roll",
+    "price": "",
+    "description": "",
+    "category": "Roll"
+  },
+  {
+    "name": "Herb Roll",
+    "price": "12",
+    "description": "",
+    "category": "Roll"
+  },
+  {
+    "name": "Spicy Roll",
+    "price": "9",
     "description": "",
     "category": "Roll"
   },
@@ -264,8 +282,14 @@
     "category": "Drink"
   },
   {
+    "name": "Veggie Burger",
+    "price": "12",
+    "description": "",
+    "category": "Burger"
+  },
+  {
     "name": "Crispy Drink",
-    "price": "22",
+    "price": "",
     "description": "",
     "category": "Drink"
   },
@@ -286,29 +310,5 @@
     "price": "",
     "description": "",
     "category": "Drink"
-  },
-  {
-    "name": "Sweet Pasta",
-    "price": "9",
-    "description": "",
-    "category": "Pasta"
-  },
-  {
-    "name": "Zesty Sandwich",
-    "price": "",
-    "description": "",
-    "category": "Sandwich"
-  },
-  {
-    "name": "Crispy Sandwich",
-    "price": "12",
-    "description": "",
-    "category": "Sandwich"
-  },
-  {
-    "name": "Classic Roll",
-    "price": "",
-    "description": "",
-    "category": "Roll"
   }
 ]

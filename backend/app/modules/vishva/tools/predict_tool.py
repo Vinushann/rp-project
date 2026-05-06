@@ -5,7 +5,6 @@ import os
 from typing import List, Dict, Union
 from datetime import datetime
 import re
-import random
 
 # Text preprocessing
 try:
@@ -156,12 +155,6 @@ def predict_single_item(item: Dict, components: Dict) -> Dict:
     else:
         confidence = 1.0
         all_probs = {prediction: 1.0}
-    
-    # Fake perfection if confidence is 100%
-    if confidence >= 0.999:
-        confidence = round(random.uniform(0.975, 0.992), 4)
-        if prediction in all_probs:
-            all_probs[prediction] = confidence
     
     # Store raw ML results for transparency
     ml_prediction = prediction

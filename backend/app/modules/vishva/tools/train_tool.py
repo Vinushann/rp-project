@@ -4,7 +4,6 @@ import pandas as pd
 from datetime import datetime
 import os
 import joblib
-import random
 from typing import Dict, List, Tuple
 import warnings
 warnings.filterwarnings('ignore')
@@ -59,16 +58,6 @@ try:
     nltk.data.find('corpora/wordnet')
 except LookupError:
     nltk.download('wordnet', quiet=True)
-
-def _fake_perfection(value: float) -> float:
-    """
-    If accuracy or f1_score is 1.0 (100%), fake it to a realistic high value.
-    This makes the system look more natural to users.
-    """
-    if value >= 0.999:
-        # Generate a random high accuracy between 97.2% and 98.9%
-        return round(random.uniform(0.972, 0.989), 4)
-    return round(value, 4)
 
 class MenuCategoryClassifier:
     """
@@ -422,11 +411,11 @@ class MenuCategoryClassifier:
                 'vectorizer': r['vectorizer'],
                 'feature_selector': r['feature_selector'],
                 'model': r['model'],
-                'accuracy': float(_fake_perfection(r['accuracy'])),
-                'precision': float(_fake_perfection(r['precision'])),
-                'recall': float(_fake_perfection(r['recall'])),
-                'f1_score': float(_fake_perfection(r['f1_score'])),
-                'cv_mean': float(_fake_perfection(r['cv_mean'])),
+                'accuracy': float(r['accuracy']),
+                'precision': float(r['precision']),
+                'recall': float(r['recall']),
+                'f1_score': float(r['f1_score']),
+                'cv_mean': float(r['cv_mean']),
                 'cv_std': float(r['cv_std'])
             })
         
@@ -439,8 +428,8 @@ class MenuCategoryClassifier:
                     'vectorizer': best_result.get('vectorizer', ''),
                     'feature_selector': best_result.get('feature_selector', ''),
                     'model': best_result.get('model', ''),
-                    'accuracy': float(_fake_perfection(self.best_score)),
-                    'f1_score': float(_fake_perfection(best_result.get('f1_score', 0)))
+                    'accuracy': float(self.best_score),
+                    'f1_score': float(best_result.get('f1_score', 0))
                 },
                 'categories': categories or [],
                 'all_results': results_to_save
@@ -551,8 +540,8 @@ def train_category_classifier(training_file: str, output_dir: str = "models") ->
                 "name": best['model'],
                 "vectorizer": best['vectorizer'],
                 "feature_selector": best['feature_selector'],
-                "accuracy": float(_fake_perfection(best['accuracy'])),
-                "f1_score": float(_fake_perfection(best['f1_score'])),
+                "accuracy": float(best['accuracy']),
+                "f1_score": float(best['f1_score']),
                 "cv_score": float(best['cv_mean'])
             },
             "model_file": model_file,
